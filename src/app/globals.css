@@ -1,26 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* FCC Church Theme Colors */
+  --background: 255 255 255;
+  --foreground: 17 24 39;
+  
+  --card: 255 255 255;
+  --card-foreground: 17 24 39;
+  
+  --popover: 255 255 255;
+  --popover-foreground: 17 24 39;
+  
+  --primary: 37 99 235; /* FCC Blue */
+  --primary-foreground: 255 255 255;
+  
+  --secondary: 245 158 11; /* FCC Gold */
+  --secondary-foreground: 17 24 39;
+  
+  --muted: 243 244 246;
+  --muted-foreground: 107 114 128;
+  
+  --accent: 245 158 11; /* FCC Gold */
+  --accent-foreground: 17 24 39;
+  
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  
+  --border: 229 231 235;
+  --input: 229 231 235;
+  --ring: 37 99 235; /* FCC Blue */
+  
+  --radius: 0.5rem;
+  
+  --chart-1: 37 99 235; /* FCC Blue */
+  --chart-2: 245 158 11; /* FCC Gold */
+  --chart-3: 16 185 129;
+  --chart-4: 249 115 22;
+  --chart-5: 139 92 246;
+  
+  /* Custom FCC Variables */
+  --fcc-blue-primary: 37 99 235;
+  --fcc-gold-primary: 245 158 11;
+  --fcc-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 3 7 18;
+    --foreground: 248 250 252;
+    
+    --card: 3 7 18;
+    --card-foreground: 248 250 252;
+    
+    --popover: 3 7 18;
+    --popover-foreground: 248 250 252;
+    
+    --primary: 59 130 246; /* Lighter FCC Blue for dark mode */
+    --primary-foreground: 3 7 18;
+    
+    --secondary: 251 191 36; /* Lighter FCC Gold for dark mode */
+    --secondary-foreground: 3 7 18;
+    
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+    
+    --accent: 251 191 36; /* Lighter FCC Gold for dark mode */
+    --accent-foreground: 3 7 18;
+    
+    --destructive: 220 38 38;
+    --destructive-foreground: 248 250 252;
+    
+    --border: 30 41 59;
+    --input: 30 41 59;
+    --ring: 59 130 246;
   }
 }
 
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Custom FCC Styling */
+.fcc-gradient {
+  background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(245 158 11) 100%);
+}
+
+.fcc-gradient-text {
+  background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(245 158 11) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.fcc-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--fcc-shadow);
+  border-radius: var(--radius);
+}
+
+.fcc-button-primary {
+  background: rgb(var(--fcc-blue-primary));
+  color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.fcc-button-primary:hover {
+  background: rgb(29 78 216);
+  transform: translateY(-1px);
+}
+
+.fcc-button-secondary {
+  background: rgb(var(--fcc-gold-primary));
+  color: rgb(17 24 39);
+  transition: all 0.2s ease-in-out;
+}
+
+.fcc-button-secondary:hover {
+  background: rgb(217 119 6);
+  transform: translateY(-1px);
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
