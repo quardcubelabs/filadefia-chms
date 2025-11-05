@@ -17,6 +17,13 @@ export function useAuth() {
   const supabase = createClient();
 
   useEffect(() => {
+    // Check if supabase client is available
+    if (!supabase) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -32,19 +39,21 @@ export function useAuth() {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        } else {
-          setUser(null);
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event: any, session: any) => {
+          if (session?.user) {
+            await loadUserProfile(session.user);
+          } else {
+            setUser(null);
+          }
+          setLoading(false);
         }
-        setLoading(false);
-      }
-    );
+      );
 
-    return () => subscription.unsubscribe();
-  }, []);
+        return () => subscription.unsubscribe();
+    }
+  }, [supabase]);
 
   const loadUserProfile = async (authUser: User) => {
     try {
@@ -79,7 +88,9 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
   };
 
@@ -179,7 +190,7 @@ export function useDepartmentAccess() {
           .from('departments')
           .select('id');
         
-        setDepartments(allDepts?.map(d => d.id) || []);
+        setDepartments(allDepts?.map((d: any) => d.id) || []);
         setLoading(false);
         return;
       }
@@ -191,7 +202,7 @@ export function useDepartmentAccess() {
           .select('id')
           .eq('leader_id', user.profile.id);
         
-        setDepartments(userDepts?.map(d => d.id) || []);
+        setDepartments(userDepts?.map((d: any) => d.id) || []);
         setLoading(false);
         return;
       }

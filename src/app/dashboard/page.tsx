@@ -18,6 +18,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      window.location.href = '/setup';
+      return;
+    }
+
     if (!authLoading && !user) {
       window.location.href = '/login';
       return;

@@ -12,7 +12,11 @@ export const metadata: Metadata = {
   description: "Filadefia Christian Center - Tanzania Assemblies of God (TAG) Church Management System",
   keywords: "church, management, system, Tanzania, Assemblies of God, FCC, Filadefia",
   authors: [{ name: "FCC IT Department" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

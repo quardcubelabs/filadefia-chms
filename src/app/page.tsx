@@ -8,6 +8,12 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   useEffect(() => {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Don't redirect if Supabase is not configured
+      return;
+    }
+
     if (!loading && user) {
       // Redirect authenticated users to dashboard
       window.location.href = '/dashboard';

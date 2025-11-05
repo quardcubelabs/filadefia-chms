@@ -1,6 +1,11 @@
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: any) {
+  // Skip middleware if Supabase is not configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return;
+  }
+  
   return await updateSession(request)
 }
 
