@@ -1,8 +1,9 @@
 import { updateSession } from '@/lib/supabase/middleware'
+import { isSupabaseConfigured } from '@/lib/config'
 
 export async function middleware(request: any) {
   // Skip middleware if Supabase is not configured
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!isSupabaseConfigured()) {
     return;
   }
   

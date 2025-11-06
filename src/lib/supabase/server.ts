@@ -1,11 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { config, isSupabaseConfigured } from '@/lib/config'
 
 export async function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!isSupabaseConfigured()) {
     console.warn('Supabase environment variables not configured. Some features may not work.');
     // Return a mock client for build-time
     return null as any;
@@ -14,8 +12,8 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   return createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
+    config.supabase.url,
+    config.supabase.anonKey,
     {
       cookies: {
         getAll() {

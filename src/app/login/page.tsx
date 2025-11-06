@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -40,119 +42,195 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-fcc-blue-50 to-fcc-gold-50">
-      <div className="max-w-md w-full space-y-8 p-8">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-fcc-gradient rounded-full flex items-center justify-center mb-4">
-            <span className="text-2xl font-bold text-white">FCC</span>
+    <div className="min-h-screen flex">
+      {/* Left Side - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="h-12 w-12 bg-gradient-to-br from-fcc-blue-600 to-fcc-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-xl">F</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">FCC System</h1>
+                <p className="text-sm text-gray-500">Church Management</p>
+              </div>
+            </div>
+            
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
+            <p className="text-gray-600">Sign in to access your account</p>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to your Filadefia Christian Center account
-          </p>
-        </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-fcc-blue-500 focus:border-fcc-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-fcc-blue-500 focus:border-transparent transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
 
+            {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-fcc-blue-500 focus:border-fcc-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your password"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-fcc-blue-600 focus:ring-fcc-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-fcc-blue-500 focus:border-transparent transition-all"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
-            <div className="text-sm">
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-fcc-blue-600 focus:ring-fcc-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                  Remember me
+                </label>
+              </div>
+
               <Link
                 href="/forgot-password"
-                className="font-medium text-fcc-blue-600 hover:text-fcc-blue-500"
+                className="text-sm font-medium text-fcc-blue-600 hover:text-fcc-blue-700"
               >
-                Forgot your password?
+                Forgot password?
               </Link>
             </div>
-          </div>
 
-          <div>
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center space-x-2">
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white fcc-button-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fcc-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center space-x-2 py-3 px-4 bg-gradient-to-r from-fcc-blue-600 to-fcc-blue-700 text-white text-base font-medium rounded-xl hover:from-fcc-blue-700 hover:to-fcc-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fcc-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
             >
               {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Signing In...
-                </div>
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Signing in...</span>
+                </>
               ) : (
-                'Sign In'
+                <>
+                  <span>Sign in</span>
+                  <ArrowRight className="h-5 w-5" />
+                </>
               )}
             </button>
-          </div>
+          </form>
 
-          <div className="text-center">
-            <span className="text-sm text-gray-600">
-              Don't have an account?{' '}
+          {/* Footer */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-600">
+              Need access?{' '}
               <Link
-                href="/signup"
-                className="font-medium text-fcc-blue-600 hover:text-fcc-blue-500"
+                href="/"
+                className="font-medium text-fcc-blue-600 hover:text-fcc-blue-700"
               >
-                Contact your church administrator
+                Contact your administrator
               </Link>
-            </span>
+            </p>
           </div>
-        </form>
 
-        <div className="mt-8 text-center text-xs text-gray-500">
-          <p>Filadefia Christian Center</p>
-          <p>Tanzania Assemblies of God (TAG)</p>
+          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+            <p className="text-xs text-gray-500">
+              © 2025 Filadefia Christian Center. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Gradient Background */}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-fcc-blue-600 via-fcc-blue-700 to-fcc-blue-900 p-12 items-center justify-center relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-fcc-gold-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 max-w-md text-white">
+          <h2 className="text-4xl font-bold mb-6">
+            Modern Church<br />Management System
+          </h2>
+          <p className="text-lg text-blue-100 mb-8">
+            Streamline your church operations with our comprehensive management platform designed specifically for TAG churches in Tanzania.
+          </p>
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                <span className="text-2xl">👥</span>
+              </div>
+              <div>
+                <p className="font-semibold">Member Management</p>
+                <p className="text-sm text-blue-100">Comprehensive member profiles & tracking</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                <span className="text-2xl">💰</span>
+              </div>
+              <div>
+                <p className="font-semibold">Financial Tracking</p>
+                <p className="text-sm text-blue-100">Tithes, offerings & expense management</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                <span className="text-2xl">📊</span>
+              </div>
+              <div>
+                <p className="font-semibold">Analytics & Reports</p>
+                <p className="text-sm text-blue-100">Detailed insights & automated reporting</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

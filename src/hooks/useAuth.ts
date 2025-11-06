@@ -64,12 +64,46 @@ export function useAuth() {
         .single();
 
       if (error) {
-        console.error('Error loading profile:', error);
-        setUser({
-          id: authUser.id,
-          email: authUser.email,
-          profile: null,
-        });
+        // Check if profile doesn't exist (PGRST116 is "not found" error)
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found for user, creating basic profile...');
+          
+          // Create a basic profile for the user
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: authUser.id,
+              email: authUser.email || '',
+              role: 'member', // Default role
+              first_name: authUser.email?.split('@')[0] || 'User',
+              last_name: '',
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError.message);
+            setUser({
+              id: authUser.id,
+              email: authUser.email,
+              profile: null,
+            });
+          } else {
+            console.log('Profile created successfully');
+            setUser({
+              id: authUser.id,
+              email: authUser.email,
+              profile: newProfile,
+            });
+          }
+        } else {
+          console.error('Error loading profile:', error.message, error.details);
+          setUser({
+            id: authUser.id,
+            email: authUser.email,
+            profile: null,
+          });
+        }
       } else {
         setUser({
           id: authUser.id,
@@ -77,8 +111,8 @@ export function useAuth() {
           profile,
         });
       }
-    } catch (error) {
-      console.error('Error loading profile:', error);
+    } catch (error: any) {
+      console.error('Exception loading profile:', error?.message || error);
       setUser({
         id: authUser.id,
         email: authUser.email,
