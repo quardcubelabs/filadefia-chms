@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/Sidebar';
 import MemberForm from '@/components/MemberForm';
+import CSVImport from '@/components/CSVImport';
+import BulkCardGenerator from '@/components/BulkCardGenerator';
 import { Button, Card, CardBody, Input, Select, Badge, Table, Modal, ConfirmModal, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
-import { Users, Plus, Search, Filter, Download, Upload, Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Briefcase } from 'lucide-react';
+import { Users, Plus, Search, Filter, Download, Upload, Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Briefcase, CreditCard } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -33,6 +36,7 @@ interface Member {
 }
 
 export default function MembersPage() {
+  const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +45,8 @@ export default function MembersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showBulkCardModal, setShowBulkCardModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
@@ -209,6 +215,65 @@ export default function MembersPage() {
     a.click();
   };
 
+  // Import from CSV
+  const handleCSVImport = async (parsedMembers: any[]) => {
+    const results = [];
+
+    for (let i = 0; i < parsedMembers.length; i++) {
+      const memberData = parsedMembers[i];
+      const rowNumber = i + 2; // +2 because row 1 is headers and array is 0-indexed
+
+      try {
+        // Validate required fields
+        if (!memberData.first_name || !memberData.last_name) {
+          results.push({
+            success: false,
+            row: rowNumber,
+            name: `${memberData.first_name || ''} ${memberData.last_name || ''}`.trim(),
+            error: 'Missing required fields: first_name and last_name'
+          });
+          continue;
+        }
+
+        // Generate member number
+        const memberNumber = await generateMemberNumber();
+
+        // Insert member
+        const { data, error } = await supabase
+          .from('members')
+          .insert([{
+            member_number: memberNumber,
+            ...memberData,
+            created_by: user!.id,
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        results.push({
+          success: true,
+          row: rowNumber,
+          memberNumber: memberNumber,
+          name: `${memberData.first_name} ${memberData.last_name}`
+        });
+
+        // Add to local state
+        setMembers(prev => [data, ...prev]);
+
+      } catch (err: any) {
+        results.push({
+          success: false,
+          row: rowNumber,
+          name: `${memberData.first_name} ${memberData.last_name}`,
+          error: err.message || 'Failed to import'
+        });
+      }
+    }
+
+    return results;
+  };
+
   // Filter members
   const filteredMembers = members.filter(member => {
     const matchesSearch = 
@@ -362,11 +427,26 @@ export default function MembersPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={handleExport}
                   disabled={filteredMembers.length === 0}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBulkCardModal(true)}
+                  disabled={filteredMembers.length === 0}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Print Cards
                 </Button>
                 <Button onClick={() => setShowAddModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -446,10 +526,7 @@ export default function MembersPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => {
-                                setSelectedMember(member);
-                                setShowViewModal(true);
-                              }}
+                              onClick={() => router.push(`/members/${member.id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -682,6 +759,32 @@ export default function MembersPage() {
           variant="danger"
           loading={submitting}
         />
+
+        {/* CSV Import Modal */}
+        <Modal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          title="Import Members from CSV"
+          size="xl"
+        >
+          <CSVImport
+            onImport={handleCSVImport}
+            onClose={() => setShowImportModal(false)}
+          />
+        </Modal>
+
+        {/* Bulk Card Generator Modal */}
+        <Modal
+          isOpen={showBulkCardModal}
+          onClose={() => setShowBulkCardModal(false)}
+          title="Generate Membership Cards"
+          size="lg"
+        >
+          <BulkCardGenerator
+            members={filteredMembers}
+            onClose={() => setShowBulkCardModal(false)}
+          />
+        </Modal>
       </main>
     </div>
   );

@@ -15,7 +15,8 @@ import {
   Bell,
   LogOut,
   ChevronLeft,
-  Church
+  Church,
+  Briefcase
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -37,6 +38,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
   const navItems: NavItem[] = [
     { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
     { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
+    { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' },
     { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
     { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
     { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
