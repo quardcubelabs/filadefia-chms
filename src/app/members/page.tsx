@@ -109,18 +109,66 @@ export default function MembersPage() {
       setSubmitting(true);
       setError(null);
 
+      // Validate required fields
+      if (!formData.first_name || !formData.last_name) {
+        throw new Error('First name and last name are required');
+      }
+      if (!formData.gender) {
+        throw new Error('Gender is required');
+      }
+      if (!formData.date_of_birth) {
+        throw new Error('Date of birth is required');
+      }
+      if (!formData.marital_status) {
+        throw new Error('Marital status is required');
+      }
+      if (!formData.phone) {
+        throw new Error('Phone number is required');
+      }
+      if (!formData.address) {
+        throw new Error('Address is required');
+      }
+      if (!formData.emergency_contact_name || !formData.emergency_contact_phone) {
+        throw new Error('Emergency contact information is required');
+      }
+
       const memberNumber = await generateMemberNumber();
+      
+      // Clean up form data - convert empty strings to null for optional fields
+      const cleanedData = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        middle_name: formData.middle_name?.trim() || null,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        marital_status: formData.marital_status,
+        phone: formData.phone.trim(),
+        email: formData.email?.trim() || null,
+        address: formData.address.trim(),
+        occupation: formData.occupation?.trim() || null,
+        employer: formData.employer?.trim() || null,
+        emergency_contact_name: formData.emergency_contact_name.trim(),
+        emergency_contact_phone: formData.emergency_contact_phone.trim(),
+        baptism_date: formData.baptism_date || null,
+        membership_date: formData.membership_date || new Date().toISOString().split('T')[0],
+        status: formData.status || 'active',
+        photo_url: formData.photo_url || null,
+        notes: formData.notes?.trim() || null,
+      };
+
       const { data, error } = await supabase
         .from('members')
         .insert([{
           member_number: memberNumber,
-          ...formData,
-          created_by: user!.id,
+          ...cleanedData,
         }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error(error.message || 'Failed to add member to database');
+      }
 
       setMembers(prev => [data, ...prev]);
       setShowAddModal(false);
@@ -140,19 +188,42 @@ export default function MembersPage() {
       setSubmitting(true);
       setError(null);
 
+      // Clean up form data - convert empty strings to null for optional fields
+      const cleanedData = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        middle_name: formData.middle_name?.trim() || null,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        marital_status: formData.marital_status,
+        phone: formData.phone.trim(),
+        email: formData.email?.trim() || null,
+        address: formData.address.trim(),
+        occupation: formData.occupation?.trim() || null,
+        employer: formData.employer?.trim() || null,
+        emergency_contact_name: formData.emergency_contact_name.trim(),
+        emergency_contact_phone: formData.emergency_contact_phone.trim(),
+        baptism_date: formData.baptism_date || null,
+        membership_date: formData.membership_date,
+        status: formData.status,
+        photo_url: formData.photo_url || null,
+        notes: formData.notes?.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('members')
-        .update({
-          ...formData,
-          updated_at: new Date().toISOString(),
-        })
+        .update(cleanedData)
         .eq('id', selectedMember.id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error(error.message || 'Failed to update member');
+      }
 
-      setMembers(prev => prev.map(m => m.id === selectedMember.id ? data : m));
+      setMembers(prev => prev.map(m => m.id === data.id ? data : m));
       setShowEditModal(false);
       setSelectedMember(null);
     } catch (err: any) {

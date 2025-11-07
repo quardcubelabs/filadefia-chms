@@ -89,26 +89,56 @@ const config: Config = {
         // Keep FCC aliases pointing to TAG colors for backwards compatibility
         fcc: {
           red: {
+            50: '#fef2f2',
+            100: '#fee2e2',
+            200: '#fecaca',
+            300: '#fca5a5',
+            400: '#f87171',
             500: '#e31e24',
             600: '#dc2626',
             700: '#b91c1c',
+            800: '#991b1b',
+            900: '#7f1d1d',
+            950: '#450a0a'
           },
           yellow: {
+            50: '#fefce8',
+            100: '#fef9c3',
+            200: '#fef08a',
+            300: '#fde047',
+            400: '#facc15',
             500: '#ffd700',
             600: '#eab308',
             700: '#ca8a04',
+            800: '#a16207',
+            900: '#854d0e',
+            950: '#713f12'
           },
           blue: {
+            50: '#eff6ff',
+            100: '#dbeafe',
+            200: '#bfdbfe',
+            300: '#93c5fd',
+            400: '#60a5fa',
             500: '#3b82f6',
             600: '#2563eb',
             700: '#1d4ed8',
             800: '#1e40af',
             900: '#1e3a8a',
+            950: '#0f172a'
           },
           gold: {
+            50: '#fefce8',
+            100: '#fef9c3',
+            200: '#fef08a',
+            300: '#fde047',
+            400: '#facc15',
             500: '#ffd700',
             600: '#eab308',
             700: '#ca8a04',
+            800: '#a16207',
+            900: '#854d0e',
+            950: '#713f12'
           },
         },
         background: "hsl(var(--background))",
