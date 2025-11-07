@@ -30,12 +30,16 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-fcc-blue-600 to-fcc-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-xl font-bold text-white">F</span>
+              <div className="h-11 w-11 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center shadow-lg p-1">
+                <img 
+                  src="/tag-logo.png" 
+                  alt="TAG Logo" 
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">FCC System</h1>
-                <p className="text-xs text-gray-500">Church Management</p>
+                <h1 className="text-lg font-bold text-gray-900">FCC CHMS</h1>
+                <p className="text-xs text-gray-500">Tanzania Assemblies of God</p>
               </div>
             </div>
             <nav className="flex items-center space-x-4">

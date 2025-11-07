@@ -49,12 +49,16 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="h-12 w-12 bg-gradient-to-br from-fcc-blue-600 to-fcc-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl">F</span>
+              <div className="h-14 w-14 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center shadow-lg p-1.5">
+                <img 
+                  src="/tag-logo.png" 
+                  alt="TAG Logo" 
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">FCC System</h1>
-                <p className="text-sm text-gray-500">Church Management</p>
+                <h1 className="text-2xl font-bold text-gray-900">FCC CHMS</h1>
+                <p className="text-sm text-gray-500">Tanzania Assemblies of God</p>
               </div>
             </div>
             

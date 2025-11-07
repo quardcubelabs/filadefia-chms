@@ -24,12 +24,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
     
     const variants = {
-      primary: 'bg-gradient-to-r from-fcc-blue-600 to-fcc-blue-700 text-white hover:from-fcc-blue-700 hover:to-fcc-blue-800 focus:ring-fcc-blue-500 shadow-lg hover:shadow-xl',
-      secondary: 'bg-gradient-to-r from-fcc-gold-500 to-fcc-gold-600 text-white hover:from-fcc-gold-600 hover:to-fcc-gold-700 focus:ring-fcc-gold-500 shadow-lg hover:shadow-xl',
-      outline: 'border-2 border-fcc-blue-600 text-fcc-blue-600 hover:bg-fcc-blue-50 focus:ring-fcc-blue-500',
-      ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-400',
-      danger: 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 focus:ring-red-500 shadow-lg hover:shadow-xl',
-      success: 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 focus:ring-green-500 shadow-lg hover:shadow-xl',
+      primary: 'bg-gradient-to-r from-tag-red-500 to-tag-red-700 text-white hover:from-tag-red-600 hover:to-tag-red-800 focus:ring-tag-red-500 shadow-tag-lg hover:shadow-xl font-semibold',
+      secondary: 'bg-gradient-to-r from-tag-yellow-500 to-tag-yellow-600 text-tag-black hover:from-tag-yellow-600 hover:to-tag-yellow-700 focus:ring-tag-yellow-500 shadow-lg hover:shadow-xl font-semibold',
+      outline: 'border-2 border-tag-red-500 text-tag-red-600 hover:bg-tag-red-50 hover:border-tag-red-600 focus:ring-tag-red-500 font-semibold',
+      ghost: 'text-tag-gray-700 hover:bg-tag-gray-100 hover:text-tag-gray-900 focus:ring-tag-gray-400 font-medium',
+      danger: 'bg-gradient-to-r from-tag-red-600 to-tag-red-700 text-white hover:from-tag-red-700 hover:to-tag-red-800 focus:ring-tag-red-500 shadow-tag-lg hover:shadow-xl font-semibold',
+      success: 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 focus:ring-green-500 shadow-lg hover:shadow-xl font-semibold',
     };
 
     const sizes = {

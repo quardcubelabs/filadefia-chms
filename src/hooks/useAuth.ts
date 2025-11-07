@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { Profile, UserRole } from '@/types';
 import { User } from '@supabase/supabase-js';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export interface AuthUser {
   id: string;
@@ -14,118 +14,137 @@ export interface AuthUser {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  
+  // Create supabase client once and memoize it
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    // Check if supabase client is available
     if (!supabase) {
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        await loadUserProfile(session.user);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    };
+    const loadUserProfile = async (authUser: User) => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .single();
 
-    getInitialSession();
+        if (error) {
+          // Check if profile doesn't exist (PGRST116 is "not found" error)
+          if (error.code === 'PGRST116') {
+            console.log('Profile not found for user, creating basic profile...');
+            
+            // Create a basic profile for the user
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                user_id: authUser.id,
+                email: authUser.email || '',
+                role: 'member',
+                first_name: authUser.email?.split('@')[0] || 'User',
+                last_name: '',
+              })
+              .select()
+              .single();
 
-    // Listen for auth changes
-    if (supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event: any, session: any) => {
-          if (session?.user) {
-            await loadUserProfile(session.user);
+            if (createError) {
+              console.error('Error creating profile:', createError.message);
+              setUser({
+                id: authUser.id,
+                email: authUser.email,
+                profile: null,
+              });
+            } else {
+              console.log('Profile created successfully');
+              setUser({
+                id: authUser.id,
+                email: authUser.email,
+                profile: newProfile,
+              });
+            }
           } else {
-            setUser(null);
-          }
-          setLoading(false);
-        }
-      );
-
-        return () => subscription.unsubscribe();
-    }
-  }, [supabase]);
-
-  const loadUserProfile = async (authUser: User) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .single();
-
-      if (error) {
-        // Check if profile doesn't exist (PGRST116 is "not found" error)
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found for user, creating basic profile...');
-          
-          // Create a basic profile for the user
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: authUser.id,
-              email: authUser.email || '',
-              role: 'member', // Default role
-              first_name: authUser.email?.split('@')[0] || 'User',
-              last_name: '',
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Error creating profile:', createError.message);
+            console.error('Error loading profile:', error.message, error.details);
             setUser({
               id: authUser.id,
               email: authUser.email,
               profile: null,
             });
-          } else {
-            console.log('Profile created successfully');
-            setUser({
-              id: authUser.id,
-              email: authUser.email,
-              profile: newProfile,
-            });
           }
         } else {
-          console.error('Error loading profile:', error.message, error.details);
           setUser({
             id: authUser.id,
             email: authUser.email,
-            profile: null,
+            profile,
           });
         }
-      } else {
+      } catch (error: any) {
+        console.error('Exception loading profile:', error?.message || error);
         setUser({
           id: authUser.id,
           email: authUser.email,
-          profile,
+          profile: null,
         });
       }
-    } catch (error: any) {
-      console.error('Exception loading profile:', error?.message || error);
-      setUser({
-        id: authUser.id,
-        email: authUser.email,
-        profile: null,
-      });
-    }
-  };
+    };
+
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        if (session?.user) {
+          await loadUserProfile(session.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Exception getting session:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: string, session: any) => {
+        console.log('Auth state changed:', event);
+        
+        if (session?.user) {
+          await loadUserProfile(session.user);
+        } else {
+          setUser(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const signOut = async () => {
-    if (supabase) {
+    try {
       await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
-    setUser(null);
   };
 
   const hasRole = (requiredRoles: UserRole[]): boolean => {
@@ -177,7 +196,7 @@ export function useAuth() {
     isStaff,
     isDepartmentLeader,
     canAccess,
-    supabase, // Expose supabase client for direct queries
+    supabase,
   };
 }
 
@@ -188,13 +207,11 @@ export function useRequireAuth(requiredRole?: UserRole) {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        // Redirect to login page
         window.location.href = '/login';
         return;
       }
 
       if (requiredRole && !canAccess(requiredRole)) {
-        // Redirect to unauthorized page
         window.location.href = '/unauthorized';
         return;
       }
@@ -212,7 +229,7 @@ export function useDepartmentAccess() {
 
   useEffect(() => {
     const loadDepartments = async () => {
-      if (!user?.profile) {
+      if (!user?.profile || !supabase) {
         setDepartments([]);
         setLoading(false);
         return;

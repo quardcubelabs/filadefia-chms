@@ -2,13 +2,10 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
+import Sidebar from '@/components/Sidebar';
 import { 
-  Home,
   Calendar,
   Users,
-  Settings,
-  MessageSquare,
-  FileText,
   Search,
   Bell,
   Mail,
@@ -28,12 +25,18 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
+  // Show loading spinner while checking authentication
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fcc-blue-600"></div>
       </div>
     );
+  }
+
+  // Don't render dashboard if no user (will redirect to login)
+  if (!user) {
+    return null;
   }
 
   const bgColor = darkMode ? 'bg-[#1a1d2e]' : 'bg-[#f5f6fa]';
@@ -44,50 +47,28 @@ export default function DashboardPage() {
 
   return (
     <div className={`min-h-screen ${bgColor} flex`}>
-      {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full w-20 ${darkMode ? 'bg-[#252836]' : 'bg-white'} border-r ${borderColor} flex flex-col items-center py-8 space-y-8 z-50`}>
-        {/* Logo */}
-        <div className="relative">
-          <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="currentColor">
-              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* Navigation Icons */}
-        <nav className="flex-1 flex flex-col items-center space-y-4">
-          <button className="p-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
-            <Home className="h-5 w-5" />
-          </button>
-          <button className={`p-4 rounded-xl ${textSecondary} hover:bg-gray-100 ${darkMode ? 'hover:bg-[#1a1d2e]' : ''} transition-colors`}>
-            <Calendar className="h-5 w-5" />
-          </button>
-          <button className={`p-4 rounded-xl ${textSecondary} hover:bg-gray-100 ${darkMode ? 'hover:bg-[#1a1d2e]' : ''} transition-colors`}>
-            <Users className="h-5 w-5" />
-          </button>
-          <button className={`p-4 rounded-xl ${textSecondary} hover:bg-gray-100 ${darkMode ? 'hover:bg-[#1a1d2e]' : ''} transition-colors`}>
-            <MessageSquare className="h-5 w-5" />
-          </button>
-          <button className={`p-4 rounded-xl ${textSecondary} hover:bg-gray-100 ${darkMode ? 'hover:bg-[#1a1d2e]' : ''} transition-colors`}>
-            <Settings className="h-5 w-5" />
-          </button>
-          <button className={`p-4 rounded-xl ${textSecondary} hover:bg-gray-100 ${darkMode ? 'hover:bg-[#1a1d2e]' : ''} transition-colors`}>
-            <FileText className="h-5 w-5" />
-          </button>
-        </nav>
-      </aside>
+      {/* Sidebar Component */}
+      <Sidebar darkMode={darkMode} onSignOut={signOut} />
 
       {/* Main Content */}
-      <div className="flex-1 ml-20">
+      <div className="flex-1">
         {/* Header */}
         <header className={`${cardBg} border-b ${borderColor} sticky top-0 z-40`}>
           <div className="px-8 py-5 flex items-center justify-between">
-            <div>
-              <h1 className={`text-2xl font-bold ${textPrimary} flex items-center`}>
-                Hello {user?.email?.split('@')[0] || 'User'} 👋
-              </h1>
-              <p className={`text-sm ${textSecondary} mt-1`}>Church Admin Dashboard</p>
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 bg-white rounded-xl flex items-center justify-center shadow-md p-1.5">
+                <img 
+                  src="/tag-logo.png" 
+                  alt="TAG Logo" 
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div>
+                <h1 className={`text-2xl font-bold ${textPrimary} flex items-center`}>
+                  Hello {user?.email?.split('@')[0] || 'User'} 👋
+                </h1>
+                <p className={`text-sm ${textSecondary} mt-1`}>Tanzania Assemblies of God - FCC</p>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -121,7 +102,7 @@ export default function DashboardPage() {
               </button>
 
               {/* User Avatar */}
-              <button className="flex items-center space-x-3 pl-4 border-l ${borderColor}">
+              <button className={`flex items-center space-x-3 pl-4 border-l ${borderColor}`}>
                 <img
                   src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
                   alt="User"

@@ -1,0 +1,688 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import Sidebar from '@/components/Sidebar';
+import MemberForm from '@/components/MemberForm';
+import { Button, Card, CardBody, Input, Select, Badge, Table, Modal, ConfirmModal, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
+import { Users, Plus, Search, Filter, Download, Upload, Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Briefcase } from 'lucide-react';
+
+interface Member {
+  id: string;
+  member_number: string;
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  gender: 'male' | 'female';
+  date_of_birth: string;
+  marital_status: 'single' | 'married' | 'divorced' | 'widowed';
+  phone: string;
+  email?: string;
+  address: string;
+  occupation?: string;
+  employer?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  baptism_date?: string;
+  status: 'active' | 'visitor' | 'transferred' | 'inactive';
+  membership_date: string;
+  photo_url?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export default function MembersPage() {
+  const { user, loading: authLoading, supabase } = useAuth();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch members from Supabase
+  useEffect(() => {
+    if (supabase) {
+      fetchMembers();
+    }
+  }, [supabase]);
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .order('member_number', { ascending: false });
+
+      if (error) throw error;
+      setMembers(data || []);
+    } catch (err: any) {
+      console.error('Error fetching members:', err);
+      setError(err.message || 'Failed to fetch members');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generate next member number
+  const generateMemberNumber = async (): Promise<string> => {
+    const year = new Date().getFullYear();
+    const { data, error } = await supabase
+      .from('members')
+      .select('member_number')
+      .like('member_number', `FCC-${year}-%`)
+      .order('member_number', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('Error generating member number:', error);
+      return `FCC-${year}-001`;
+    }
+
+    if (!data || data.length === 0) {
+      return `FCC-${year}-001`;
+    }
+
+    const lastNumber = parseInt(data[0].member_number.split('-')[2]);
+    const nextNumber = (lastNumber + 1).toString().padStart(3, '0');
+    return `FCC-${year}-${nextNumber}`;
+  };
+
+  // Add new member
+  const handleAddMember = async (formData: any) => {
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      const memberNumber = await generateMemberNumber();
+      const { data, error } = await supabase
+        .from('members')
+        .insert([{
+          member_number: memberNumber,
+          ...formData,
+          created_by: user!.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMembers(prev => [data, ...prev]);
+      setShowAddModal(false);
+    } catch (err: any) {
+      console.error('Error adding member:', err);
+      setError(err.message || 'Failed to add member');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Update member
+  const handleUpdateMember = async (formData: any) => {
+    if (!selectedMember) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('members')
+        .update({
+          ...formData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', selectedMember.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMembers(prev => prev.map(m => m.id === selectedMember.id ? data : m));
+      setShowEditModal(false);
+      setSelectedMember(null);
+    } catch (err: any) {
+      console.error('Error updating member:', err);
+      setError(err.message || 'Failed to update member');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete member
+  const handleDeleteMember = async () => {
+    if (!memberToDelete) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', memberToDelete.id);
+
+      if (error) throw error;
+
+      setMembers(prev => prev.filter(m => m.id !== memberToDelete.id));
+      setShowDeleteConfirm(false);
+      setMemberToDelete(null);
+    } catch (err: any) {
+      console.error('Error deleting member:', err);
+      setError(err.message || 'Failed to delete member');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Export to CSV
+  const handleExport = () => {
+    const headers = ['Member Number', 'First Name', 'Last Name', 'Phone', 'Email', 'Status', 'Membership Date'];
+    const csvData = filteredMembers.map(m => [
+      m.member_number,
+      m.first_name,
+      m.last_name,
+      m.phone,
+      m.email || '',
+      m.status,
+      m.membership_date,
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fcc-members-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  // Filter members
+  const filteredMembers = members.filter(member => {
+    const matchesSearch = 
+      member.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.member_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.phone.includes(searchQuery);
+
+    const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Calculate stats
+  const stats = {
+    total: members.length,
+    active: members.filter(m => m.status === 'active').length,
+    visitors: members.filter(m => m.status === 'visitor').length,
+    newThisMonth: members.filter(m => {
+      const memberDate = new Date(m.membership_date);
+      const now = new Date();
+      return memberDate.getMonth() === now.getMonth() && memberDate.getFullYear() === now.getFullYear();
+    }).length,
+  };
+
+  const getStatusBadge = (status: Member['status']) => {
+    const variants: Record<Member['status'], 'success' | 'info' | 'warning' | 'default'> = {
+      active: 'success',
+      visitor: 'info',
+      transferred: 'warning',
+      inactive: 'default',
+    };
+    return <Badge variant={variants[status]} dot>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+  };
+
+  // Don't return early - render the layout with loading state instead
+  if (!user && !authLoading) {
+    return null;
+  }
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      
+      <main className="flex-1 ml-20 p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <Users className="h-8 w-8 mr-3 text-fcc-blue-600" />
+            Member Management
+          </h1>
+          <p className="text-gray-600 mt-2">Manage church members, visitors, and their information</p>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6">
+            <Alert variant="error" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card variant="default">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Members</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                </div>
+                <div className="h-12 w-12 bg-gradient-to-br from-fcc-blue-500 to-fcc-blue-600 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card variant="default">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Members</p>
+                  <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
+                </div>
+                <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card variant="default">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Visitors</p>
+                  <p className="text-3xl font-bold text-blue-600 mt-1">{stats.visitors}</p>
+                </div>
+                <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Eye className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card variant="default">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">New This Month</p>
+                  <p className="text-3xl font-bold text-fcc-gold-600 mt-1">{stats.newThisMonth}</p>
+                </div>
+                <div className="h-12 w-12 bg-gradient-to-br from-fcc-gold-500 to-fcc-gold-600 rounded-lg flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Actions & Filters */}
+        <Card variant="default" className="mb-6">
+          <CardBody className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div className="flex flex-col md:flex-row gap-4 flex-1">
+                <div className="w-full md:w-96">
+                  <Input
+                    placeholder="Search members by name, number, or phone..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    icon={<Search className="h-5 w-5" />}
+                    fullWidth
+                  />
+                </div>
+
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  options={[
+                    { value: 'all', label: 'All Statuses' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'visitor', label: 'Visitor' },
+                    { value: 'transferred', label: 'Transferred' },
+                    { value: 'inactive', label: 'Inactive' },
+                  ]}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleExport}
+                  disabled={filteredMembers.length === 0}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button onClick={() => setShowAddModal(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Member
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Members Table */}
+        <Card variant="default">
+          <CardBody className="p-6">
+            {loading ? (
+              <Loading />
+            ) : filteredMembers.length === 0 ? (
+              <EmptyState
+                icon={<Users className="h-12 w-12" />}
+                title="No members found"
+                description={searchQuery || statusFilter !== 'all' ? "Try adjusting your search or filters" : "Get started by adding your first member"}
+                action={{
+                  label: 'Add Member',
+                  onClick: () => setShowAddModal(true),
+                  icon: <Plus className="h-4 w-4" />,
+                }}
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Member #</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Phone</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Joined</th>
+                      <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMembers.map(member => (
+                      <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-4">
+                          <span className="font-mono text-sm text-gray-900">{member.member_number}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center space-x-3">
+                            <Avatar
+                              src={member.photo_url}
+                              alt={`${member.first_name} ${member.last_name}`}
+                              size="md"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {member.first_name} {member.middle_name && `${member.middle_name} `}{member.last_name}
+                              </p>
+                              {member.email && (
+                                <p className="text-sm text-gray-500">{member.email}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                            {member.phone}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {getStatusBadge(member.status)}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-gray-600">
+                          {new Date(member.membership_date).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setShowViewModal(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setShowEditModal(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setMemberToDelete(member);
+                                setShowDeleteConfirm(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Add Member Modal */}
+        <Modal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          title="Add New Member"
+          size="lg"
+        >
+          <MemberForm
+            onSubmit={handleAddMember}
+            onCancel={() => setShowAddModal(false)}
+            loading={submitting}
+          />
+        </Modal>
+
+        {/* Edit Member Modal */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedMember(null);
+          }}
+          title="Edit Member"
+          size="lg"
+        >
+          {selectedMember && (
+            <MemberForm
+              initialData={selectedMember}
+              onSubmit={handleUpdateMember}
+              onCancel={() => {
+                setShowEditModal(false);
+                setSelectedMember(null);
+              }}
+              isEditing
+              loading={submitting}
+            />
+          )}
+        </Modal>
+
+        {/* View Member Modal */}
+        <Modal
+          isOpen={showViewModal}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedMember(null);
+          }}
+          title="Member Details"
+          size="md"
+        >
+          {selectedMember && (
+            <div className="space-y-6">
+              {/* Member Photo & Basic Info */}
+              <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
+                <Avatar
+                  src={selectedMember.photo_url}
+                  alt={`${selectedMember.first_name} ${selectedMember.last_name}`}
+                  size="xl"
+                />
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {selectedMember.first_name} {selectedMember.middle_name && `${selectedMember.middle_name} `}{selectedMember.last_name}
+                  </h3>
+                  <p className="text-gray-600 font-mono">{selectedMember.member_number}</p>
+                  <div className="mt-2">
+                    {getStatusBadge(selectedMember.status)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Contact Information</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center text-gray-600">
+                    <Phone className="h-4 w-4 mr-3 text-gray-400" />
+                    <span>{selectedMember.phone}</span>
+                  </div>
+                  {selectedMember.email && (
+                    <div className="flex items-center text-gray-600">
+                      <Mail className="h-4 w-4 mr-3 text-gray-400" />
+                      <span>{selectedMember.email}</span>
+                    </div>
+                  )}
+                  <div className="flex items-start text-gray-600">
+                    <MapPin className="h-4 w-4 mr-3 text-gray-400 mt-0.5" />
+                    <span>{selectedMember.address}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal Information */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Personal Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Date of Birth</p>
+                    <p className="text-gray-900">{new Date(selectedMember.date_of_birth).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Gender</p>
+                    <p className="text-gray-900 capitalize">{selectedMember.gender}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Marital Status</p>
+                    <p className="text-gray-900 capitalize">{selectedMember.marital_status}</p>
+                  </div>
+                  {selectedMember.occupation && (
+                    <div>
+                      <p className="text-sm text-gray-500">Occupation</p>
+                      <p className="text-gray-900">{selectedMember.occupation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Membership Information */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Membership Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Membership Date</p>
+                    <p className="text-gray-900">{new Date(selectedMember.membership_date).toLocaleDateString()}</p>
+                  </div>
+                  {selectedMember.baptism_date && (
+                    <div>
+                      <p className="text-sm text-gray-500">Baptism Date</p>
+                      <p className="text-gray-900">{new Date(selectedMember.baptism_date).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Emergency Contact */}
+              {selectedMember.emergency_contact_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Emergency Contact</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Name</p>
+                      <p className="text-gray-900">{selectedMember.emergency_contact_name}</p>
+                    </div>
+                    {selectedMember.emergency_contact_phone && (
+                      <div>
+                        <p className="text-sm text-gray-500">Phone</p>
+                        <p className="text-gray-900">{selectedMember.emergency_contact_phone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedMember.notes && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Notes</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{selectedMember.notes}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setSelectedMember(null);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        {/* Delete Confirmation */}
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setMemberToDelete(null);
+          }}
+          onConfirm={handleDeleteMember}
+          title="Delete Member"
+          message={`Are you sure you want to delete ${memberToDelete?.first_name} ${memberToDelete?.last_name}? This action cannot be undone.`}
+          confirmText="Delete"
+          variant="danger"
+          loading={submitting}
+        />
+      </main>
+    </div>
+  );
+}

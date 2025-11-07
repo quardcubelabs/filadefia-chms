@@ -99,14 +99,18 @@ export default function SignupPage() {
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg">
         <div className="px-6 py-8">
           <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-fcc-gradient rounded-full flex items-center justify-center mb-4">
-              <span className="text-lg font-bold text-white">FCC</span>
+            <div className="mx-auto h-16 w-16 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center mb-4 p-2">
+              <img 
+                src="/tag-logo.png" 
+                alt="TAG Logo" 
+                className="h-full w-full object-contain"
+              />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">
               Create New User
             </h2>
             <p className="text-sm text-gray-600">
-              Add a new user to the FCC system
+              Tanzania Assemblies of God - FCC
             </p>
           </div>
 

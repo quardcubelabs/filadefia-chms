@@ -9,35 +9,55 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // FCC Church Branding Colors
-        fcc: {
+        // TAG (Tanzania Assemblies of God) Official Colors from Logo
+        tag: {
+          // Primary Red from TAG logo
+          red: {
+            50: '#fef2f2',
+            100: '#fee2e2',
+            200: '#fecaca',
+            300: '#fca5a5',
+            400: '#f87171',
+            500: '#e31e24', // TAG Primary Red
+            600: '#dc2626',
+            700: '#b91c1c',
+            800: '#991b1b',
+            900: '#7f1d1d',
+            950: '#450a0a'
+          },
+          // Yellow/Gold from TAG logo
+          yellow: {
+            50: '#fefce8',
+            100: '#fef9c3',
+            200: '#fef08a',
+            300: '#fde047',
+            400: '#facc15',
+            500: '#ffd700', // TAG Primary Yellow/Gold
+            600: '#eab308',
+            700: '#ca8a04',
+            800: '#a16207',
+            900: '#854d0e',
+            950: '#713f12'
+          },
+          // Dark Blue (added as requested)
           blue: {
             50: '#eff6ff',
             100: '#dbeafe',
             200: '#bfdbfe',
             300: '#93c5fd',
             400: '#60a5fa',
-            500: '#3b82f6', // Primary blue
-            600: '#2563eb', // Darker blue
-            700: '#1d4ed8',
+            500: '#3b82f6',
+            600: '#2563eb',
+            700: '#1d4ed8', // Dark Blue
             800: '#1e40af',
-            900: '#1e3a8a',
-            950: '#172554'
+            900: '#1e3a8a', // Darker Blue
+            950: '#0f172a'  // Very Dark Blue
           },
-          gold: {
-            50: '#fffbeb',
-            100: '#fef3c7',
-            200: '#fde68a',
-            300: '#fcd34d',
-            400: '#fbbf24',
-            500: '#f59e0b', // Primary gold
-            600: '#d97706', // Darker gold
-            700: '#b45309',
-            800: '#92400e',
-            900: '#78350f',
-            950: '#451a03'
-          },
+          // Black from TAG logo
+          black: '#000000',
+          // White from TAG logo
           white: '#ffffff',
+          // Neutral grays for UI
           gray: {
             50: '#f9fafb',
             100: '#f3f4f6',
@@ -48,8 +68,34 @@ const config: Config = {
             600: '#4b5563',
             700: '#374151',
             800: '#1f2937',
-            900: '#111827'
+            900: '#111827',
+            950: '#030712'
           }
+        },
+        // Keep FCC aliases pointing to TAG colors for backwards compatibility
+        fcc: {
+          red: {
+            500: '#e31e24',
+            600: '#dc2626',
+            700: '#b91c1c',
+          },
+          yellow: {
+            500: '#ffd700',
+            600: '#eab308',
+            700: '#ca8a04',
+          },
+          blue: {
+            500: '#3b82f6',
+            600: '#2563eb',
+            700: '#1d4ed8',
+            800: '#1e40af',
+            900: '#1e3a8a',
+          },
+          gold: {
+            500: '#ffd700',
+            600: '#eab308',
+            700: '#ca8a04',
+          },
         },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -97,6 +143,11 @@ const config: Config = {
         serif: ['Georgia', 'serif'],
       },
       boxShadow: {
+        'tag': '0 4px 6px -1px rgba(227, 30, 36, 0.1), 0 2px 4px -1px rgba(227, 30, 36, 0.06)',
+        'tag-lg': '0 10px 15px -3px rgba(227, 30, 36, 0.1), 0 4px 6px -2px rgba(227, 30, 36, 0.05)',
+        'tag-blue': '0 4px 6px -1px rgba(30, 58, 138, 0.1), 0 2px 4px -1px rgba(30, 58, 138, 0.06)',
+        'tag-blue-lg': '0 10px 15px -3px rgba(30, 58, 138, 0.1), 0 4px 6px -2px rgba(30, 58, 138, 0.05)',
+        // Keep FCC shadows for backwards compatibility
         'fcc': '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
         'fcc-lg': '0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -2px rgba(59, 130, 246, 0.05)',
       },
