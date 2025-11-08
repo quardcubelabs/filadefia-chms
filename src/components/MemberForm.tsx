@@ -1,8 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Input, TextArea, Select } from '@/components/ui';
-import { User, Phone, Mail, MapPin, Calendar, Briefcase, Users as UsersIcon, Upload } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, Briefcase, Users as UsersIcon, Upload, Building2, X } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+
+interface Department {
+  id: string;
+  name: string;
+  swahili_name?: string;
+}
 
 interface MemberFormData {
   first_name: string;
@@ -23,6 +30,7 @@ interface MemberFormData {
   status: 'active' | 'visitor' | 'transferred' | 'inactive';
   notes: string;
   photo_url: string;
+  department_ids: string[];
 }
 
 interface MemberFormProps {
@@ -34,6 +42,11 @@ interface MemberFormProps {
 }
 
 export default function MemberForm({ initialData, onSubmit, onCancel, isEditing = false, loading = false }: MemberFormProps) {
+  const { supabase } = useAuth();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
+  
   const [formData, setFormData] = useState<MemberFormData>({
     first_name: initialData?.first_name || '',
     last_name: initialData?.last_name || '',
@@ -53,13 +66,61 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
     status: initialData?.status || 'active',
     notes: initialData?.notes || '',
     photo_url: initialData?.photo_url || '',
+    department_ids: initialData?.department_ids || [],
   });
 
   const [uploading, setUploading] = useState(false);
 
+  // Fetch departments on component mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      if (!supabase) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('departments')
+          .select('id, name, swahili_name')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+        setDepartments(data || []);
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+      } finally {
+        setLoadingDepartments(false);
+      }
+    };
+
+    fetchDepartments();
+  }, [supabase]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddDepartment = () => {
+    if (!selectedDepartmentId) return;
+    
+    // Check if department is already added
+    if (formData.department_ids.includes(selectedDepartmentId)) {
+      alert('This department is already added');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      department_ids: [...prev.department_ids, selectedDepartmentId]
+    }));
+    setSelectedDepartmentId('');
+  };
+
+  const handleRemoveDepartment = (departmentId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      department_ids: prev.department_ids.filter(id => id !== departmentId)
+    }));
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,6 +392,91 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
             required
             fullWidth
           />
+        </div>
+      </div>
+
+      {/* Department Assignment */}
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+          Department Assignment
+        </h3>
+        
+        <div className="space-y-4">
+          {/* Department Selection */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Select
+                label="Select Department"
+                value={selectedDepartmentId}
+                onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                options={[
+                  { value: '', label: 'Choose a department...' },
+                  ...departments.map(dept => ({
+                    value: dept.id,
+                    label: dept.swahili_name ? `${dept.name} (${dept.swahili_name})` : dept.name
+                  }))
+                ]}
+                disabled={loadingDepartments}
+                fullWidth
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddDepartment}
+                disabled={!selectedDepartmentId || loadingDepartments}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Selected Departments List */}
+          {formData.department_ids.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                Assigned Departments ({formData.department_ids.length})
+              </p>
+              <div className="space-y-2">
+                {formData.department_ids.map(deptId => {
+                  const dept = departments.find(d => d.id === deptId);
+                  if (!dept) return null;
+                  
+                  return (
+                    <div
+                      key={deptId}
+                      className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-2"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{dept.name}</p>
+                          {dept.swahili_name && (
+                            <p className="text-xs text-gray-500">{dept.swahili_name}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDepartment(deptId)}
+                        className="text-red-600 hover:text-red-700 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {formData.department_ids.length === 0 && (
+            <p className="text-sm text-gray-500 italic">
+              No departments assigned yet. Members can be assigned to multiple departments.
+            </p>
+          )}
         </div>
       </div>
 

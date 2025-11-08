@@ -48,6 +48,7 @@ export default function MembersPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBulkCardModal, setShowBulkCardModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedMemberDepartments, setSelectedMemberDepartments] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,26 @@ export default function MembersPage() {
       fetchMembers();
     }
   }, [supabase]);
+
+  // Load member's department assignments
+  const loadMemberDepartments = async (memberId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('department_members')
+        .select('department_id')
+        .eq('member_id', memberId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      
+      const departmentIds = data?.map((d: any) => d.department_id) || [];
+      setSelectedMemberDepartments(departmentIds);
+      return departmentIds;
+    } catch (error) {
+      console.error('Error loading member departments:', error);
+      return [];
+    }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -120,35 +141,43 @@ export default function MembersPage() {
         throw new Error('Database connection not available. Please refresh the page.');
       }
 
-      // Validate required fields
-      if (!formData.first_name || !formData.last_name) {
-        throw new Error('First name and last name are required');
+      // Validate required fields according to database schema
+      const requiredFields = {
+        first_name: 'First name',
+        last_name: 'Last name',
+        gender: 'Gender',
+        date_of_birth: 'Date of birth',
+        marital_status: 'Marital status',
+        phone: 'Phone number',
+        address: 'Address',
+        emergency_contact_name: 'Emergency contact name',
+        emergency_contact_phone: 'Emergency contact phone',
+      };
+
+      // Check each required field
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!formData[field] || formData[field].toString().trim() === '') {
+          throw new Error(`${label} is required`);
+        }
       }
-      if (!formData.gender) {
-        throw new Error('Gender is required');
+
+      // Validate gender value
+      if (!['male', 'female'].includes(formData.gender)) {
+        throw new Error('Please select a valid gender');
       }
-      if (!formData.date_of_birth) {
-        throw new Error('Date of birth is required');
-      }
-      if (!formData.marital_status) {
-        throw new Error('Marital status is required');
-      }
-      if (!formData.phone) {
-        throw new Error('Phone number is required');
-      }
-      if (!formData.address) {
-        throw new Error('Address is required');
-      }
-      if (!formData.emergency_contact_name || !formData.emergency_contact_phone) {
-        throw new Error('Emergency contact information is required');
+
+      // Validate marital status value
+      if (!['single', 'married', 'divorced', 'widowed'].includes(formData.marital_status)) {
+        throw new Error('Please select a valid marital status');
       }
 
       console.log('Generating member number...');
       const memberNumber = await generateMemberNumber();
       console.log('Generated member number:', memberNumber);
       
-      // Clean up form data - convert empty strings to null for optional fields
-      const cleanedData = {
+      // Prepare member data according to database schema
+      const memberData = {
+        member_number: memberNumber,
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         middle_name: formData.middle_name?.trim() || null,
@@ -165,18 +194,15 @@ export default function MembersPage() {
         baptism_date: formData.baptism_date || null,
         membership_date: formData.membership_date || new Date().toISOString().split('T')[0],
         status: formData.status || 'active',
-        photo_url: formData.photo_url || null,
+        photo_url: formData.photo_url?.trim() || null,
         notes: formData.notes?.trim() || null,
       };
 
-      console.log('Inserting member into database...', { member_number: memberNumber, ...cleanedData });
+      console.log('Inserting member into database...', memberData);
 
       const { data, error } = await supabase
         .from('members')
-        .insert([{
-          member_number: memberNumber,
-          ...cleanedData,
-        }])
+        .insert([memberData])
         .select()
         .single();
 
@@ -186,6 +212,31 @@ export default function MembersPage() {
       }
 
       console.log('Member added successfully:', data);
+      
+      // Step 2: Add department assignments if any
+      if (formData.department_ids && formData.department_ids.length > 0) {
+        console.log('Adding department assignments...', formData.department_ids);
+        
+        const departmentAssignments = formData.department_ids.map((deptId: string) => ({
+          member_id: data.id,
+          department_id: deptId,
+          position: 'member', // default position
+          joined_date: new Date().toISOString().split('T')[0],
+          is_active: true,
+        }));
+
+        const { error: deptError } = await supabase
+          .from('department_members')
+          .insert(departmentAssignments);
+
+        if (deptError) {
+          console.error('Error adding department assignments:', deptError);
+          // Don't throw error, just log it - member was created successfully
+          alert(`Member added but some department assignments failed: ${deptError.message}`);
+        } else {
+          console.log('Department assignments added successfully');
+        }
+      }
       
       // Refresh the members list to get the latest data
       await fetchMembers();
@@ -248,6 +299,42 @@ export default function MembersPage() {
       }
 
       console.log('Member updated successfully:', data);
+      
+      // Step 2: Update department assignments
+      if (formData.department_ids !== undefined) {
+        console.log('Updating department assignments...');
+        
+        // First, remove all existing department assignments
+        const { error: deleteError } = await supabase
+          .from('department_members')
+          .delete()
+          .eq('member_id', selectedMember.id);
+
+        if (deleteError) {
+          console.error('Error removing old department assignments:', deleteError);
+        }
+
+        // Then, add new department assignments
+        if (formData.department_ids.length > 0) {
+          const departmentAssignments = formData.department_ids.map((deptId: string) => ({
+            member_id: selectedMember.id,
+            department_id: deptId,
+            position: 'member',
+            joined_date: new Date().toISOString().split('T')[0],
+            is_active: true,
+          }));
+
+          const { error: insertError } = await supabase
+            .from('department_members')
+            .insert(departmentAssignments);
+
+          if (insertError) {
+            console.error('Error adding new department assignments:', insertError);
+          } else {
+            console.log('Department assignments updated successfully');
+          }
+        }
+      }
       
       // Refresh the members list
       await fetchMembers();
@@ -536,16 +623,6 @@ export default function MembersPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={fetchMembers}
-                  disabled={loading}
-                >
-                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh
-                </Button>
-                <Button
-                  variant="outline"
                   onClick={() => setShowImportModal(true)}
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -652,8 +729,10 @@ export default function MembersPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => {
+                              onClick={async () => {
                                 setSelectedMember(member);
+                                const deptIds = await loadMemberDepartments(member.id);
+                                setSelectedMemberDepartments(deptIds);
                                 setShowEditModal(true);
                               }}
                             >
@@ -700,17 +779,22 @@ export default function MembersPage() {
           onClose={() => {
             setShowEditModal(false);
             setSelectedMember(null);
+            setSelectedMemberDepartments([]);
           }}
           title="Edit Member"
           size="lg"
         >
           {selectedMember && (
             <MemberForm
-              initialData={selectedMember}
+              initialData={{
+                ...selectedMember,
+                department_ids: selectedMemberDepartments
+              }}
               onSubmit={handleUpdateMember}
               onCancel={() => {
                 setShowEditModal(false);
                 setSelectedMember(null);
+                setSelectedMemberDepartments([]);
               }}
               isEditing
               loading={submitting}

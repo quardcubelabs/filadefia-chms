@@ -29,13 +29,13 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
-  const bgColor = darkMode ? 'bg-tag-gray-900' : 'bg-tag-gray-50';
-  const cardBg = darkMode ? 'bg-tag-gray-800' : 'bg-white';
-  const textPrimary = darkMode ? 'text-white' : 'text-tag-gray-900';
-  const textSecondary = darkMode ? 'text-tag-gray-400' : 'text-tag-gray-600';
-  const borderColor = darkMode ? 'border-tag-gray-700' : 'border-tag-gray-200';
-  const inputBg = darkMode ? 'bg-tag-gray-800' : 'bg-white';
-  const buttonBg = darkMode ? 'bg-tag-gray-800' : 'bg-tag-gray-100';
+  const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
+  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
+  const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
+  const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
+  const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const buttonBg = darkMode ? 'bg-gray-800' : 'bg-gray-100';
 
   return (
     <div className={`min-h-screen ${bgColor}`}>
@@ -266,64 +266,76 @@ export default function DashboardPage() {
               </div>
 
               {/* Weekly Offerings Chart */}
-              <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-2xl font-bold ${textPrimary}`}>Weekly Offerings</h3>
-                  <div className="flex items-center space-x-6">
+              <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-xl font-bold ${textPrimary}`}>Weekly Offerings</h3>
+                  <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
-                      <span className={`text-sm ${textSecondary}`}>Last month</span>
+                      <div className="w-2.5 h-2.5 rounded-sm bg-gray-300"></div>
+                      <span className={`text-xs ${textSecondary}`}>Last month</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 rounded-sm bg-blue-600"></div>
-                      <span className={`text-sm ${textSecondary}`}>Revenue</span>
+                      <div className="w-2.5 h-2.5 rounded-sm bg-blue-600"></div>
+                      <span className={`text-xs ${textSecondary}`}>Revenue</span>
                     </div>
-                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
-                      <option>2023</option>
+                    <select className={`px-4 py-1.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
                       <option>2024</option>
+                      <option>2023</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mb-10">
+                {/* Stats Row */}
+                <div className="flex items-center justify-between mb-8">
                   <div>
-                    <p className={`text-sm ${textSecondary} mb-2`}>Total Revenue</p>
-                    <p className={`text-4xl font-bold ${textPrimary}`}>$25,452k</p>
+                    <p className={`text-xs ${textSecondary} mb-1`}>Total Revenue</p>
+                    <p className={`text-2xl font-bold ${textPrimary}`}>TZS 25,452k</p>
                   </div>
                   <div>
-                    <p className={`text-sm ${textSecondary} mb-2`}>Total Profit</p>
-                    <p className={`text-4xl font-bold ${textPrimary}`}>$25,452k</p>
+                    <p className={`text-xs ${textSecondary} mb-1`}>Total Profit</p>
+                    <p className={`text-2xl font-bold ${textPrimary}`}>TZS 25,452k</p>
                   </div>
-                  <div className="bg-blue-50 px-8 py-4 rounded-2xl">
-                    <p className="text-4xl font-bold text-blue-600">80K</p>
+                  <div className="bg-blue-50 px-6 py-3 rounded-xl">
+                    <p className="text-2xl font-bold text-blue-600">80K</p>
                   </div>
                 </div>
 
                 {/* Bar Chart */}
-                <div className="relative h-56 mt-8">
+                <div className="relative" style={{ height: '180px' }}>
                   {/* Floating label above bar 06 */}
-                  <div className="absolute top-2 left-[57%] transform -translate-x-1/2 bg-blue-600 px-4 py-2 rounded-xl shadow-lg z-10">
-                    <p className="text-white text-lg font-bold">80K</p>
+                  <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
+                    <p className="text-white text-sm font-bold">80K</p>
                   </div>
 
-                  {/* Bar Chart SVG */}
-                  <div className="flex items-end justify-between h-full px-2 pb-8 gap-3">
+                  {/* Bar Chart Container */}
+                  <div className="h-full flex items-end justify-between gap-4 pt-10">
                     {[
-                      { height: '60%', label: '01' },
-                      { height: '75%', label: '02' },
-                      { height: '55%', label: '03' },
-                      { height: '50%', label: '04' },
-                      { height: '70%', label: '05' },
-                      { height: '90%', label: '06' },
-                      { height: '45%', label: '07' },
-                      { height: '65%', label: '08' }
+                      { revenue: 70, forecast: 65, label: '01' },
+                      { revenue: 95, forecast: 90, label: '02' },
+                      { revenue: 85, forecast: 80, label: '03' },
+                      { revenue: 65, forecast: 70, label: '04' },
+                      { revenue: 105, forecast: 100, label: '05' },
+                      { revenue: 130, forecast: 120, label: '06' },
+                      { revenue: 60, forecast: 65, label: '07' },
+                      { revenue: 100, forecast: 95, label: '08' }
                     ].map((bar, idx) => (
                       <div key={idx} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full bg-blue-600 rounded-t-xl transition-all duration-300 hover:bg-blue-700"
-                          style={{ height: bar.height }}
-                        ></div>
-                        <span className={`text-sm ${textSecondary} mt-3`}>{bar.label}</span>
+                        {/* Bar Group */}
+                        <div className="w-full flex items-end justify-center gap-1">
+                          {/* Revenue Bar (Dark Blue) */}
+                          <div 
+                            className="flex-1 bg-blue-600 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-blue-700"
+                            style={{ height: `${bar.revenue}px` }}
+                          ></div>
+                          {/* Forecast Bar (Light Purple/Blue) */}
+                          <div 
+                            className="flex-1 bg-purple-400 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-purple-500"
+                            style={{ height: `${bar.forecast}px` }}
+                          ></div>
+                        </div>
+                        {/* Label */}
+                        <span className={`text-xs mt-2 ${textSecondary}`}>{bar.label}</span>
                       </div>
                     ))}
                   </div>
