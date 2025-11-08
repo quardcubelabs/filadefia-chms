@@ -62,7 +62,7 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-tag-black/50 backdrop-blur-sm transition-opacity"
         onClick={closeOnOverlayClick ? onClose : undefined}
       ></div>
 
@@ -74,15 +74,15 @@ export const Modal: React.FC<ModalProps> = ({
         >
           {/* Header */}
           {(title || description) && (
-            <div className="px-6 py-5 border-b border-gray-200">
+            <div className="px-6 py-5 border-b border-tag-gray-200">
               <div className="flex items-start justify-between">
                 <div>
-                  {title && <h3 className="text-xl font-semibold text-gray-900">{title}</h3>}
-                  {description && <p className="mt-1 text-sm text-gray-600">{description}</p>}
+                  {title && <h3 className="text-xl font-semibold text-tag-gray-900">{title}</h3>}
+                  {description && <p className="mt-1 text-sm text-tag-gray-600">{description}</p>}
                 </div>
                 <button
                   onClick={onClose}
-                  className="ml-4 text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+                  className="ml-4 text-tag-gray-400 hover:text-tag-red-600 transition-colors p-2 hover:bg-tag-red-50 rounded-lg"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex items-center justify-end gap-3">
+            <div className="px-6 py-4 bg-tag-gray-50 border-t border-tag-gray-200 rounded-b-2xl flex items-center justify-end gap-3">
               {footer}
             </div>
           )}
@@ -154,7 +154,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         </>
       }
     >
-      <p className="text-gray-700">{message}</p>
+      <p className="text-tag-gray-700">{message}</p>
     </Modal>
   );
 };

@@ -27,19 +27,19 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputBaseStyles = 'block w-full rounded-xl border transition-all focus:outline-none focus:ring-2';
     const inputSizeStyles = icon ? (iconPosition === 'left' ? 'pl-12 pr-4 py-3' : 'pl-4 pr-12 py-3') : 'px-4 py-3';
     const inputStateStyles = hasError
-      ? 'border-tag-red-300 focus:border-tag-red-500 focus:ring-tag-red-500'
-      : 'border-tag-gray-300 focus:border-tag-red-500 focus:ring-tag-red-500';
+      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-semibold text-tag-gray-700 mb-2">
+          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-700 mb-2">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && iconPosition === 'left' && (
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-tag-gray-400">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
               {icon}
             </div>
           )}
@@ -50,16 +50,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {icon && iconPosition === 'right' && (
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-tag-gray-400">
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
               {icon}
             </div>
           )}
         </div>
         {error && (
-          <p className="mt-2 text-sm text-tag-red-600 font-medium">{error}</p>
+          <p className="mt-2 text-sm text-red-600 font-medium">{error}</p>
         )}
         {helperText && !error && (
-          <p className="mt-2 text-sm text-tag-gray-500">{helperText}</p>
+          <p className="mt-2 text-sm text-gray-500">{helperText}</p>
         )}
       </div>
     );
@@ -91,13 +91,13 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
 
     const textareaBaseStyles = 'block w-full rounded-xl border px-4 py-3 transition-all focus:outline-none focus:ring-2';
     const textareaStateStyles = hasError
-      ? 'border-tag-red-300 focus:border-tag-red-500 focus:ring-tag-red-500'
-      : 'border-tag-gray-300 focus:border-tag-red-500 focus:ring-tag-red-500';
+      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-semibold text-tag-gray-700 mb-2">
+          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-700 mb-2">
             {label}
           </label>
         )}
@@ -109,10 +109,10 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           {...props}
         />
         {error && (
-          <p className="mt-2 text-sm text-tag-red-600 font-medium">{error}</p>
+          <p className="mt-2 text-sm text-red-600 font-medium">{error}</p>
         )}
         {helperText && !error && (
-          <p className="mt-2 text-sm text-tag-gray-500">{helperText}</p>
+          <p className="mt-2 text-sm text-gray-500">{helperText}</p>
         )}
       </div>
     );

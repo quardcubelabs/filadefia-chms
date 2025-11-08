@@ -64,12 +64,16 @@ export default function MembersPage() {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching members from database...');
+      
       const { data, error } = await supabase
         .from('members')
         .select('*')
         .order('member_number', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('Members fetched successfully:', data?.length || 0, 'members');
       setMembers(data || []);
     } catch (err: any) {
       console.error('Error fetching members:', err);
@@ -109,6 +113,13 @@ export default function MembersPage() {
       setSubmitting(true);
       setError(null);
 
+      console.log('Starting member creation...', formData);
+
+      // Check if supabase is available
+      if (!supabase) {
+        throw new Error('Database connection not available. Please refresh the page.');
+      }
+
       // Validate required fields
       if (!formData.first_name || !formData.last_name) {
         throw new Error('First name and last name are required');
@@ -132,7 +143,9 @@ export default function MembersPage() {
         throw new Error('Emergency contact information is required');
       }
 
+      console.log('Generating member number...');
       const memberNumber = await generateMemberNumber();
+      console.log('Generated member number:', memberNumber);
       
       // Clean up form data - convert empty strings to null for optional fields
       const cleanedData = {
@@ -156,6 +169,8 @@ export default function MembersPage() {
         notes: formData.notes?.trim() || null,
       };
 
+      console.log('Inserting member into database...', { member_number: memberNumber, ...cleanedData });
+
       const { data, error } = await supabase
         .from('members')
         .insert([{
@@ -170,11 +185,20 @@ export default function MembersPage() {
         throw new Error(error.message || 'Failed to add member to database');
       }
 
-      setMembers(prev => [data, ...prev]);
+      console.log('Member added successfully:', data);
+      
+      // Refresh the members list to get the latest data
+      await fetchMembers();
+      
       setShowAddModal(false);
+      setSelectedMember(null);
+      
+      // Show success message
+      alert('Member added successfully!');
     } catch (err: any) {
       console.error('Error adding member:', err);
       setError(err.message || 'Failed to add member');
+      alert(`Error: ${err.message || 'Failed to add member'}`);
     } finally {
       setSubmitting(false);
     }
@@ -223,12 +247,19 @@ export default function MembersPage() {
         throw new Error(error.message || 'Failed to update member');
       }
 
-      setMembers(prev => prev.map(m => m.id === data.id ? data : m));
+      console.log('Member updated successfully:', data);
+      
+      // Refresh the members list
+      await fetchMembers();
+      
       setShowEditModal(false);
       setSelectedMember(null);
+      
+      alert('Member updated successfully!');
     } catch (err: any) {
       console.error('Error updating member:', err);
       setError(err.message || 'Failed to update member');
+      alert(`Error: ${err.message || 'Failed to update member'}`);
     } finally {
       setSubmitting(false);
     }
@@ -249,12 +280,19 @@ export default function MembersPage() {
 
       if (error) throw error;
 
-      setMembers(prev => prev.filter(m => m.id !== memberToDelete.id));
+      console.log('Member deleted successfully');
+      
+      // Refresh the members list
+      await fetchMembers();
+      
       setShowDeleteConfirm(false);
       setMemberToDelete(null);
+      
+      alert('Member deleted successfully!');
     } catch (err: any) {
       console.error('Error deleting member:', err);
       setError(err.message || 'Failed to delete member');
+      alert(`Error: ${err.message || 'Failed to delete member'}`);
     } finally {
       setSubmitting(false);
     }
@@ -386,14 +424,14 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <Sidebar />
       
-      <main className="flex-1 ml-20 p-8">
+      <main className="ml-20 p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Users className="h-8 w-8 mr-3 text-fcc-blue-600" />
+            <Users className="h-8 w-8 mr-3 text-blue-600" />
             Member Management
           </h1>
           <p className="text-gray-600 mt-2">Manage church members, visitors, and their information</p>
@@ -417,7 +455,7 @@ export default function MembersPage() {
                   <p className="text-sm font-medium text-gray-600">Total Members</p>
                   <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
                 </div>
-                <div className="h-12 w-12 bg-gradient-to-br from-fcc-blue-500 to-fcc-blue-600 rounded-lg flex items-center justify-center">
+                <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <Users className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -457,9 +495,9 @@ export default function MembersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">New This Month</p>
-                  <p className="text-3xl font-bold text-fcc-gold-600 mt-1">{stats.newThisMonth}</p>
+                  <p className="text-3xl font-bold text-purple-600 mt-1">{stats.newThisMonth}</p>
                 </div>
-                <div className="h-12 w-12 bg-gradient-to-br from-fcc-gold-500 to-fcc-gold-600 rounded-lg flex items-center justify-center">
+                <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <Plus className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -496,6 +534,16 @@ export default function MembersPage() {
               </div>
 
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={fetchMembers}
+                  disabled={loading}
+                >
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowImportModal(true)}

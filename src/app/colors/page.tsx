@@ -35,10 +35,10 @@ export default function ColorsPage() {
   );
 
   return (
-    <div className="flex min-h-screen bg-tag-gray-50">
+    <div className="min-h-screen bg-tag-gray-50">
       <Sidebar />
       
-      <main className="flex-1 ml-20 p-8">
+      <main className="ml-20 p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-tag-black flex items-center">

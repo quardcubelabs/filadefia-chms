@@ -134,10 +134,10 @@ export default function DepartmentDashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-tag-gray-50 via-white to-tag-blue-50/30">
+    <div className="min-h-screen bg-gray-50">
       <Sidebar />
       
-      <main className="flex-1 ml-20 p-8">
+      <main className="ml-20 p-8">
         {/* Back Button */}
         <Button
           variant="ghost"

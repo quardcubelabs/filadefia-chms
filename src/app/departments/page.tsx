@@ -33,21 +33,35 @@ interface DepartmentStats {
 
 export default function DepartmentsPage() {
   const router = useRouter();
-  const { user, loading: authLoading, supabase } = useAuth();
+  const { user, loading: authLoading, supabase, signOut } = useAuth();
   const [departments, setDepartments] = useState<DepartmentStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && user) {
+    console.log('Auth state:', { user: !!user, authLoading, supabase: !!supabase });
+    
+    if (!authLoading && !user) {
+      console.log('No user, redirecting to login...');
+      router.push('/login');
+      return;
+    }
+
+    if (!authLoading && user && supabase) {
       fetchDepartments();
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, supabase]);
 
   const fetchDepartments = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      console.log('Fetching departments...');
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
 
       // Fetch departments
       const { data: depts, error: deptsError } = await supabase
@@ -55,6 +69,8 @@ export default function DepartmentsPage() {
         .select('*')
         .eq('is_active', true)
         .order('name');
+
+      console.log('Departments fetched:', depts, 'Error:', deptsError);
 
       if (deptsError) throw deptsError;
 
@@ -77,8 +93,10 @@ export default function DepartmentsPage() {
       );
 
       setDepartments(departmentsWithStats);
+      console.log('Departments with stats:', departmentsWithStats);
 
     } catch (err: any) {
+      console.error('Error fetching departments:', err);
       setError(err.message || 'Failed to load departments');
     } finally {
       setLoading(false);
@@ -121,15 +139,23 @@ export default function DepartmentsPage() {
     return colorMap[name] || 'from-tag-red-500 to-tag-red-700';
   };
 
-  if (!user && !authLoading) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return null;
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-tag-gray-50 via-white to-tag-blue-50/30">
-      <Sidebar />
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar darkMode={false} onSignOut={signOut} />
       
-      <main className="flex-1 ml-20 p-8">
+      <main className="ml-20 p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-tag-gray-900 flex items-center">

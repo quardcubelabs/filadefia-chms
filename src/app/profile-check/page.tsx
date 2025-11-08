@@ -80,11 +80,34 @@ export default function ProfileCheckPage() {
                 </div>
                 
                 {currentUserProfile && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                    <h3 className="font-semibold text-gray-900 mb-2">Profile Details:</h3>
-                    <pre className="text-sm text-gray-600 overflow-auto">
-                      {JSON.stringify(currentUserProfile, null, 2)}
-                    </pre>
+                  <div className="mt-4 space-y-4">
+                    {/* Profile Image Preview */}
+                    {currentUserProfile.avatar_url && (
+                      <div className="p-4 bg-white rounded-lg border border-gray-200">
+                        <h3 className="font-semibold text-gray-900 mb-3">Profile Image:</h3>
+                        <div className="flex items-center space-x-4">
+                          <img
+                            src={currentUserProfile.avatar_url}
+                            alt="Profile"
+                            className="h-20 w-20 rounded-full object-cover border-2 border-blue-200"
+                          />
+                          <div>
+                            <p className="text-sm text-gray-600">✓ Google profile image loaded</p>
+                            <p className="text-xs text-gray-500 mt-1 break-all max-w-md">
+                              {currentUserProfile.avatar_url}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Profile Details */}
+                    <div className="p-4 bg-white rounded-lg border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-2">Profile Details:</h3>
+                      <pre className="text-sm text-gray-600 overflow-auto">
+                        {JSON.stringify(currentUserProfile, null, 2)}
+                      </pre>
+                    </div>
                   </div>
                 )}
 

@@ -8,12 +8,12 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ children, variant = 'default', padding = 'md', hover = false, className = '', ...props }, ref) => {
-    const baseStyles = 'rounded-2xl transition-all';
+    const baseStyles = 'rounded-2xl transition-all duration-200';
     
     const variants = {
-      default: 'bg-white border border-gray-100 shadow-sm',
-      gradient: 'bg-gradient-to-br from-fcc-blue-50 to-white border border-fcc-blue-100 shadow-md',
-      bordered: 'bg-white border-2 border-fcc-blue-200',
+      default: 'bg-white border border-tag-gray-200 shadow-sm',
+      gradient: 'bg-gradient-to-br from-tag-red-50 via-white to-tag-yellow-50 border border-tag-gray-200 shadow-md',
+      bordered: 'bg-white border-2 border-tag-red-200',
     };
 
     const paddings = {
@@ -23,7 +23,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       lg: 'p-8',
     };
 
-    const hoverClass = hover ? 'hover:shadow-xl hover:border-fcc-blue-300 cursor-pointer' : '';
+    const hoverClass = hover ? 'hover:shadow-xl hover:border-tag-red-300 hover:-translate-y-1 cursor-pointer' : '';
 
     return (
       <div
@@ -49,8 +49,8 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subtitle, action,
   return (
     <div className={`flex items-start justify-between mb-6 ${className}`} {...props}>
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-600 mt-1">{subtitle}</p>}
+        <h3 className="text-lg font-semibold text-tag-gray-900">{title}</h3>
+        {subtitle && <p className="text-sm text-tag-gray-600 mt-1">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>
@@ -71,7 +71,7 @@ CardBody.displayName = 'CardBody';
 
 export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, className = '', ...props }) => {
   return (
-    <div className={`mt-6 pt-6 border-t border-gray-200 ${className}`} {...props}>
+    <div className={`mt-6 pt-6 border-t border-tag-gray-200 ${className}`} {...props}>
       {children}
     </div>
   );

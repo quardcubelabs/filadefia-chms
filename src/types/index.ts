@@ -33,7 +33,9 @@ export interface Profile {
   role: UserRole;
   first_name: string;
   last_name: string;
-  phone: string;
+  phone?: string;
+  avatar_url?: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

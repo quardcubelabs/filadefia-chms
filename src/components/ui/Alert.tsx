@@ -18,24 +18,24 @@ export const Alert: React.FC<AlertProps> = ({
 }) => {
   const variants = {
     info: {
-      container: 'bg-blue-50 border-blue-200 text-blue-800',
-      icon: <Info className="h-5 w-5 text-blue-600" />,
-      title: 'text-blue-900',
+      container: 'bg-tag-blue-50 border-tag-blue-200 text-tag-blue-800',
+      icon: <Info className="h-5 w-5 text-tag-blue-700" />,
+      title: 'text-tag-blue-900',
     },
     success: {
-      container: 'bg-green-50 border-green-200 text-green-800',
-      icon: <CheckCircle className="h-5 w-5 text-green-600" />,
-      title: 'text-green-900',
+      container: 'bg-tag-yellow-50 border-tag-yellow-300 text-tag-yellow-800',
+      icon: <CheckCircle className="h-5 w-5 text-tag-yellow-600" />,
+      title: 'text-tag-yellow-900',
     },
     warning: {
-      container: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      icon: <AlertCircle className="h-5 w-5 text-yellow-600" />,
-      title: 'text-yellow-900',
+      container: 'bg-orange-50 border-orange-200 text-orange-800',
+      icon: <AlertCircle className="h-5 w-5 text-orange-600" />,
+      title: 'text-orange-900',
     },
     error: {
-      container: 'bg-red-50 border-red-200 text-red-800',
-      icon: <XCircle className="h-5 w-5 text-red-600" />,
-      title: 'text-red-900',
+      container: 'bg-tag-red-50 border-tag-red-200 text-tag-red-800',
+      icon: <XCircle className="h-5 w-5 text-tag-red-600" />,
+      title: 'text-tag-red-900',
     },
   };
 
@@ -56,7 +56,7 @@ export const Alert: React.FC<AlertProps> = ({
         {onClose && (
           <button
             onClick={onClose}
-            className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex-shrink-0 ml-3 text-tag-gray-400 hover:text-tag-gray-600 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>

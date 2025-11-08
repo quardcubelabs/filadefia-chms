@@ -20,6 +20,7 @@ export function useAuth() {
 
   useEffect(() => {
     if (!supabase) {
+      console.warn('Supabase client not available');
       setUser(null);
       setLoading(false);
       return;
@@ -37,6 +38,23 @@ export function useAuth() {
           // Check if profile doesn't exist (PGRST116 is "not found" error)
           if (error.code === 'PGRST116') {
             console.log('Profile not found for user, creating basic profile...');
+            console.log('User metadata:', authUser.user_metadata);
+            
+            // Extract Google profile data from user metadata
+            const fullName = authUser.user_metadata?.full_name || '';
+            const avatarUrl = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '';
+            
+            // Parse first and last name
+            let firstName = '';
+            let lastName = '';
+            
+            if (fullName) {
+              const nameParts = fullName.trim().split(' ');
+              firstName = nameParts[0] || '';
+              lastName = nameParts.slice(1).join(' ') || '';
+            } else {
+              firstName = authUser.email?.split('@')[0] || 'User';
+            }
             
             // Create a basic profile for the user
             const { data: newProfile, error: createError } = await supabase
@@ -45,8 +63,9 @@ export function useAuth() {
                 user_id: authUser.id,
                 email: authUser.email || '',
                 role: 'member',
-                first_name: authUser.email?.split('@')[0] || 'User',
-                last_name: '',
+                first_name: firstName,
+                last_name: lastName,
+                avatar_url: avatarUrl || null,
               })
               .select()
               .single();
@@ -93,6 +112,7 @@ export function useAuth() {
 
     // Get initial session
     const getInitialSession = async () => {
+      console.log('Getting initial session...');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -103,6 +123,8 @@ export function useAuth() {
           return;
         }
         
+        console.log('Session check:', session ? 'User logged in' : 'No session');
+        
         if (session?.user) {
           await loadUserProfile(session.user);
         } else {
@@ -112,6 +134,7 @@ export function useAuth() {
         console.error('Exception getting session:', error);
         setUser(null);
       } finally {
+        console.log('Auth check complete');
         setLoading(false);
       }
     };
