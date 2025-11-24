@@ -7,16 +7,19 @@ import Sidebar from '@/components/Sidebar';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { AnimatedChart } from '@/components/AnimatedChart';
 import { AnimatedSVGPath, AnimatedCircle } from '@/components/AnimatedSVG';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  Calendar,
-  Users,
-  Search,
-  Bell,
-  Mail,
-  ChevronDown,
-  Sun,
-  Moon
-} from 'lucide-react';
+  faCalendarDays,
+  faUsers,
+  faSearch,
+  faBell,
+  faEnvelope,
+  faChevronDown,
+  faSun,
+  faMoon,
+  faDollarSign,
+  faCheckCircle
+} from '@fortawesome/free-solid-svg-icons';
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -63,7 +66,7 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-4">
               {/* Search Bar */}
               <div className="relative">
-                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 ${textSecondary}`} />
+                <FontAwesomeIcon icon={faSearch} className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 ${textSecondary}`} />
                 <input
                   type="text"
                   placeholder="Search"
@@ -76,17 +79,17 @@ export default function DashboardPage() {
                 onClick={() => setDarkMode(!darkMode)}
                 className={`p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
               >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                <FontAwesomeIcon icon={darkMode ? faSun : faMoon} className="h-5 w-5" />
               </button>
 
               {/* Mail Icon */}
               <button className={`p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}>
-                <Mail className="h-5 w-5" />
+                <FontAwesomeIcon icon={faEnvelope} className="h-5 w-5" />
               </button>
 
               {/* Notification Bell */}
               <button className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}>
-                <Bell className="h-5 w-5" />
+                <FontAwesomeIcon icon={faBell} className="h-5 w-5" />
                 <span className="absolute top-2 right-2 h-2 w-2 bg-tag-red-500 rounded-full"></span>
               </button>
 
@@ -100,7 +103,7 @@ export default function DashboardPage() {
                   alt={`${user?.profile?.first_name || 'User'} ${user?.profile?.last_name || ''}`.trim()}
                   className="h-10 w-10 rounded-full object-cover"
                 />
-                <ChevronDown className={`h-4 w-4 ${textSecondary}`} />
+                <FontAwesomeIcon icon={faChevronDown} className={`h-4 w-4 ${textSecondary}`} />
               </button>
             </div>
           </div>
@@ -116,7 +119,7 @@ export default function DashboardPage() {
                 {/* Sunday Service Card */}
                 <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-3xl p-6 shadow-sm`}>
                   <div className={`inline-flex p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                    <Calendar className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+                    <FontAwesomeIcon icon={faCalendarDays} className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-2`}>Sunday Service</p>
                   <AnimatedCounter 
@@ -148,7 +151,7 @@ export default function DashboardPage() {
                 {/* Total Members Card */}
                 <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-3xl p-6 shadow-sm`}>
                   <div className={`inline-flex p-4 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                    <Users className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
+                    <FontAwesomeIcon icon={faUsers} className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-2`}>Total Members</p>
                   <AnimatedCounter 
@@ -569,7 +572,7 @@ export default function DashboardPage() {
                   <h3 className={`text-lg font-semibold ${textPrimary}`}>Best Department Leaders</h3>
                   <button className="text-sm text-blue-500 hover:text-blue-600 flex items-center">
                     See all
-                    <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
+                    <FontAwesomeIcon icon={faChevronDown} className="ml-1 h-4 w-4 -rotate-90" />
                   </button>
                 </div>
 
