@@ -2,7 +2,11 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
+import { AnimatedChart } from '@/components/AnimatedChart';
+import { AnimatedSVGPath, AnimatedCircle } from '@/components/AnimatedSVG';
 import { 
   Calendar,
   Users,
@@ -63,7 +67,7 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   placeholder="Search"
-                  className={`pl-12 pr-4 py-2.5 ${inputBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500 w-64`}
+                  className={`pl-12 pr-4 py-2.5 ${inputBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64`}
                 />
               </div>
 
@@ -115,7 +119,12 @@ export default function DashboardPage() {
                     <Calendar className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-2`}>Sunday Service</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>76</h3>
+                  <AnimatedCounter 
+                    end={76} 
+                    duration={2000} 
+                    delay={200}
+                    className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}
+                  />
                 </div>
 
                 {/* Church Income Card */}
@@ -126,7 +135,14 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-2`}>Church Income</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>$56K</h3>
+                  <AnimatedCounter 
+                    end={56} 
+                    duration={2200} 
+                    delay={400}
+                    prefix="$"
+                    suffix="K"
+                    className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}
+                  />
                 </div>
 
                 {/* Total Members Card */}
@@ -135,7 +151,13 @@ export default function DashboardPage() {
                     <Users className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-2`}>Total Members</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>783K</h3>
+                  <AnimatedCounter 
+                    end={783} 
+                    duration={2400} 
+                    delay={600}
+                    suffix="K"
+                    className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}
+                  />
                 </div>
 
                 {/* Active Events Card */}
@@ -146,7 +168,12 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-2`}>Active Events</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>12</h3>
+                  <AnimatedCounter 
+                    end={12} 
+                    duration={2000} 
+                    delay={800}
+                    className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}
+                  />
                 </div>
               </div>
 
@@ -154,7 +181,7 @@ export default function DashboardPage() {
               <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
                 <div className="flex items-center justify-between mb-8">
                   <h3 className={`text-2xl font-bold ${textPrimary}`}>Members (%)</h3>
-                  <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
+                  <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
                     <option>Monthly</option>
                     <option>Yearly</option>
                   </select>
@@ -164,14 +191,23 @@ export default function DashboardPage() {
                   {/* Left side - Total Members */}
                   <div className="flex-shrink-0">
                     <p className={`text-sm ${textSecondary} mb-3`}>Total Members</p>
-                    <p className={`text-4xl font-bold ${textPrimary}`}>562,084 People</p>
+                    <div className={`text-4xl font-bold ${textPrimary}`}>
+                      <AnimatedCounter 
+                        end={562084} 
+                        duration={3000} 
+                        delay={1000}
+                        formatNumber={(num) => num.toLocaleString()}
+                        suffix=" People"
+                      />
+                    </div>
                   </div>
 
                   {/* Right side - Donut Chart and Legend */}
                   <div className="flex items-center gap-12">
                     {/* Donut Chart */}
-                    <div className="relative flex items-center justify-center flex-shrink-0">
-                      <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
+                    <AnimatedChart type="donut" delay={1200}>
+                      <div className="relative flex items-center justify-center flex-shrink-0">
+                        <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
                         <defs>
                           {/* Gradient for cyan segment */}
                           <linearGradient id="memberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -237,14 +273,21 @@ export default function DashboardPage() {
                           strokeDashoffset={`${-2 * Math.PI * 76 * 0.75}`}
                           strokeLinecap="butt"
                         />
-                      </svg>
-                      
-                      {/* Center text */}
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                        <p className={`text-xs ${textSecondary} mb-1`}>Members</p>
-                        <p className="text-3xl font-bold text-blue-600">90%</p>
+                        </svg>
+                        
+                        {/* Center text */}
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                          <p className={`text-xs ${textSecondary} mb-1`}>Members</p>
+                          <AnimatedCounter 
+                            end={90} 
+                            duration={2000} 
+                            delay={2000}
+                            suffix="%"
+                            className="text-3xl font-bold text-blue-600"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    </AnimatedChart>
 
                     {/* Legend - Vertical layout */}
                     <div className="flex flex-col space-y-4">
@@ -290,19 +333,44 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <p className={`text-xs ${textSecondary} mb-1`}>Total Revenue</p>
-                    <p className={`text-2xl font-bold ${textPrimary}`}>TZS 25,452k</p>
+                    <div className={`text-2xl font-bold ${textPrimary}`}>
+                      <AnimatedCounter 
+                        end={25452} 
+                        duration={2500} 
+                        delay={1400}
+                        prefix="TZS "
+                        suffix="k"
+                        formatNumber={(num) => num.toLocaleString()}
+                      />
+                    </div>
                   </div>
                   <div>
                     <p className={`text-xs ${textSecondary} mb-1`}>Total Profit</p>
-                    <p className={`text-2xl font-bold ${textPrimary}`}>TZS 25,452k</p>
+                    <div className={`text-2xl font-bold ${textPrimary}`}>
+                      <AnimatedCounter 
+                        end={25452} 
+                        duration={2500} 
+                        delay={1600}
+                        prefix="TZS "
+                        suffix="k"
+                        formatNumber={(num) => num.toLocaleString()}
+                      />
+                    </div>
                   </div>
                   <div className="bg-blue-50 px-6 py-3 rounded-xl">
-                    <p className="text-2xl font-bold text-blue-600">80K</p>
+                    <AnimatedCounter 
+                      end={80} 
+                      duration={2000} 
+                      delay={1800}
+                      suffix="K"
+                      className="text-2xl font-bold text-blue-600"
+                    />
                   </div>
                 </div>
 
                 {/* Bar Chart */}
-                <div className="relative" style={{ height: '180px' }}>
+                <AnimatedChart type="bar" delay={2000}>
+                  <div className="relative" style={{ height: '180px' }}>
                   {/* Floating label above bar 06 */}
                   <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
                     <p className="text-white text-sm font-bold">80K</p>
@@ -338,8 +406,9 @@ export default function DashboardPage() {
                         <span className={`text-xs mt-2 ${textSecondary}`}>{bar.label}</span>
                       </div>
                     ))}
+                    </div>
                   </div>
-                </div>
+                </AnimatedChart>
               </div>
             </div>
 
@@ -351,7 +420,7 @@ export default function DashboardPage() {
                   <div>
                     <h3 className={`text-2xl font-bold ${textPrimary}`}>Attendance</h3>
                   </div>
-                  <select className={`px-4 py-2 ${inputBg} ${textSecondary} border ${borderColor} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
+                  <select className={`px-4 py-2 ${inputBg} ${textSecondary} border ${borderColor} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
                     <option>Regularly</option>
                     <option>Monthly</option>
                   </select>
@@ -373,32 +442,35 @@ export default function DashboardPage() {
                   {/* Value label on chart */}
                   <div className="absolute top-8 right-32 bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">
                     <p className={`text-xs ${textSecondary}`}>Regular</p>
-                    <p className="text-lg font-bold text-blue-600">650</p>
+                    <AnimatedCounter 
+                      end={650} 
+                      duration={2000} 
+                      delay={2200}
+                      className="text-lg font-bold text-blue-600"
+                    />
                   </div>
 
                   <svg className="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
-                    {/* Cyan smooth wave - crossing pattern */}
-                    <path
-                      d="M 0 140 C 50 100, 80 80, 100 100 S 150 140, 200 130 S 250 100, 300 110 S 350 130, 400 120 S 450 100, 500 110 S 550 120, 600 100"
-                      fill="none"
-                      stroke="#22d3ee"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Blue smooth wave - main wave with crossings */}
-                    <path
-                      d="M 0 150 C 50 130, 80 110, 100 120 S 150 150, 200 140 S 250 80, 300 90 S 350 100, 400 80 S 450 70, 500 90 S 550 100, 600 80"
-                      fill="none"
-                      stroke="#2563eb"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Dot on blue line at Thursday */}
-                    <circle cx="400" cy="80" r="7" fill="#2563eb" stroke="white" strokeWidth="3"/>
-                    {/* Vertical line from dot */}
-                    <line x1="400" y1="80" x2="400" y2="200" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="5 5" opacity="0.5"/>
+                      {/* Cyan smooth wave - crossing pattern */}
+                      <AnimatedSVGPath
+                        d="M 0 140 C 50 100, 80 80, 100 100 S 150 140, 200 130 S 250 100, 300 110 S 350 130, 400 120 S 450 100, 500 110 S 550 120, 600 100"
+                        stroke="#22d3ee"
+                        strokeWidth={3.5}
+                        delay={2600}
+                        duration={2.5}
+                      />
+                      {/* Blue smooth wave - main wave with crossings */}
+                      <AnimatedSVGPath
+                        d="M 0 150 C 50 130, 80 110, 100 120 S 150 150, 200 140 S 250 80, 300 90 S 350 100, 400 80 S 450 70, 500 90 S 550 100, 600 80"
+                        stroke="#2563eb"
+                        strokeWidth={3.5}
+                        delay={2800}
+                        duration={2.5}
+                      />
+                      {/* Dot on blue line at Thursday */}
+                      <AnimatedCircle cx={400} cy={80} r={7} fill="#2563eb" stroke="white" strokeWidth={3} delay={3200} />
+                      {/* Vertical line from dot */}
+                      <line x1="400" y1="80" x2="400" y2="200" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="5 5" opacity="0.5"/>
                   </svg>
                   
                   {/* X-axis labels */}
@@ -414,73 +486,81 @@ export default function DashboardPage() {
               <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
                 <div className="flex items-center justify-between mb-8">
                   <h3 className={`text-2xl font-bold ${textPrimary}`}>Visitors</h3>
-                  <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
+                  <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
                     <option>Monthly</option>
                     <option>Yearly</option>
                   </select>
                 </div>
 
                 {/* Area Chart */}
-                <div className="relative h-64">
-                  {/* Floating value label */}
-                  <div className="absolute top-8 right-32 z-10">
-                    <p className={`text-sm ${textSecondary} mb-1`}>14 Apr</p>
-                    <p className="text-3xl font-bold text-blue-600">
-                      32.61 <span className="text-base font-semibold text-green-500">30% ↑</span>
-                    </p>
-                  </div>
+                <AnimatedChart type="area" delay={2400}>
+                  <div className="relative h-64">
+                    {/* Floating value label */}
+                    <div className="absolute top-8 right-32 z-10">
+                      <p className={`text-sm ${textSecondary} mb-1`}>14 Apr</p>
+                      <div className="text-3xl font-bold text-blue-600">
+                        <AnimatedCounter 
+                          end={32.61} 
+                          duration={2500} 
+                          delay={3000}
+                          formatNumber={(num) => num.toFixed(2)}
+                        /> 
+                        <span className="text-base font-semibold text-green-500">30% ↑</span>
+                      </div>
+                    </div>
 
-                  <svg className="w-full h-full" viewBox="0 0 700 250" preserveAspectRatio="none">
-                    <defs>
-                      {/* Gradient fill for area */}
-                      <linearGradient id="visitorsGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 0.25 }} />
-                        <stop offset="50%" style={{ stopColor: '#93c5fd', stopOpacity: 0.15 }} />
-                        <stop offset="100%" style={{ stopColor: '#dbeafe', stopOpacity: 0.05 }} />
-                      </linearGradient>
-                    </defs>
+                    <svg className="w-full h-full" viewBox="0 0 700 250" preserveAspectRatio="none">
+                      <defs>
+                        {/* Gradient fill for area */}
+                        <linearGradient id="visitorsGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 0.25 }} />
+                          <stop offset="50%" style={{ stopColor: '#93c5fd', stopOpacity: 0.15 }} />
+                          <stop offset="100%" style={{ stopColor: '#dbeafe', stopOpacity: 0.05 }} />
+                        </linearGradient>
+                      </defs>
+                      
+                      {/* Area fill - smooth wave */}
+                      <path
+                        d="M 0 170 C 80 150, 100 140, 150 130 S 220 110, 280 135 S 340 150, 380 120 S 430 90, 470 100 S 520 120, 580 80 L 700 50 L 700 250 L 0 250 Z"
+                        fill="url(#visitorsGradient)"
+                      />
+                      
+                      {/* Line - smooth wave */}
+                      <path
+                        d="M 0 170 C 80 150, 100 140, 150 130 S 220 110, 280 135 S 340 150, 380 120 S 430 90, 470 100 S 520 120, 580 80 L 700 50"
+                        fill="none"
+                        stroke="#2563eb"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      
+                      {/* Dot at May */}
+                      <circle cx="470" cy="100" r="8" fill="#2563eb" stroke="white" strokeWidth="3"/>
+                      
+                      {/* Vertical dashed line */}
+                      <line 
+                        x1="470" 
+                        y1="100" 
+                        x2="470" 
+                        y2="250" 
+                        stroke="#cbd5e1" 
+                        strokeWidth="1.5" 
+                        strokeDasharray="5 5" 
+                        opacity="0.5"
+                      />
+                    </svg>
                     
-                    {/* Area fill - smooth wave */}
-                    <path
-                      d="M 0 170 C 80 150, 100 140, 150 130 S 220 110, 280 135 S 340 150, 380 120 S 430 90, 470 100 S 520 120, 580 80 L 700 50 L 700 250 L 0 250 Z"
-                      fill="url(#visitorsGradient)"
-                    />
-                    
-                    {/* Line - smooth wave */}
-                    <path
-                      d="M 0 170 C 80 150, 100 140, 150 130 S 220 110, 280 135 S 340 150, 380 120 S 430 90, 470 100 S 520 120, 580 80 L 700 50"
-                      fill="none"
-                      stroke="#2563eb"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    
-                    {/* Dot at May */}
-                    <circle cx="470" cy="100" r="8" fill="#2563eb" stroke="white" strokeWidth="3"/>
-                    
-                    {/* Vertical dashed line */}
-                    <line 
-                      x1="470" 
-                      y1="100" 
-                      x2="470" 
-                      y2="250" 
-                      stroke="#cbd5e1" 
-                      strokeWidth="1.5" 
-                      strokeDasharray="5 5" 
-                      opacity="0.5"
-                    />
-                  </svg>
-                  
-                  {/* X-axis labels */}
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'].map((month, idx) => (
-                      <span key={month} className={`text-sm ${idx === 4 ? textPrimary + ' font-medium' : textSecondary}`}>
-                        {month}
-                      </span>
-                    ))}
+                    {/* X-axis labels */}
+                    <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
+                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'].map((month, idx) => (
+                        <span key={month} className={`text-sm ${idx === 4 ? textPrimary + ' font-medium' : textSecondary}`}>
+                          {month}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </AnimatedChart>
               </div>
 
               {/* Best Department Leaders */}

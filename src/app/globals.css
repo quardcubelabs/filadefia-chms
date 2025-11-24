@@ -171,3 +171,55 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* Override browser default form focus styles */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure consistent blue focus for all form elements */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: rgb(37 99 235) !important; /* Blue-600 */
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 0.2) !important; /* Blue focus ring */
+}
+
+/* Remove any yellow/brown autocomplete styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: inset 0 0 0 1000px white !important;
+  -webkit-text-fill-color: inherit !important;
+  border-color: rgb(229 231 235) !important; /* Default border */
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Dark mode autocomplete override */
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover,
+[data-theme="dark"] input:-webkit-autofill:focus,
+[data-theme="dark"] input:-webkit-autofill:active,
+[data-theme="dark"] select:-webkit-autofill,
+[data-theme="dark"] select:-webkit-autofill:hover,
+[data-theme="dark"] select:-webkit-autofill:focus,
+[data-theme="dark"] select:-webkit-autofill:active {
+  -webkit-box-shadow: inset 0 0 0 1000px rgb(30 41 59) !important;
+  -webkit-text-fill-color: white !important;
+}

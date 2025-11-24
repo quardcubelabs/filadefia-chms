@@ -238,12 +238,9 @@ export default function LoginPage() {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600">
               Need access?{' '}
-              <Link
-                href="/"
-                className="font-medium text-blue-600 hover:text-blue-700"
-              >
+              <span className="font-medium text-blue-600">
                 Contact your administrator
-              </Link>
+              </span>
             </p>
           </div>
 
