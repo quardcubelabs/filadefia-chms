@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:members": "node scripts/seed-members.js",
+    "seed:members:win": "powershell -ExecutionPolicy Bypass -File scripts/seed-members.ps1"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
