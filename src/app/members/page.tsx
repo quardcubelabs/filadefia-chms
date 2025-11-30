@@ -535,7 +535,7 @@ export default function MembersPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Users className="h-8 w-8 mr-3 text-blue-600" />
+            <FontAwesomeIcon icon={faUsers} className="h-8 w-8 mr-3 text-blue-600" />
             Member Management
           </h1>
           <p className="text-gray-600 mt-2">Manage church members, visitors, and their information</p>
