@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/lib/supabase/client';
+import { Member } from '@/types';
 import { 
   Calendar,
   Users,
@@ -130,7 +131,7 @@ export default function DashboardPage() {
         seniors: 0  // 61+
       };
 
-      members?.forEach(member => {
+      members?.forEach((member: Member) => {
         const birthYear = new Date(member.date_of_birth).getFullYear();
         const age = currentYear - birthYear;
         
