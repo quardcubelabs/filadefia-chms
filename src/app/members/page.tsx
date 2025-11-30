@@ -26,6 +26,7 @@ import {
   faBriefcase, 
   faCreditCard 
 } from '@fortawesome/free-solid-svg-icons';
+import { Users, Eye } from 'lucide-react';
 
 interface Member {
   id: string;
