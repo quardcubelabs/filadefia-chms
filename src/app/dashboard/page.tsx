@@ -175,7 +175,7 @@ export default function DashboardPage() {
         return;
       }
       
-      const totalIncome = incomeData?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      const totalIncome = incomeData?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
       // Fetch current month income
       const currentMonth = new Date();
@@ -193,7 +193,7 @@ export default function DashboardPage() {
         return;
       }
       
-      const monthlyIncome = monthlyData?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      const monthlyIncome = monthlyData?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
       // Fetch weekly offerings for the last 8 weeks
       const weeks = [];
@@ -212,7 +212,7 @@ export default function DashboardPage() {
           .lte('date', weekEnd.toISOString().split('T')[0]);
         
         if (!weekError) {
-          const weekAmount = weekData?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+          const weekAmount = weekData?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
           weeks.push({
             week: `W${8-i}`,
             amount: weekAmount,
