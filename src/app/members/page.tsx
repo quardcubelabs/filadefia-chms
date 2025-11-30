@@ -8,7 +8,24 @@ import MemberForm from '@/components/MemberForm';
 import CSVImport from '@/components/CSVImport';
 import BulkCardGenerator from '@/components/BulkCardGenerator';
 import { Button, Card, CardBody, Input, Select, Badge, Table, Modal, ConfirmModal, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
-import { Users, Plus, Search, Filter, Download, Upload, Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Briefcase, CreditCard } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faUsers, 
+  faPlus, 
+  faSearch, 
+  faFilter, 
+  faDownload, 
+  faUpload, 
+  faEdit, 
+  faTrash, 
+  faEye, 
+  faPhone, 
+  faEnvelope, 
+  faMapMarkerAlt, 
+  faCalendarDays, 
+  faBriefcase, 
+  faCreditCard 
+} from '@fortawesome/free-solid-svg-icons';
 
 interface Member {
   id: string;

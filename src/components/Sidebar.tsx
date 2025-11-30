@@ -3,20 +3,21 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  Home,
-  Calendar,
-  Users,
-  Settings,
-  MessageSquare,
-  FileText,
-  DollarSign,
-  BarChart3,
-  Bell,
-  ChevronLeft,
-  Church,
-  Briefcase
-} from 'lucide-react';
+  faHome,
+  faCalendarDays,
+  faUsers,
+  faCog,
+  faComments,
+  faFile,
+  faDollarSign,
+  faChartBar,
+  faBell,
+  faChevronLeft,
+  faChurch,
+  faBriefcase
+} from '@fortawesome/free-solid-svg-icons';
 
 interface SidebarProps {
   darkMode?: boolean;
@@ -35,16 +36,16 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
   const pathname = usePathname();
 
   const navItems: NavItem[] = [
-    { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
-    { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
-    { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' },
-    { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
-    { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
-    { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
-    { icon: <BarChart3 className="h-5 w-5" />, label: 'Reports', href: '/reports' },
-    { icon: <FileText className="h-5 w-5" />, label: 'Documents', href: '/documents' },
-    { icon: <Bell className="h-5 w-5" />, label: 'Notifications', href: '/notifications' },
-    { icon: <Settings className="h-5 w-5" />, label: 'Settings', href: '/settings' },
+    { icon: <FontAwesomeIcon icon={faHome} className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
+    { icon: <FontAwesomeIcon icon={faUsers} className="h-5 w-5" />, label: 'Members', href: '/members' },
+    { icon: <FontAwesomeIcon icon={faBriefcase} className="h-5 w-5" />, label: 'Departments', href: '/departments' },
+    { icon: <FontAwesomeIcon icon={faCalendarDays} className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
+    { icon: <FontAwesomeIcon icon={faComments} className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
+    { icon: <FontAwesomeIcon icon={faDollarSign} className="h-5 w-5" />, label: 'Finance', href: '/finance' },
+    { icon: <FontAwesomeIcon icon={faChartBar} className="h-5 w-5" />, label: 'Reports', href: '/reports' },
+    { icon: <FontAwesomeIcon icon={faFile} className="h-5 w-5" />, label: 'Documents', href: '/documents' },
+    { icon: <FontAwesomeIcon icon={faBell} className="h-5 w-5" />, label: 'Notifications', href: '/notifications' },
+    { icon: <FontAwesomeIcon icon={faCog} className="h-5 w-5" />, label: 'Settings', href: '/settings' },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -155,7 +156,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
               isExpanded ? 'mx-auto rotate-180' : 'mx-auto'
             }`}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
           </div>
         </div>
       </aside>

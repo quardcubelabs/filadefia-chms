@@ -40,10 +40,10 @@ export default function SetupPage() {
             </div>
             
             <Link
-              href="/"
+              href="/login"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white fcc-button-primary"
             >
-              Back to Home
+              Go to Login
             </Link>
           </div>
         </div>

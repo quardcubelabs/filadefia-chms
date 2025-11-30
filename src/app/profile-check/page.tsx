@@ -213,10 +213,10 @@ export default function ProfileCheckPage() {
           {/* Navigation */}
           <div className="mt-8 flex justify-between">
             <Link
-              href="/"
+              href="/dashboard"
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
             >
-              ← Back to Home
+              ← Back to Dashboard
             </Link>
             {user && (
               <Link
