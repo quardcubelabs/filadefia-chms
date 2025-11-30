@@ -3,6 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Calendar,
   Users,
@@ -11,13 +12,37 @@ import {
   Mail,
   ChevronDown,
   Sun,
-  Moon
+  Moon,
+  Building2
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [showTimeout, setShowTimeout] = useState(false);
+  const [dashboardData, setDashboardData] = useState({
+    totalMembers: 0,
+    totalDepartments: 0,
+    departmentStats: [],
+    membersByAge: { youth: 0, adults: 0, seniors: 0 }
+  });
+  const [financialData, setFinancialData] = useState({
+    totalIncome: 0,
+    monthlyIncome: 0,
+    weeklyOfferings: [] as Array<{ week: string, amount: number, label: string }>
+  });
+  const [departmentLeaders, setDepartmentLeaders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   useEffect(() => {
     console.log('Dashboard - Auth state:', { user: !!user, loading: authLoading });
@@ -27,7 +52,437 @@ export default function DashboardPage() {
       window.location.href = '/login';
       return;
     }
+
+    if (user && !authLoading) {
+      fetchDashboardData();
+      fetchFinancialData();
+      fetchDepartmentLeaders();
+      fetchNotifications();
+      fetchMessages();
+      fetchUserProfile();
+    }
   }, [user, authLoading]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setShowNotifications(false);
+        setShowMessages(false);
+        setShowProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const supabase = createClient();
+      if (!supabase) return;
+
+      setLoading(true);
+
+      // Fetch total members count
+      const { data: members, error: membersError } = await supabase
+        .from('members')
+        .select('id, date_of_birth')
+        .eq('status', 'active');
+
+      if (membersError) {
+        console.error('Error fetching members:', membersError);
+        return;
+      }
+
+      // Fetch total departments count
+      const { data: departments, error: departmentsError } = await supabase
+        .from('departments')
+        .select('id, name')
+        .eq('is_active', true);
+
+      if (departmentsError) {
+        console.error('Error fetching departments:', departmentsError);
+        return;
+      }
+
+      // Fetch department member counts
+      const { data: departmentStats, error: departmentStatsError } = await supabase
+        .from('departments')
+        .select(`
+          id,
+          name,
+          department_members!inner(member_id)
+        `)
+        .eq('is_active', true)
+        .eq('department_members.is_active', true);
+
+      if (departmentStatsError) {
+        console.error('Error fetching department stats:', departmentStatsError);
+      }
+
+      // Calculate age groups
+      const currentYear = new Date().getFullYear();
+      const membersByAge = {
+        youth: 0,   // 15-35
+        adults: 0,  // 36-60
+        seniors: 0  // 61+
+      };
+
+      members?.forEach(member => {
+        const birthYear = new Date(member.date_of_birth).getFullYear();
+        const age = currentYear - birthYear;
+        
+        if (age >= 15 && age <= 35) {
+          membersByAge.youth++;
+        } else if (age >= 36 && age <= 60) {
+          membersByAge.adults++;
+        } else if (age > 60) {
+          membersByAge.seniors++;
+        }
+      });
+
+      setDashboardData({
+        totalMembers: members?.length || 0,
+        totalDepartments: departments?.length || 0,
+        departmentStats: departmentStats || [],
+        membersByAge
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFinancialData = async () => {
+    try {
+      const supabase = createClient();
+      if (!supabase) return;
+
+      // Fetch total income (all income transactions)
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('financial_transactions')
+        .select('amount')
+        .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
+        .eq('verified', true);
+      
+      if (incomeError) {
+        console.error('Error fetching income data:', incomeError);
+        return;
+      }
+      
+      const totalIncome = incomeData?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      
+      // Fetch current month income
+      const currentMonth = new Date();
+      const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      
+      const { data: monthlyData, error: monthlyError } = await supabase
+        .from('financial_transactions')
+        .select('amount')
+        .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
+        .eq('verified', true)
+        .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
+      
+      if (monthlyError) {
+        console.error('Error fetching monthly data:', monthlyError);
+        return;
+      }
+      
+      const monthlyIncome = monthlyData?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      
+      // Fetch weekly offerings for the last 8 weeks
+      const weeks = [];
+      for (let i = 7; i >= 0; i--) {
+        const weekEnd = new Date();
+        weekEnd.setDate(weekEnd.getDate() - (i * 7));
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekStart.getDate() - 6);
+        
+        const { data: weekData, error: weekError } = await supabase
+          .from('financial_transactions')
+          .select('amount')
+          .eq('transaction_type', 'offering')
+          .eq('verified', true)
+          .gte('date', weekStart.toISOString().split('T')[0])
+          .lte('date', weekEnd.toISOString().split('T')[0]);
+        
+        if (!weekError) {
+          const weekAmount = weekData?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+          weeks.push({
+            week: `W${8-i}`,
+            amount: weekAmount,
+            label: String(8-i).padStart(2, '0')
+          });
+        }
+      }
+      
+      setFinancialData({
+        totalIncome,
+        monthlyIncome,
+        weeklyOfferings: weeks
+      });
+      
+    } catch (error) {
+      console.error('Error fetching financial data:', error);
+    }
+  };
+
+  const fetchDepartmentLeaders = async () => {
+    try {
+      const supabase = createClient();
+      if (!supabase) return;
+
+      // Fetch departments with their leaders
+      const { data: departmentLeadersData, error } = await supabase
+        .from('departments')
+        .select(`
+          id,
+          name,
+          leader_id,
+          members:members!leader_id(
+            id,
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
+        .eq('is_active', true)
+        .not('leader_id', 'is', null)
+        .limit(3);
+
+      if (error) {
+        console.error('Error fetching department leaders:', error);
+        return;
+      }
+
+      // Transform the data for display
+      const formattedLeaders = departmentLeadersData?.map((dept: any) => ({
+        id: dept.id,
+        name: dept.members ? `${dept.members.first_name} ${dept.members.last_name}` : 'Unknown Leader',
+        role: `${dept.name} Leader`,
+        departmentName: dept.name,
+        photo_url: dept.members?.photo_url
+      })) || [];
+
+      setDepartmentLeaders(formattedLeaders);
+
+    } catch (error) {
+      console.error('Error fetching department leaders:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      // Mock notifications - replace with real Supabase query later
+      const mockNotifications = [
+        {
+          id: 1,
+          title: 'New Member Registration',
+          message: 'John Doe has registered as a new member',
+          time: '5 minutes ago',
+          type: 'member',
+          read: false
+        },
+        {
+          id: 2,
+          title: 'Payment Received',
+          message: 'Monthly tithe payment of TZS 500,000 received',
+          time: '1 hour ago',
+          type: 'payment',
+          read: false
+        },
+        {
+          id: 3,
+          title: 'Event Reminder',
+          message: 'Youth Conference starts tomorrow at 9:00 AM',
+          time: '3 hours ago',
+          type: 'event',
+          read: true
+        }
+      ];
+
+      setNotifications(mockNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const fetchMessages = async () => {
+    try {
+      // Mock messages - replace with real Supabase query later
+      const mockMessages = [
+        {
+          id: 1,
+          sender: 'Pastor Michael',
+          subject: 'Sunday Service Update',
+          preview: 'Please note the change in service time...',
+          time: '2 hours ago',
+          read: false
+        },
+        {
+          id: 2,
+          sender: 'Finance Team',
+          subject: 'Monthly Financial Report',
+          preview: 'Attached is the financial report for...',
+          time: '1 day ago',
+          read: true
+        },
+        {
+          id: 3,
+          sender: 'Events Committee',
+          subject: 'Upcoming Conference',
+          preview: 'Registration for the annual conference...',
+          time: '2 days ago',
+          read: false
+        }
+      ];
+
+      setMessages(mockMessages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const handleViewDepartmentLeader = (leaderId: string) => {
+    // Navigate to department leader profile or details page
+    window.location.href = `/members/${leaderId}`;
+  };
+
+  const markNotificationAsRead = (notificationId: number) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      const supabase = createClient();
+      if (!user?.id) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          member:members(*)
+        `)
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!user?.id) return;
+
+    try {
+      setIsUpdatingProfile(true);
+      const supabase = createClient();
+
+      // Upload photo to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `profiles/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('photos')
+        .getPublicUrl(filePath);
+
+      // Update profile with new photo URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ photo_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // If user has a member record, update it too
+      if (userProfile?.member) {
+        await supabase
+          .from('members')
+          .update({ photo_url: publicUrl })
+          .eq('id', userProfile.member.id);
+      }
+
+      // Refresh user profile
+      await fetchUserProfile();
+      
+      alert('Profile photo updated successfully!');
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Error uploading photo. Please try again.');
+    } finally {
+      setIsUpdatingProfile(false);
+      setPhotoFile(null);
+    }
+  };
+
+  const updateUserProfile = async (updates: any) => {
+    if (!user?.id) return;
+
+    try {
+      setIsUpdatingProfile(true);
+      const supabase = createClient();
+
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // If user has a member record, update relevant fields
+      if (userProfile?.member && (updates.first_name || updates.last_name)) {
+        const memberUpdates: any = {};
+        if (updates.first_name) memberUpdates.first_name = updates.first_name;
+        if (updates.last_name) memberUpdates.last_name = updates.last_name;
+
+        await supabase
+          .from('members')
+          .update(memberUpdates)
+          .eq('id', userProfile.member.id);
+      }
+
+      // Refresh user profile
+      await fetchUserProfile();
+      
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile. Please try again.');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const markMessageAsRead = (messageId: number) => {
+    setMessages(prev => 
+      prev.map(msg => 
+        msg.id === messageId ? { ...msg, read: true } : msg
+      )
+    );
+  };
 
   const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
@@ -75,29 +530,178 @@ export default function DashboardPage() {
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
-              {/* Mail Icon */}
-              <button className={`p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}>
-                <Mail className="h-5 w-5" />
-              </button>
+              {/* Mail Icon with Dropdown */}
+              <div className="relative dropdown-container">
+                <button 
+                  onClick={() => {
+                    setShowMessages(!showMessages);
+                    setShowNotifications(false);
+                    setShowProfile(false);
+                  }}
+                  className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
+                >
+                  <Mail className="h-5 w-5" />
+                  {messages.filter(msg => !msg.read).length > 0 && (
+                    <span className="absolute top-1 right-1 h-2 w-2 bg-tag-red-500 rounded-full"></span>
+                  )}
+                </button>
 
-              {/* Notification Bell */}
-              <button className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}>
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 bg-tag-red-500 rounded-full"></span>
-              </button>
+                {/* Messages Dropdown */}
+                {showMessages && (
+                  <div className={`absolute right-0 top-full mt-2 w-80 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto`}>
+                    <div className={`p-4 border-b ${borderColor}`}>
+                      <h3 className={`font-semibold ${textPrimary}`}>Messages</h3>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {messages.map((message) => (
+                        <div 
+                          key={message.id} 
+                          className={`p-4 border-b ${borderColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} cursor-pointer ${!message.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                          onClick={() => markMessageAsRead(message.id)}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <p className={`font-medium text-sm ${textPrimary}`}>{message.sender}</p>
+                            <span className={`text-xs ${textSecondary}`}>{message.time}</span>
+                          </div>
+                          <p className={`text-sm font-medium ${textPrimary} mb-1`}>{message.subject}</p>
+                          <p className={`text-sm ${textSecondary} truncate`}>{message.preview}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`p-4 border-t ${borderColor}`}>
+                      <button 
+                        className="w-full text-center text-blue-500 hover:text-blue-600 text-sm font-medium"
+                        onClick={() => window.location.href = '/messages'}
+                      >
+                        View All Messages
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {/* User Avatar */}
-              <button className={`flex items-center space-x-3 pl-4 border-l ${borderColor}`}>
-                <img
-                  src={
-                    user?.profile?.avatar_url || 
-                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
-                  }
-                  alt={`${user?.profile?.first_name || 'User'} ${user?.profile?.last_name || ''}`.trim()}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-                <ChevronDown className={`h-4 w-4 ${textSecondary}`} />
-              </button>
+              {/* Notification Bell with Dropdown */}
+              <div className="relative dropdown-container">
+                <button 
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setShowMessages(false);
+                    setShowProfile(false);
+                  }}
+                  className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
+                >
+                  <Bell className="h-5 w-5" />
+                  {notifications.filter(notif => !notif.read).length > 0 && (
+                    <span className="absolute top-1 right-1 h-2 w-2 bg-tag-red-500 rounded-full"></span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown */}
+                {showNotifications && (
+                  <div className={`absolute right-0 top-full mt-2 w-80 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto`}>
+                    <div className={`p-4 border-b ${borderColor}`}>
+                      <h3 className={`font-semibold ${textPrimary}`}>Notifications</h3>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.map((notification) => (
+                        <div 
+                          key={notification.id} 
+                          className={`p-4 border-b ${borderColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} cursor-pointer ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                          onClick={() => markNotificationAsRead(notification.id)}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <p className={`font-medium text-sm ${textPrimary}`}>{notification.title}</p>
+                            <span className={`text-xs ${textSecondary}`}>{notification.time}</span>
+                          </div>
+                          <p className={`text-sm ${textSecondary}`}>{notification.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`p-4 border-t ${borderColor}`}>
+                      <button 
+                        className="w-full text-center text-blue-500 hover:text-blue-600 text-sm font-medium"
+                        onClick={() => window.location.href = '/notifications'}
+                      >
+                        View All Notifications
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* User Avatar with Profile Dropdown */}
+              <div className="relative dropdown-container">
+                <button 
+                  onClick={() => {
+                    setShowProfile(!showProfile);
+                    setShowMessages(false);
+                    setShowNotifications(false);
+                  }}
+                  className={`flex items-center space-x-3 pl-4 border-l ${borderColor}`}
+                >
+                  <img
+                    src={
+                      user?.profile?.avatar_url || 
+                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
+                    }
+                    alt={`${user?.profile?.first_name || 'User'} ${user?.profile?.last_name || ''}`.trim()}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                  <ChevronDown className={`h-4 w-4 ${textSecondary}`} />
+                </button>
+
+                {/* Profile Dropdown */}
+                {showProfile && (
+                  <div className={`absolute right-0 top-full mt-2 w-64 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50`}>
+                    <div className={`p-4 border-b ${borderColor}`}>
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={
+                            user?.profile?.avatar_url || 
+                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
+                          }
+                          alt="Profile"
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className={`font-semibold ${textPrimary}`}>
+                            {user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} {user?.profile?.last_name || ''}
+                          </p>
+                          <p className={`text-sm ${textSecondary}`}>
+                            {user?.profile?.role || 'Member'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="py-2">
+                      <button 
+                        onClick={() => {
+                          setShowProfile(false);
+                          setShowProfileModal(true);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm ${textPrimary} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
+                      >
+                        View Profile
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setShowProfile(false);
+                          setShowSettingsModal(true);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm ${textPrimary} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
+                      >
+                        Settings
+                      </button>
+                      <button 
+                        onClick={signOut}
+                        className={`w-full text-left px-4 py-2 text-sm text-red-500 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -109,13 +713,15 @@ export default function DashboardPage() {
             <div className="col-span-12 lg:col-span-7 space-y-6">
               {/* Stats Cards Grid */}
               <div className="grid grid-cols-2 gap-6">
-                {/* Sunday Service Card */}
+                {/* Total Departments Card */}
                 <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-3xl p-6 shadow-sm`}>
                   <div className={`inline-flex p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                    <Calendar className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+                    <Building2 className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
                   </div>
-                  <p className={`text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-2`}>Sunday Service</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>76</h3>
+                  <p className={`text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-2`}>Total Departments</p>
+                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {loading ? '...' : dashboardData.totalDepartments}
+                  </h3>
                 </div>
 
                 {/* Church Income Card */}
@@ -126,7 +732,9 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-2`}>Church Income</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>$56K</h3>
+                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {loading ? '...' : `TZS ${(financialData.totalIncome / 1000000).toFixed(1)}M`}
+                  </h3>
                 </div>
 
                 {/* Total Members Card */}
@@ -135,7 +743,9 @@ export default function DashboardPage() {
                     <Users className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
                   </div>
                   <p className={`text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-2`}>Total Members</p>
-                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>783K</h3>
+                  <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {loading ? '...' : dashboardData.totalMembers.toLocaleString()}
+                  </h3>
                 </div>
 
                 {/* Active Events Card */}
@@ -164,101 +774,152 @@ export default function DashboardPage() {
                   {/* Left side - Total Members */}
                   <div className="flex-shrink-0">
                     <p className={`text-sm ${textSecondary} mb-3`}>Total Members</p>
-                    <p className={`text-4xl font-bold ${textPrimary}`}>562,084 People</p>
+                    <p className={`text-4xl font-bold ${textPrimary}`}>
+                      {loading ? '...' : `${dashboardData.totalMembers.toLocaleString()} People`}
+                    </p>
                   </div>
 
                   {/* Right side - Donut Chart and Legend */}
                   <div className="flex items-center gap-12">
                     {/* Donut Chart */}
                     <div className="relative flex items-center justify-center flex-shrink-0">
-                      <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
-                        <defs>
-                          {/* Gradient for cyan segment */}
-                          <linearGradient id="memberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
-                            <stop offset="100%" style={{ stopColor: '#06b6d4', stopOpacity: 1 }} />
-                          </linearGradient>
-                          {/* Gradient for blue segment */}
-                          <linearGradient id="memberGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
-                            <stop offset="100%" style={{ stopColor: '#1d4ed8', stopOpacity: 1 }} />
-                          </linearGradient>
-                          {/* Gradient for pink segment */}
-                          <linearGradient id="memberGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style={{ stopColor: '#f472b6', stopOpacity: 1 }} />
-                            <stop offset="100%" style={{ stopColor: '#ec4899', stopOpacity: 1 }} />
-                          </linearGradient>
-                        </defs>
-                        
-                        {/* Background circle */}
-                        <circle
-                          cx="100"
-                          cy="100"
-                          r="75"
-                          fill="none"
-                          stroke={darkMode ? '#1f2937' : '#f5f5f5'}
-                          strokeWidth="28"
-                        />
-                        
-                        {/* Cyan segment (Youth) - 20% - Thick layer */}
-                        <circle
-                          cx="100"
-                          cy="100"
-                          r="80"
-                          fill="none"
-                          stroke="url(#memberGradient1)"
-                          strokeWidth="32"
-                          strokeDasharray={`${2 * Math.PI * 80 * 0.20} ${2 * Math.PI * 80 * 0.80}`}
-                          strokeLinecap="butt"
-                        />
-                        
-                        {/* Blue segment (Adults) - 55% - Thinnest layer */}
-                        <circle
-                          cx="100"
-                          cy="100"
-                          r="72"
-                          fill="none"
-                          stroke="url(#memberGradient2)"
-                          strokeWidth="20"
-                          strokeDasharray={`${2 * Math.PI * 72 * 0.55} ${2 * Math.PI * 72 * 0.45}`}
-                          strokeDashoffset={`${-2 * Math.PI * 72 * 0.20}`}
-                          strokeLinecap="butt"
-                        />
-                        
-                        {/* Pink segment (Seniors) - 25% - Medium-thick layer */}
-                        <circle
-                          cx="100"
-                          cy="100"
-                          r="76"
-                          fill="none"
-                          stroke="url(#memberGradient3)"
-                          strokeWidth="28"
-                          strokeDasharray={`${2 * Math.PI * 76 * 0.25} ${2 * Math.PI * 76 * 0.75}`}
-                          strokeDashoffset={`${-2 * Math.PI * 76 * 0.75}`}
-                          strokeLinecap="butt"
-                        />
-                      </svg>
+                      {(() => {
+                        if (loading) {
+                          return (
+                            <div className="w-[200px] h-[200px] flex items-center justify-center">
+                              <p className={textSecondary}>Loading...</p>
+                            </div>
+                          );
+                        }
+
+                        const totalMembers = dashboardData.totalMembers;
+                        if (totalMembers === 0) {
+                          return (
+                            <div className="w-[200px] h-[200px] flex items-center justify-center">
+                              <p className={textSecondary}>No data</p>
+                            </div>
+                          );
+                        }
+
+                        const youthPercentage = (dashboardData.membersByAge.youth / totalMembers) * 100;
+                        const adultsPercentage = (dashboardData.membersByAge.adults / totalMembers) * 100;
+                        const seniorsPercentage = (dashboardData.membersByAge.seniors / totalMembers) * 100;
+
+                        const youthRatio = dashboardData.membersByAge.youth / totalMembers;
+                        const adultsRatio = dashboardData.membersByAge.adults / totalMembers;
+                        const seniorsRatio = dashboardData.membersByAge.seniors / totalMembers;
+
+                        return (
+                          <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
+                            <defs>
+                              <linearGradient id="memberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
+                                <stop offset="100%" style={{ stopColor: '#06b6d4', stopOpacity: 1 }} />
+                              </linearGradient>
+                              <linearGradient id="memberGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                                <stop offset="100%" style={{ stopColor: '#1d4ed8', stopOpacity: 1 }} />
+                              </linearGradient>
+                              <linearGradient id="memberGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style={{ stopColor: '#f472b6', stopOpacity: 1 }} />
+                                <stop offset="100%" style={{ stopColor: '#ec4899', stopOpacity: 1 }} />
+                              </linearGradient>
+                            </defs>
+                            
+                            {/* Background circle */}
+                            <circle
+                              cx="100"
+                              cy="100"
+                              r="75"
+                              fill="none"
+                              stroke={darkMode ? '#1f2937' : '#f5f5f5'}
+                              strokeWidth="28"
+                            />
+                            
+                            {/* Youth segment (Cyan) */}
+                            {youthRatio > 0 && (
+                              <circle
+                                cx="100"
+                                cy="100"
+                                r="80"
+                                fill="none"
+                                stroke="url(#memberGradient1)"
+                                strokeWidth="32"
+                                strokeDasharray={`${2 * Math.PI * 80 * youthRatio} ${2 * Math.PI * 80 * (1 - youthRatio)}`}
+                                strokeLinecap="butt"
+                              />
+                            )}
+                            
+                            {/* Adults segment (Blue) */}
+                            {adultsRatio > 0 && (
+                              <circle
+                                cx="100"
+                                cy="100"
+                                r="72"
+                                fill="none"
+                                stroke="url(#memberGradient2)"
+                                strokeWidth="20"
+                                strokeDasharray={`${2 * Math.PI * 72 * adultsRatio} ${2 * Math.PI * 72 * (1 - adultsRatio)}`}
+                                strokeDashoffset={`${-2 * Math.PI * 72 * youthRatio}`}
+                                strokeLinecap="butt"
+                              />
+                            )}
+                            
+                            {/* Seniors segment (Pink) */}
+                            {seniorsRatio > 0 && (
+                              <circle
+                                cx="100"
+                                cy="100"
+                                r="76"
+                                fill="none"
+                                stroke="url(#memberGradient3)"
+                                strokeWidth="28"
+                                strokeDasharray={`${2 * Math.PI * 76 * seniorsRatio} ${2 * Math.PI * 76 * (1 - seniorsRatio)}`}
+                                strokeDashoffset={`${-2 * Math.PI * 76 * (youthRatio + adultsRatio)}`}
+                                strokeLinecap="butt"
+                              />
+                            )}
+                          </svg>
+                        );
+                      })()}
                       
                       {/* Center text */}
                       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                        <p className={`text-xs ${textSecondary} mb-1`}>Members</p>
-                        <p className="text-3xl font-bold text-blue-600">90%</p>
+                        <p className={`text-xs ${textSecondary} mb-1`}>Active</p>
+                        <p className="text-3xl font-bold text-blue-600">
+                          {loading ? '...' : '100%'}
+                        </p>
                       </div>
                     </div>
 
                     {/* Legend - Vertical layout */}
                     <div className="flex flex-col space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-4 h-4 rounded-sm bg-cyan-400 flex-shrink-0"></div>
-                        <span className={`text-sm ${textSecondary}`}>Youth</span>
+                      <div className="flex items-center justify-between space-x-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-4 h-4 rounded-sm bg-cyan-400 flex-shrink-0"></div>
+                          <span className={`text-sm ${textSecondary}`}>Youth (15-35)</span>
+                        </div>
+                        <span className={`text-sm font-semibold ${textPrimary}`}>
+                          {loading ? '...' : `${dashboardData.membersByAge.youth} (${dashboardData.totalMembers > 0 ? Math.round((dashboardData.membersByAge.youth / dashboardData.totalMembers) * 100) : 0}%)`}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-4 h-4 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                        <span className={`text-sm ${textSecondary}`}>Adults</span>
+                      <div className="flex items-center justify-between space-x-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-4 h-4 rounded-sm bg-blue-600 flex-shrink-0"></div>
+                          <span className={`text-sm ${textSecondary}`}>Adults (36-60)</span>
+                        </div>
+                        <span className={`text-sm font-semibold ${textPrimary}`}>
+                          {loading ? '...' : `${dashboardData.membersByAge.adults} (${dashboardData.totalMembers > 0 ? Math.round((dashboardData.membersByAge.adults / dashboardData.totalMembers) * 100) : 0}%)`}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-4 h-4 rounded-sm bg-pink-500 flex-shrink-0"></div>
-                        <span className={`text-sm ${textSecondary}`}>Seniors</span>
+                      <div className="flex items-center justify-between space-x-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-4 h-4 rounded-sm bg-pink-500 flex-shrink-0"></div>
+                          <span className={`text-sm ${textSecondary}`}>Seniors (61+)</span>
+                        </div>
+                        <span className={`text-sm font-semibold ${textPrimary}`}>
+                          {loading ? '...' : `${dashboardData.membersByAge.seniors} (${dashboardData.totalMembers > 0 ? Math.round((dashboardData.membersByAge.seniors / dashboardData.totalMembers) * 100) : 0}%)`}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -290,54 +951,70 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <p className={`text-xs ${textSecondary} mb-1`}>Total Revenue</p>
-                    <p className={`text-2xl font-bold ${textPrimary}`}>TZS 25,452k</p>
+                    <p className={`text-2xl font-bold ${textPrimary}`}>
+                      {loading ? 'Loading...' : `TZS ${(financialData.totalIncome / 1000).toFixed(0)}k`}
+                    </p>
                   </div>
                   <div>
-                    <p className={`text-xs ${textSecondary} mb-1`}>Total Profit</p>
-                    <p className={`text-2xl font-bold ${textPrimary}`}>TZS 25,452k</p>
+                    <p className={`text-xs ${textSecondary} mb-1`}>Monthly Income</p>
+                    <p className={`text-2xl font-bold ${textPrimary}`}>
+                      {loading ? 'Loading...' : `TZS ${(financialData.monthlyIncome / 1000).toFixed(0)}k`}
+                    </p>
                   </div>
-                  <div className="bg-blue-50 px-6 py-3 rounded-xl">
-                    <p className="text-2xl font-bold text-blue-600">80K</p>
+                  <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-6 py-3 rounded-xl`}>
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-blue-600'}`}>
+                      {loading ? '...' : `${Math.max(...(financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)) || [0]))}K`}
+                    </p>
                   </div>
                 </div>
 
                 {/* Bar Chart */}
                 <div className="relative" style={{ height: '180px' }}>
-                  {/* Floating label above bar 06 */}
-                  <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
-                    <p className="text-white text-sm font-bold">80K</p>
-                  </div>
+                  {/* Floating label above highest bar */}
+                  {financialData.weeklyOfferings.length > 0 && (
+                    <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
+                      <p className="text-white text-sm font-bold">
+                        {Math.max(...financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)), 0)}K
+                      </p>
+                    </div>
+                  )}
 
                   {/* Bar Chart Container */}
                   <div className="h-full flex items-end justify-between gap-4 pt-10">
-                    {[
-                      { revenue: 70, forecast: 65, label: '01' },
-                      { revenue: 95, forecast: 90, label: '02' },
-                      { revenue: 85, forecast: 80, label: '03' },
-                      { revenue: 65, forecast: 70, label: '04' },
-                      { revenue: 105, forecast: 100, label: '05' },
-                      { revenue: 130, forecast: 120, label: '06' },
-                      { revenue: 60, forecast: 65, label: '07' },
-                      { revenue: 100, forecast: 95, label: '08' }
-                    ].map((bar, idx) => (
-                      <div key={idx} className="flex-1 flex flex-col items-center">
-                        {/* Bar Group */}
-                        <div className="w-full flex items-end justify-center gap-1">
-                          {/* Revenue Bar (Dark Blue) */}
-                          <div 
-                            className="flex-1 bg-blue-600 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-blue-700"
-                            style={{ height: `${bar.revenue}px` }}
-                          ></div>
-                          {/* Forecast Bar (Light Purple/Blue) */}
-                          <div 
-                            className="flex-1 bg-purple-400 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-purple-500"
-                            style={{ height: `${bar.forecast}px` }}
-                          ></div>
+                    {(financialData.weeklyOfferings.length > 0 ? financialData.weeklyOfferings : [
+                      { week: 'W1', amount: 0, label: '01' },
+                      { week: 'W2', amount: 0, label: '02' },
+                      { week: 'W3', amount: 0, label: '03' },
+                      { week: 'W4', amount: 0, label: '04' },
+                      { week: 'W5', amount: 0, label: '05' },
+                      { week: 'W6', amount: 0, label: '06' },
+                      { week: 'W7', amount: 0, label: '07' },
+                      { week: 'W8', amount: 0, label: '08' }
+                    ]).map((bar, idx) => {
+                      const maxAmount = Math.max(...financialData.weeklyOfferings.map(w => w.amount), 1);
+                      const height = Math.max((bar.amount / maxAmount) * 120, 10);
+                      const forecastHeight = Math.max(height * 0.9, 8);
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center">
+                          {/* Bar Group */}
+                          <div className="w-full flex items-end justify-center gap-1">
+                            {/* Revenue Bar (Dark Blue) */}
+                            <div 
+                              className="flex-1 bg-blue-600 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-blue-700"
+                              style={{ height: `${height}px` }}
+                              title={`Week ${idx + 1}: TZS ${bar.amount.toLocaleString()}`}
+                            ></div>
+                            {/* Forecast Bar (Light Purple/Blue) */}
+                            <div 
+                              className="flex-1 bg-purple-400 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-purple-500"
+                              style={{ height: `${forecastHeight}px` }}
+                            ></div>
+                          </div>
+                          {/* Label */}
+                          <span className={`text-xs mt-2 ${textSecondary}`}>{bar.label}</span>
                         </div>
-                        {/* Label */}
-                        <span className={`text-xs mt-2 ${textSecondary}`}>{bar.label}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -494,46 +1171,314 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {[
-                    { name: 'Pastor John Mwanga', role: 'Senior Pastor', reviews: 451 },
-                    { name: 'Sister Grace Ndosi', role: 'Women Leader', reviews: 387 },
-                    { name: 'Bro. David Kilima', role: 'Youth Leader', reviews: 324 }
-                  ].map((leader, idx) => (
-                    <div key={idx} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-tag-gray-900' : 'hover:bg-tag-gray-50'} transition-colors cursor-pointer`}>
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          {/* Badge positioned on left side */}
-                          <div className="absolute -top-1 -left-1 h-7 w-7 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center z-10">
-                            <span className="text-white text-sm font-bold">{idx + 1}</span>
-                          </div>
-                          <img
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
-                            alt={leader.name}
-                            className="h-12 w-12 rounded-full"
-                          />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
-                          <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
-                          <div className="flex items-center mt-1">
-                            <div className="flex text-yellow-400 text-xs">
-                              {'★'.repeat(5)}
+                  {departmentLeaders.length > 0 ? (
+                    departmentLeaders.map((leader: any, idx: number) => (
+                      <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-tag-gray-900' : 'hover:bg-tag-gray-50'} transition-colors cursor-pointer`}>
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            {/* Badge positioned on left side */}
+                            <div className="absolute -top-1 -left-1 h-7 w-7 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center z-10">
+                              <span className="text-white text-sm font-bold">{idx + 1}</span>
                             </div>
-                            <span className={`text-xs ${textSecondary} ml-2`}>{leader.reviews} reviews</span>
+                            <img
+                              src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
+                              alt={leader.name}
+                              className="h-12 w-12 rounded-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
+                            <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
+                            <div className="flex items-center mt-1">
+                              <div className="flex text-yellow-400 text-xs">
+                                {'★'.repeat(5)}
+                              </div>
+                              <span className={`text-xs ${textSecondary} ml-2`}>{leader.departmentName}</span>
+                            </div>
                           </div>
                         </div>
+                        <button 
+                          onClick={() => handleViewDepartmentLeader(leader.id)}
+                          className="px-5 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
+                        >
+                          View
+                        </button>
                       </div>
-                      <button className="px-5 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors">
-                        View
-                      </button>
+                    ))
+                  ) : (
+                    <div className={`text-center py-8 ${textSecondary}`}>
+                      {loading ? 'Loading department leaders...' : 'No department leaders found'}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </main>
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${cardBg} rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
+            <div className={`p-6 border-b ${borderColor}`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`text-xl font-bold ${textPrimary}`}>Profile Information</h2>
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className={`text-gray-500 hover:${textPrimary}`}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {userProfile ? (
+                <div className="space-y-6">
+                  {/* Profile Photo Section */}
+                  <div className="text-center">
+                    <div className="relative inline-block">
+                      <img
+                        src={userProfile.photo_url || '/default-avatar.png'}
+                        alt="Profile"
+                        className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                      />
+                      <label className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setPhotoFile(file);
+                              handlePhotoUpload(file);
+                            }
+                          }}
+                        />
+                        📷
+                      </label>
+                    </div>
+                    {isUpdatingProfile && (
+                      <p className="text-blue-500 mt-2">Updating photo...</p>
+                    )}
+                  </div>
+
+                  {/* Profile Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        value={userProfile.first_name || ''}
+                        onChange={(e) => setUserProfile({...userProfile, first_name: e.target.value})}
+                        className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textPrimary}`}
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        value={userProfile.last_name || ''}
+                        onChange={(e) => setUserProfile({...userProfile, last_name: e.target.value})}
+                        className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textPrimary}`}
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={userProfile.email || ''}
+                        readOnly
+                        className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                        Role
+                      </label>
+                      <input
+                        type="text"
+                        value={userProfile.role || ''}
+                        readOnly
+                        className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
+                      />
+                    </div>
+                    {userProfile.member && (
+                      <>
+                        <div>
+                          <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                            Member Number
+                          </label>
+                          <input
+                            type="text"
+                            value={userProfile.member.member_number || ''}
+                            readOnly
+                            className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                            Phone
+                          </label>
+                          <input
+                            type="text"
+                            value={userProfile.member.phone || ''}
+                            readOnly
+                            className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      onClick={() => setShowProfileModal(false)}
+                      className={`px-4 py-2 border ${borderColor} rounded-md ${textSecondary} hover:${textPrimary}`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateUserProfile({
+                          first_name: userProfile.first_name,
+                          last_name: userProfile.last_name
+                        });
+                        setShowProfileModal(false);
+                      }}
+                      disabled={isUpdatingProfile}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className={textSecondary}>Loading profile...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${cardBg} rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
+            <div className={`p-6 border-b ${borderColor}`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`text-xl font-bold ${textPrimary}`}>Settings</h2>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className={`text-gray-500 hover:${textPrimary}`}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Theme Settings */}
+              <div>
+                <h3 className={`text-lg font-semibold ${textPrimary} mb-4`}>Appearance</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className={textSecondary}>Dark Mode</span>
+                    <button
+                      onClick={() => setDarkMode(!darkMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        darkMode ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          darkMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notification Settings */}
+              <div>
+                <h3 className={`text-lg font-semibold ${textPrimary} mb-4`}>Notifications</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={textPrimary}>Email Notifications</span>
+                      <p className={`text-sm ${textSecondary}`}>Receive notifications via email</p>
+                    </div>
+                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600">
+                      <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={textPrimary}>Push Notifications</span>
+                      <p className={`text-sm ${textSecondary}`}>Receive push notifications</p>
+                    </div>
+                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300">
+                      <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Privacy Settings */}
+              <div>
+                <h3 className={`text-lg font-semibold ${textPrimary} mb-4`}>Privacy</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={textPrimary}>Profile Visibility</span>
+                      <p className={`text-sm ${textSecondary}`}>Make your profile visible to other members</p>
+                    </div>
+                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600">
+                      <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Actions */}
+              <div>
+                <h3 className={`text-lg font-semibold ${textPrimary} mb-4`}>Account</h3>
+                <div className="space-y-3">
+                  <button className={`w-full text-left px-4 py-3 border ${borderColor} rounded-md hover:bg-gray-50 ${textPrimary}`}>
+                    Change Password
+                  </button>
+                  <button className={`w-full text-left px-4 py-3 border ${borderColor} rounded-md hover:bg-gray-50 ${textPrimary}`}>
+                    Export Data
+                  </button>
+                  <button className="w-full text-left px-4 py-3 border border-red-300 rounded-md hover:bg-red-50 text-red-600">
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

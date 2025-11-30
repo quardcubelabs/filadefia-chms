@@ -113,6 +113,7 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
   
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -159,29 +160,196 @@ export default function FinancePage() {
   }, [user, authLoading]);
 
   const loadTransactions = async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      console.error('Supabase client not available');
+      setError('Database connection not available');
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log('Attempting to load financial transactions...');
+      
+      // Test basic table access first
+      const { count, error: countError } = await supabase
+        .from('financial_transactions')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Table access error:', countError);
+        throw new Error(`Cannot access financial_transactions table: ${countError.message}`);
+      }
+
+      console.log('Financial transactions count:', count);
+
+      if (count === 0) {
+        console.log('No transactions found. Database appears empty.');
+        setError(`No financial transactions found. The database appears empty.
+        
+To populate with sample data:
+1. Go to your Supabase Dashboard
+2. Navigate to SQL Editor  
+3. Run the seed_finances.sql script from the database folder
+4. Refresh this page
+
+You can also click the "Seed Sample Data" button below to add test transactions.`);
+        setTransactions([]);
+        calculateSummary([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Now fetch actual data - first try simple query without joins
+      console.log('Fetching transactions (simple query first)...');
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      console.log('Simple query result - Data:', simpleData, 'Error:', simpleError);
+
+      if (simpleError) {
+        console.error('Simple query failed:', simpleError);
+        throw simpleError;
+      }
+
+      if (!simpleData || simpleData.length === 0) {
+        console.log('No data returned from simple query');
+        throw new Error('No financial transactions found after seeding. This might be an RLS (Row Level Security) issue.');
+      }
+
+      // If simple query works, try with joins
+      console.log('Simple query successful, now trying with joins...');
       const { data, error } = await supabase
         .from('financial_transactions')
         .select(`
           *,
           member:members(first_name, last_name, member_number),
-          department:departments(name),
-          recorder:profiles!financial_transactions_recorded_by_fkey(first_name, last_name)
+          department:departments(name)
         `)
         .order('date', { ascending: false });
 
-      if (error) throw error;
+      console.log('Join query result - Data:', data, 'Error:', error);
 
+      if (error) {
+        console.error('Join query error:', error);
+        // If join query fails but simple query worked, fall back to simple data
+        if (simpleData && simpleData.length > 0) {
+          console.log('Using simple data without joins due to join error');
+          setTransactions(simpleData || []);
+          calculateSummary(simpleData || []);
+          setError(`Loaded ${simpleData.length} transactions (without member/department details due to join error: ${error.message})`);
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
+
+      console.log('Successfully loaded transactions:', data?.length || 0);
+      if (data && data.length > 0) {
+        console.log('Sample transaction data:', data[0]);
+        console.log('All transaction data sample:', data.slice(0, 3));
+      }
       setTransactions(data || []);
       calculateSummary(data || []);
     } catch (err: any) {
       console.error('Error loading transactions:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to load financial transactions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const seedSampleData = async () => {
+    if (!supabase || !user?.profile?.id) return;
+
+    try {
+      setSeeding(true);
+      setError(null);
+      
+      // Insert sample transactions for testing
+      const sampleTransactions = [
+        {
+          member_id: null,
+          transaction_type: 'offering',
+          amount: 25000.00,
+          currency: 'TZS',
+          description: 'Sunday Service Offering',
+          payment_method: 'Cash',
+          reference_number: null,
+          department_id: null,
+          date: new Date().toISOString().split('T')[0],
+          recorded_by: user.profile.id,
+          verified: true,
+          verified_by: user.profile.id,
+          verified_at: new Date().toISOString()
+        },
+        {
+          member_id: null,
+          transaction_type: 'tithe',
+          amount: 50000.00,
+          currency: 'TZS',
+          description: 'Monthly Tithe',
+          payment_method: 'M-Pesa',
+          reference_number: 'MP' + Date.now(),
+          department_id: null,
+          date: new Date().toISOString().split('T')[0],
+          recorded_by: user.profile.id,
+          verified: true,
+          verified_by: user.profile.id,
+          verified_at: new Date().toISOString()
+        },
+        {
+          member_id: null,
+          transaction_type: 'donation',
+          amount: 100000.00,
+          currency: 'TZS',
+          description: 'Building Fund Donation',
+          payment_method: 'Bank Transfer',
+          reference_number: 'BT' + Date.now(),
+          department_id: null,
+          date: new Date().toISOString().split('T')[0],
+          recorded_by: user.profile.id,
+          verified: false,
+          verified_by: null,
+          verified_at: null
+        },
+        {
+          member_id: null,
+          transaction_type: 'expense',
+          amount: 30000.00,
+          currency: 'TZS',
+          description: 'Electricity Bill',
+          payment_method: 'Cash',
+          reference_number: null,
+          department_id: null,
+          date: new Date().toISOString().split('T')[0],
+          recorded_by: user.profile.id,
+          verified: true,
+          verified_by: user.profile.id,
+          verified_at: new Date().toISOString()
+        }
+      ];
+      
+      const { error } = await supabase
+        .from('financial_transactions')
+        .insert(sampleTransactions);
+      
+      if (error) {
+        console.error('Seeding error:', error);
+        throw error;
+      }
+      
+      setSuccess('Sample financial data added successfully!');
+      loadTransactions();
+    } catch (err: any) {
+      console.error('Seeding error:', err);
+      setError(`Failed to seed data: ${err.message}`);
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -477,13 +645,62 @@ export default function FinancePage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto p-8">
           <div className="max-w-7xl mx-auto">
+            {/* Debug Info */}
+            {error && (
+              <Alert type="error" className="mb-4">
+                <div className="flex flex-col space-y-3">
+                  <p>{error}</p>
+                  {transactions.length === 0 && (
+                    <div className="text-sm">
+                      <p className="font-medium">To populate financial data:</p>
+                      <ol className="list-decimal list-inside mt-2 space-y-1 text-gray-600">
+                        <li>Go to your Supabase Dashboard</li>
+                        <li>Navigate to SQL Editor</li>
+                        <li>Copy and paste the contents of <code className="bg-gray-100 px-1 rounded">database/seed_finances.sql</code></li>
+                        <li>Click "Run" to execute</li>
+                      </ol>
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-blue-800 text-sm font-medium">💡 Sample Data Available</p>
+                        <p className="text-blue-700 text-xs mt-1">
+                          The seed file contains 80+ realistic transactions including tithes, offerings, donations, 
+                          projects, and expenses with various payment methods (Cash, M-Pesa, Bank Transfer, etc.)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Alert>
+            )}
+
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Finance Management</h1>
                 <p className="text-gray-600 mt-1">Track church income, expenses, and financial health</p>
+                {transactions.length > 0 && (
+                  <p className="text-sm text-green-600 mt-1">{transactions.length} transactions loaded</p>
+                )}
               </div>
               <div className="flex space-x-3">
+                {transactions.length === 0 && !loading && (
+                  <>
+                    <Button 
+                      variant="outline"
+                      onClick={loadTransactions}
+                      className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                    >
+                      Reload Data
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={seedSampleData}
+                      disabled={seeding}
+                      className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                    >
+                      {seeding ? 'Adding Sample Data...' : 'Add Sample Data'}
+                    </Button>
+                  </>
+                )}
                 <Button 
                   variant="outline"
                   icon={<BarChart3 className="h-4 w-4" />}

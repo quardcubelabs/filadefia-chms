@@ -77,7 +77,6 @@ interface Report {
   department_id?: string;
   content: string;
   generated_by: string;
-  generated_at: string;
   file_url?: string;
   created_at: string;
   department?: {
@@ -229,7 +228,7 @@ export default function DocumentsPage() {
         department:departments(name),
         generator:profiles(first_name, last_name)
       `)
-      .order('generated_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     setReports(data || []);
@@ -320,7 +319,7 @@ export default function DocumentsPage() {
         department_id: reportForm.department_id || null,
         content: reportForm.content,
         generated_by: user.profile.id,
-        generated_at: new Date().toISOString()
+        created_at: new Date().toISOString()
       };
 
       const { error } = await supabase
@@ -779,7 +778,7 @@ export default function DocumentsPage() {
                                 By {report.generator?.first_name} {report.generator?.last_name}
                               </span>
                               <span>
-                                {formatDate(report.generated_at)}
+                                {formatDate(report.created_at)}
                               </span>
                             </div>
                           </div>
