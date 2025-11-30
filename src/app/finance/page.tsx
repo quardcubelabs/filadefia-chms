@@ -647,7 +647,7 @@ You can also click the "Seed Sample Data" button below to add test transactions.
           <div className="max-w-7xl mx-auto">
             {/* Debug Info */}
             {error && (
-              <Alert type="error" className="mb-4">
+              <Alert variant="error" className="mb-4">
                 <div className="flex flex-col space-y-3">
                   <p>{error}</p>
                   {transactions.length === 0 && (
