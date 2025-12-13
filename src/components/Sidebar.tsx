@@ -1,23 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import UserDropdown from '@/components/UserDropdown';
 import { 
-  faHome,
-  faCalendarDays,
-  faUsers,
-  faCog,
-  faComments,
-  faFile,
-  faDollarSign,
-  faChartBar,
-  faBell,
-  faChevronLeft,
-  faChurch,
-  faBriefcase
-} from '@fortawesome/free-solid-svg-icons';
+  Home,
+  Calendar,
+  Users,
+  Settings,
+  MessageSquare,
+  FileText,
+  DollarSign,
+  BarChart3,
+  Bell,
+  LogOut,
+  ChevronLeft,
+  Church,
+  Briefcase
+} from 'lucide-react';
 
 interface SidebarProps {
   darkMode?: boolean;
@@ -34,19 +36,35 @@ interface NavItem {
 export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
+  const { departmentId, isDepartmentLeader } = useDepartmentAccess();
 
-  const navItems: NavItem[] = [
-    { icon: <FontAwesomeIcon icon={faHome} className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
-    { icon: <FontAwesomeIcon icon={faUsers} className="h-5 w-5" />, label: 'Members', href: '/members' },
-    { icon: <FontAwesomeIcon icon={faBriefcase} className="h-5 w-5" />, label: 'Departments', href: '/departments' },
-    { icon: <FontAwesomeIcon icon={faCalendarDays} className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
-    { icon: <FontAwesomeIcon icon={faComments} className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
-    { icon: <FontAwesomeIcon icon={faDollarSign} className="h-5 w-5" />, label: 'Finance', href: '/finance' },
-    { icon: <FontAwesomeIcon icon={faChartBar} className="h-5 w-5" />, label: 'Reports', href: '/reports' },
-    { icon: <FontAwesomeIcon icon={faFile} className="h-5 w-5" />, label: 'Documents', href: '/documents' },
-    { icon: <FontAwesomeIcon icon={faBell} className="h-5 w-5" />, label: 'Notifications', href: '/notifications' },
-    { icon: <FontAwesomeIcon icon={faCog} className="h-5 w-5" />, label: 'Settings', href: '/settings' },
-  ];
+  const navItems: NavItem[] = useMemo(() => {
+    const dashboardHref = isDepartmentLeader && departmentId 
+      ? `/departments/${departmentId}` 
+      : '/dashboard';
+
+    // Debug logging for sidebar navigation
+    if (isDepartmentLeader) {
+      console.log('🔍 Sidebar Debug - Department Leader Navigation:', {
+        isDepartmentLeader,
+        departmentId,
+        dashboardHref,
+        currentPath: pathname
+      });
+    }
+
+    return [
+      { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: dashboardHref },
+      { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
+      { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' },
+      { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
+      { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
+      { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
+      { icon: <BarChart3 className="h-5 w-5" />, label: 'Reports', href: '/reports' },
+      { icon: <FileText className="h-5 w-5" />, label: 'Documents', href: '/documents' },
+      { icon: <Settings className="h-5 w-5" />, label: 'Settings', href: '/settings' },
+    ];
+  }, [isDepartmentLeader, departmentId]);
 
   const isActive = (href: string) => pathname === href;
 
@@ -97,12 +115,12 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
               <Link
                 key={index}
                 href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group relative border-l-4 ${
                   active
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105'
+                    ? 'bg-red-100 border-red-600 text-red-700 shadow-md ring-1 ring-red-200'
                     : darkMode
-                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white hover:shadow-md'
-                    : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm'
+                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white hover:shadow-md border-transparent'
+                    : 'text-gray-600 hover:bg-red-100 hover:text-red-600 hover:shadow-sm border-transparent hover:border-red-300'
                 }`}
               >
                 {/* Icon */}
@@ -125,7 +143,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
                   {item.badge && isExpanded && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                       active 
-                        ? 'bg-white text-blue-600' 
+                        ? 'bg-white text-red-600' 
                         : 'bg-yellow-400 text-gray-900'
                     }`}>
                       {item.badge}
@@ -145,6 +163,13 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
           })}
         </nav>
 
+        {/* User Dropdown - only show when expanded */}
+        {isExpanded && (
+          <div className="px-5 mb-4">
+            <UserDropdown darkMode={darkMode} />
+          </div>
+        )}
+
         {/* Expand/Collapse Indicator */}
         <div className="px-5 mt-auto">
           <div
@@ -156,7 +181,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
               isExpanded ? 'mx-auto rotate-180' : 'mx-auto'
             }`}
           >
-            <FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </div>
         </div>
       </aside>

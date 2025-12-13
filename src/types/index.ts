@@ -35,6 +35,13 @@ export interface Profile {
   last_name: string;
   phone?: string;
   avatar_url?: string;
+  photo_url?: string;
+  name?: string;
+  bio?: string;
+  address?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  department_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

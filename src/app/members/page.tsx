@@ -3,30 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import MemberForm from '@/components/MemberForm';
 import CSVImport from '@/components/CSVImport';
 import BulkCardGenerator from '@/components/BulkCardGenerator';
 import { Button, Card, CardBody, Input, Select, Badge, Table, Modal, ConfirmModal, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faUsers, 
-  faPlus, 
-  faSearch, 
-  faFilter, 
-  faDownload, 
-  faUpload, 
-  faEdit, 
-  faTrash, 
-  faEye, 
-  faPhone, 
-  faEnvelope, 
-  faMapMarkerAlt, 
-  faCalendarDays, 
-  faBriefcase, 
-  faCreditCard 
-} from '@fortawesome/free-solid-svg-icons';
-import { Users, Eye, Plus } from 'lucide-react';
+import { Users, Plus, Search, Filter, Download, Upload, Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Briefcase, CreditCard } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -56,6 +39,12 @@ interface Member {
 export default function MembersPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
+  const { 
+    departmentId, 
+    departmentName, 
+    isDepartmentLeader, 
+    canAccessAllDepartments 
+  } = useDepartmentAccess();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,10 +94,17 @@ export default function MembersPage() {
       setError(null);
       console.log('Fetching members from database...');
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('members')
-        .select('*')
+        .select('*, department_members(department_id, departments(name))')
         .order('member_number', { ascending: false });
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        query = query.eq('department_members.department_id', departmentId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -536,10 +532,27 @@ export default function MembersPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <FontAwesomeIcon icon={faUsers} className="h-8 w-8 mr-3 text-blue-600" />
+            <Users className="h-8 w-8 mr-3 text-blue-600" />
             Member Management
           </h1>
           <p className="text-gray-600 mt-2">Manage church members, visitors, and their information</p>
+          
+          {/* Department Leader Access Notification */}
+          {isDepartmentLeader && departmentName && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <Briefcase className="h-5 w-5 text-red-600 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800">
+                    Department View: {departmentName}
+                  </h3>
+                  <p className="text-sm text-red-700">
+                    Showing members from your department only. You can add, edit, and manage members within {departmentName}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error Alert */}

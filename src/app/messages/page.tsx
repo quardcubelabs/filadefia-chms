@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import { 
   Button, 
@@ -94,6 +95,7 @@ interface Member {
 export default function MessagesPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
+  const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
   
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
@@ -174,13 +176,20 @@ export default function MessagesPage() {
   const loadAnnouncements = async () => {
     if (!supabase) return;
     
-    const { data, error } = await supabase
+    let announcementsQuery = supabase
       .from('announcements')
       .select(`
         *,
         author:profiles(first_name, last_name),
         department:departments(name)
-      `)
+      `);
+
+    // Filter by department for department leaders
+    if (isDepartmentLeader && departmentId) {
+      announcementsQuery = announcementsQuery.eq('department_id', departmentId);
+    }
+
+    const { data, error } = await announcementsQuery
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -190,12 +199,19 @@ export default function MessagesPage() {
   const loadCommunications = async () => {
     if (!supabase) return;
     
-    const { data, error } = await supabase
+    let communicationsQuery = supabase
       .from('communications')
       .select(`
         *,
         sender:profiles(first_name, last_name)
-      `)
+      `);
+
+    // For department leaders, show communications sent by them or to department members
+    if (isDepartmentLeader && departmentId && user?.profile?.id) {
+      communicationsQuery = communicationsQuery.eq('sent_by', user.profile.id);
+    }
+
+    const { data, error } = await communicationsQuery
       .order('sent_at', { ascending: false });
 
     if (error) throw error;
@@ -236,24 +252,95 @@ export default function MessagesPage() {
     }
   };
 
+  const testDatabaseConnection = async () => {
+    console.log('Testing basic database connection...');
+    try {
+      const { data, error } = await supabase.from('profiles').select('id').limit(1);
+      console.log('Database test result:', { data, error });
+      return !error;
+    } catch (err) {
+      console.error('Database connection failed:', err);
+      return false;
+    }
+  };
+
   const handleCreateAnnouncement = async () => {
-    if (!supabase || !user?.profile?.id) return;
+    if (!supabase || !user?.profile?.id) {
+      setError('User not authenticated or profile missing');
+      return;
+    }
+
+    // Validate required fields
+    if (!announcementForm.title.trim()) {
+      setError('Title is required');
+      return;
+    }
+
+    if (!announcementForm.content.trim()) {
+      setError('Content is required');
+      return;
+    }
+
+    // Test database connection first
+    const isDbConnected = await testDatabaseConnection();
+    if (!isDbConnected) {
+      setError('Database connection failed. Please check your internet connection and try again.');
+      return;
+    }
 
     try {
+      // First test if we can read from the announcements table
+      console.log('Testing announcements table access...');
+      const { data: testData, count, error: testError } = await supabase
+        .from('announcements')
+        .select('id', { count: 'exact', head: true });
+      
+      console.log('Announcements table test result:', { 
+        count, 
+        error: testError,
+        hasData: !!testData,
+        supabaseUrl: supabase.supabaseUrl,
+        supabaseKey: supabase.supabaseKey ? 'present' : 'missing'
+      });
+      
+      if (testError) {
+        console.error('Cannot access announcements table:', {
+          message: testError.message,
+          details: testError.details,
+          hint: testError.hint,
+          code: testError.code
+        });
+        throw new Error(`Database access error: ${testError.message || testError.details || 'Unknown database error'}`);
+      }
+
       const announcementData = {
-        title: announcementForm.title,
-        content: announcementForm.content,
+        title: announcementForm.title.trim(),
+        content: announcementForm.content.trim(),
         author_id: user.profile.id,
-        department_id: announcementForm.department_id || null,
+        department_id: isDepartmentLeader ? departmentId : (announcementForm.department_id || null),
         priority: announcementForm.priority,
-        expires_at: announcementForm.expires_at || null
+        expires_at: announcementForm.expires_at ? new Date(announcementForm.expires_at).toISOString() : null
       };
 
-      const { error } = await supabase
-        .from('announcements')
-        .insert(announcementData);
+      console.log('Inserting announcement data:', announcementData);
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert(announcementData)
+        .select();
+
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error
+        });
+        throw new Error(error.message || error.details || 'Database operation failed');
+      }
+
+      console.log('Successfully created announcement:', data);
 
       setSuccess('Announcement created successfully!');
       setIsAnnouncementModalOpen(false);
@@ -267,7 +354,29 @@ export default function MessagesPage() {
       loadAnnouncements();
     } catch (err: any) {
       console.error('Error creating announcement:', err);
-      setError(err.message);
+      console.log('Error type:', typeof err);
+      console.log('Error keys:', Object.keys(err || {}));
+      console.log('User profile:', user?.profile);
+      console.log('Supabase instance:', !!supabase);
+      console.log('Announcement data:', {
+        title: announcementForm.title,
+        content: announcementForm.content,
+        author_id: user?.profile?.id,
+        department_id: announcementForm.department_id || null,
+        priority: announcementForm.priority,
+        expires_at: announcementForm.expires_at || null
+      });
+      
+      let errorMessage = 'An error occurred while creating the announcement';
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.details) {
+        errorMessage = err.details;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -461,6 +570,21 @@ export default function MessagesPage() {
               </div>
             </div>
 
+            {/* Department Access Notification */}
+            {isDepartmentLeader && departmentName && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <MessageSquare className="h-5 w-5 text-blue-600 mr-3" />
+                  <div>
+                    <h3 className="font-medium text-blue-900">Department Messages: {departmentName}</h3>
+                    <p className="text-blue-700 text-sm mt-1">
+                      You can view and manage messages and announcements for your department only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Alerts */}
             {error && (
               <Alert 
@@ -481,34 +605,36 @@ export default function MessagesPage() {
               </Alert>
             )}
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-6">
-              <nav className="flex space-x-8">
+            {/* Tabs - Same design as image */}
+            <div className="mb-6">
+              <nav className="flex space-x-0">
                 <button
                   onClick={() => setActiveTab('announcements')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
                     activeTab === 'announcements'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center space-x-2">
-                    <Megaphone className="h-4 w-4" />
-                    <span>Announcements</span>
-                  </div>
+                  <Megaphone className="h-4 w-4" />
+                  <span>Announcements</span>
+                  {activeTab === 'announcements' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab('communications')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
                     activeTab === 'communications'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center space-x-2">
-                    <Send className="h-4 w-4" />
-                    <span>Sent Messages</span>
-                  </div>
+                  <Send className="h-4 w-4" />
+                  <span>Sent Messages</span>
+                  {activeTab === 'communications' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                  )}
                 </button>
               </nav>
             </div>
@@ -783,15 +909,24 @@ export default function MessagesPage() {
               ]}
             />
 
-            <Select
-              label="Target Audience"
-              value={announcementForm.department_id}
-              onChange={(e) => setAnnouncementForm({ ...announcementForm, department_id: e.target.value })}
-              options={[
-                { value: "", label: "Church-wide" },
-                ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-              ]}
-            />
+            {!isDepartmentLeader ? (
+              <Select
+                label="Target Audience"
+                value={announcementForm.department_id}
+                onChange={(e) => setAnnouncementForm({ ...announcementForm, department_id: e.target.value })}
+                options={[
+                  { value: "", label: "Church-wide" },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                ]}
+              />
+            ) : (
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Target Audience</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName} Department
+                </div>
+              </div>
+            )}
           </div>
 
           <Input

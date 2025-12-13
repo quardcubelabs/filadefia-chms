@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import { 
   Button, 
@@ -97,6 +98,7 @@ interface FinancialSummary {
 export default function FinancePage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
+  const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
   
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -204,9 +206,16 @@ You can also click the "Seed Sample Data" button below to add test transactions.
       
       // Now fetch actual data - first try simple query without joins
       console.log('Fetching transactions (simple query first)...');
-      const { data: simpleData, error: simpleError } = await supabase
+      let simpleQuery = supabase
         .from('financial_transactions')
-        .select('*')
+        .select('*');
+
+      // Filter by department for department leaders
+      if (isDepartmentLeader && departmentId) {
+        simpleQuery = simpleQuery.eq('department_id', departmentId);
+      }
+
+      const { data: simpleData, error: simpleError } = await simpleQuery
         .order('date', { ascending: false });
 
       console.log('Simple query result - Data:', simpleData, 'Error:', simpleError);
@@ -223,13 +232,20 @@ You can also click the "Seed Sample Data" button below to add test transactions.
 
       // If simple query works, try with joins
       console.log('Simple query successful, now trying with joins...');
-      const { data, error } = await supabase
+      let transactionsQuery = supabase
         .from('financial_transactions')
         .select(`
           *,
           member:members(first_name, last_name, member_number),
           department:departments(name)
-        `)
+        `);
+
+      // Filter by department for department leaders
+      if (isDepartmentLeader && departmentId) {
+        transactionsQuery = transactionsQuery.eq('department_id', departmentId);
+      }
+
+      const { data, error } = await transactionsQuery
         .order('date', { ascending: false });
 
       console.log('Join query result - Data:', data, 'Error:', error);
@@ -450,7 +466,7 @@ You can also click the "Seed Sample Data" button below to add test transactions.
         description: formData.description || null,
         payment_method: formData.payment_method,
         reference_number: formData.reference_number || null,
-        department_id: formData.department_id || null,
+        department_id: isDepartmentLeader ? departmentId : (formData.department_id || null),
         date: formData.date,
         recorded_by: user.profile.id
       };
@@ -482,7 +498,7 @@ You can also click the "Seed Sample Data" button below to add test transactions.
         description: formData.description || null,
         payment_method: formData.payment_method,
         reference_number: formData.reference_number || null,
-        department_id: formData.department_id || null,
+        department_id: isDepartmentLeader ? departmentId : (formData.department_id || null),
         date: formData.date
       };
 
@@ -716,6 +732,21 @@ You can also click the "Seed Sample Data" button below to add test transactions.
                 </Button>
               </div>
             </div>
+
+            {/* Department Access Notification */}
+            {isDepartmentLeader && departmentName && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <DollarSign className="h-5 w-5 text-green-600 mr-3" />
+                  <div>
+                    <h3 className="font-medium text-green-900">Department Finances: {departmentName}</h3>
+                    <p className="text-green-700 text-sm mt-1">
+                      You can view and manage financial transactions for your department only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Alerts */}
             {error && (
@@ -1096,15 +1127,24 @@ You can also click the "Seed Sample Data" button below to add test transactions.
               ]}
             />
 
-            <Select
-              label="Department (Optional)"
-              value={formData.department_id}
-              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-              options={[
-                { value: "", label: "No Department" },
-                ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-              ]}
-            />
+            {!isDepartmentLeader ? (
+              <Select
+                label="Department (Optional)"
+                value={formData.department_id}
+                onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                options={[
+                  { value: "", label: "No Department" },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                ]}
+              />
+            ) : (
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1201,15 +1241,24 @@ You can also click the "Seed Sample Data" button below to add test transactions.
               ]}
             />
 
-            <Select
-              label="Department (Optional)"
-              value={formData.department_id}
-              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-              options={[
-                { value: "", label: "No Department" },
-                ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-              ]}
-            />
+            {!isDepartmentLeader ? (
+              <Select
+                label="Department (Optional)"
+                value={formData.department_id}
+                onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                options={[
+                  { value: "", label: "No Department" },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                ]}
+              />
+            ) : (
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

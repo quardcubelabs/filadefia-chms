@@ -11,7 +11,7 @@ import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert } fro
 import { 
   ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, Calendar, 
   Briefcase, Users, Heart, FileText, History, DollarSign,
-  User, Home, Building2, AlertCircle
+  User, Home, Building2, AlertCircle, CreditCard
 } from 'lucide-react';
 
 interface Member {
@@ -56,8 +56,21 @@ interface Contribution {
   id: string;
   date: string;
   amount: number;
-  type: string;
+  transaction_type: 'tithe' | 'offering' | 'donation' | 'project' | 'pledge' | 'mission' | 'welfare';
   description?: string;
+  payment_method: string;
+  currency: string;
+  reference_number?: string;
+  verified: boolean;
+  verified_at?: string;
+  created_at: string;
+  department?: {
+    name: string;
+  };
+  recorder?: {
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export default function MemberProfilePage() {
@@ -71,6 +84,19 @@ export default function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'contributions' | 'activity'>('overview');
+  
+  // Stats state
+  const [totalAttendance, setTotalAttendance] = useState<number>(0);
+  const [totalContributions, setTotalContributions] = useState<number>(0);
+  const [departmentCount, setDepartmentCount] = useState<number>(0);
+  const [contributionStats, setContributionStats] = useState({
+    totalRecords: 0,
+    averageAmount: 0,
+    monthlyTotal: 0,
+    yearlyTotal: 0,
+    lastContributionDate: null as string | null,
+    unverifiedCount: 0
+  });
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -93,23 +119,56 @@ export default function MemberProfilePage() {
       if (memberError) throw memberError;
       setMember(memberData);
 
-      // Fetch attendance (if table exists)
-      // const { data: attendanceData } = await supabase
-      //   .from('attendance')
-      //   .select('*')
-      //   .eq('member_id', params.id)
-      //   .order('date', { ascending: false })
-      //   .limit(10);
-      // setAttendance(attendanceData || []);
+      // Fetch attendance count
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('id', { count: 'exact' })
+        .eq('member_id', params.id)
+        .eq('present', true);
+      
+      if (!attendanceError) {
+        setTotalAttendance(attendanceData?.length || 0);
+      }
 
-      // Fetch contributions (if table exists)
-      // const { data: contributionsData } = await supabase
-      //   .from('contributions')
-      //   .select('*')
-      //   .eq('member_id', params.id)
-      //   .order('date', { ascending: false })
-      //   .limit(10);
-      // setContributions(contributionsData || []);
+      // Fetch detailed contributions data (similar to finance page)
+      const { data: contributionsData, error: contributionsError } = await supabase
+        .from('financial_transactions')
+        .select(`
+          id, 
+          amount, 
+          transaction_type, 
+          description, 
+          date, 
+          payment_method, 
+          currency, 
+          reference_number,
+          verified,
+          verified_at,
+          created_at,
+          department:departments(name),
+          recorder:profiles!recorded_by(first_name, last_name)
+        `)
+        .eq('member_id', params.id)
+        .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission', 'welfare'])
+        .order('date', { ascending: false });
+      
+      if (!contributionsError && contributionsData) {
+        const total = contributionsData.reduce((sum: number, transaction: any) => sum + Number(transaction.amount), 0);
+        setTotalContributions(total);
+        setContributions(contributionsData);
+        calculateContributionStats(contributionsData);
+      }
+
+      // Fetch department count
+      const { data: departmentData, error: departmentError } = await supabase
+        .from('department_members')
+        .select('id', { count: 'exact' })
+        .eq('member_id', params.id)
+        .eq('is_active', true);
+      
+      if (!departmentError) {
+        setDepartmentCount(departmentData?.length || 0);
+      }
 
     } catch (err: any) {
       setError(err.message || 'Failed to load member details');
@@ -158,6 +217,58 @@ export default function MemberProfilePage() {
       age--;
     }
     return age;
+  };
+
+  const formatContribution = (amount: number) => {
+    if (amount === 0) return '0';
+    if (amount >= 1000000) {
+      return `TZS ${(amount / 1000000).toFixed(1)}M`;
+    }
+    if (amount >= 1000) {
+      return `TZS ${(amount / 1000).toFixed(1)}K`;
+    }
+    return `TZS ${amount.toLocaleString()}`;
+  };
+
+  const calculateContributionStats = (contributionsData: Contribution[]) => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const totalRecords = contributionsData.length;
+    const totalAmount = contributionsData.reduce((sum, t) => sum + Number(t.amount), 0);
+    const averageAmount = totalRecords > 0 ? totalAmount / totalRecords : 0;
+    
+    // Monthly total (current month)
+    const monthlyTotal = contributionsData
+      .filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getMonth() === currentMonth &&
+               transactionDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    
+    // Yearly total (current year)
+    const yearlyTotal = contributionsData
+      .filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    
+    // Last contribution date
+    const lastContributionDate = contributionsData.length > 0 ? contributionsData[0].date : null;
+    
+    // Unverified count
+    const unverifiedCount = contributionsData.filter(t => !t.verified).length;
+
+    setContributionStats({
+      totalRecords,
+      averageAmount,
+      monthlyTotal,
+      yearlyTotal,
+      lastContributionDate,
+      unverifiedCount
+    });
   };
 
   if (!user && !authLoading) {
@@ -283,9 +394,9 @@ export default function MemberProfilePage() {
               </CardBody>
             </Card>
 
-            {/* Tabs */}
-            <div className="mb-6 border-b border-tag-gray-200">
-              <div className="flex space-x-8">
+            {/* Tabs - Same design as image */}
+            <div className="mb-6">
+              <nav className="flex space-x-0">
                 {[
                   { id: 'overview', label: 'Overview', icon: FileText },
                   { id: 'attendance', label: 'Attendance', icon: History },
@@ -295,17 +406,20 @@ export default function MemberProfilePage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-2 pb-4 px-2 border-b-2 transition-colors font-semibold ${
+                    className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
                       activeTab === tab.id
-                        ? 'border-tag-red-600 text-tag-red-600'
-                        : 'border-transparent text-tag-gray-600 hover:text-tag-gray-900'
+                        ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <tab.icon className="h-5 w-5" />
-                    {tab.label}
+                    <tab.icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                    {activeTab === tab.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                    )}
                   </button>
                 ))}
-              </div>
+              </nav>
             </div>
 
             {/* Tab Content */}
@@ -360,7 +474,7 @@ export default function MemberProfilePage() {
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
                         <History className="h-8 w-8 text-tag-blue-600" />
-                        <span className="text-3xl font-bold text-tag-gray-900">--</span>
+                        <span className="text-3xl font-bold text-tag-gray-900">{totalAttendance}</span>
                       </div>
                       <p className="text-sm font-semibold text-tag-gray-600">Total Attendance</p>
                     </CardBody>
@@ -370,7 +484,9 @@ export default function MemberProfilePage() {
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
                         <DollarSign className="h-8 w-8 text-tag-yellow-600" />
-                        <span className="text-3xl font-bold text-tag-gray-900">--</span>
+                        <span className="text-3xl font-bold text-tag-gray-900">
+                          {formatContribution(totalContributions)}
+                        </span>
                       </div>
                       <p className="text-sm font-semibold text-tag-gray-600">Total Contributions</p>
                     </CardBody>
@@ -380,7 +496,7 @@ export default function MemberProfilePage() {
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
                         <Users className="h-8 w-8 text-tag-red-600" />
-                        <span className="text-3xl font-bold text-tag-gray-900">--</span>
+                        <span className="text-3xl font-bold text-tag-gray-900">{departmentCount}</span>
                       </div>
                       <p className="text-sm font-semibold text-tag-gray-600">Departments</p>
                     </CardBody>
@@ -565,15 +681,186 @@ export default function MemberProfilePage() {
             )}
 
             {activeTab === 'contributions' && (
-              <Card variant="default">
-                <CardBody className="p-12">
-                  <EmptyState
-                    icon={<DollarSign className="h-12 w-12" />}
-                    title="No contribution records"
-                    description="Financial contributions tracking feature is coming soon"
-                  />
-                </CardBody>
-              </Card>
+              <div className="space-y-6">
+                {/* Contributions Summary - Enhanced */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card variant="default">
+                    <CardBody className="p-6 text-center">
+                      <div className="text-3xl font-bold text-green-600 mb-2">
+                        {formatContribution(totalContributions)}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-600">Total All Time</p>
+                    </CardBody>
+                  </Card>
+                  
+                  <Card variant="default">
+                    <CardBody className="p-6 text-center">
+                      <div className="text-3xl font-bold text-blue-600 mb-2">
+                        {contributionStats.totalRecords}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-600">Total Records</p>
+                    </CardBody>
+                  </Card>
+                  
+                  <Card variant="default">
+                    <CardBody className="p-6 text-center">
+                      <div className="text-3xl font-bold text-yellow-600 mb-2">
+                        {formatContribution(contributionStats.averageAmount)}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-600">Average Amount</p>
+                    </CardBody>
+                  </Card>
+
+                  <Card variant="default">
+                    <CardBody className="p-6 text-center">
+                      <div className="text-3xl font-bold text-purple-600 mb-2">
+                        {formatContribution(contributionStats.yearlyTotal)}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-600">This Year</p>
+                    </CardBody>
+                  </Card>
+                </div>
+
+                {/* Additional Stats Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card variant="default">
+                    <CardBody className="p-4 text-center">
+                      <div className="text-xl font-bold text-indigo-600 mb-1">
+                        {formatContribution(contributionStats.monthlyTotal)}
+                      </div>
+                      <p className="text-xs font-semibold text-gray-600">This Month</p>
+                    </CardBody>
+                  </Card>
+
+                  <Card variant="default">
+                    <CardBody className="p-4 text-center">
+                      <div className="text-xl font-bold text-orange-600 mb-1">
+                        {contributionStats.lastContributionDate ? 
+                          new Date(contributionStats.lastContributionDate).toLocaleDateString() : 'Never'}
+                      </div>
+                      <p className="text-xs font-semibold text-gray-600">Last Contribution</p>
+                    </CardBody>
+                  </Card>
+
+                  <Card variant="default">
+                    <CardBody className="p-4 text-center">
+                      <div className="text-xl font-bold text-red-600 mb-1">
+                        {contributionStats.unverifiedCount}
+                      </div>
+                      <p className="text-xs font-semibold text-gray-600">Unverified</p>
+                    </CardBody>
+                  </Card>
+                </div>
+
+                {/* Enhanced Contributions List */}
+                <Card variant="default">
+                  <CardBody className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                        <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                        Contribution History
+                      </h3>
+                      {contributions.length > 0 && (
+                        <Badge variant="info" dot>
+                          {contributions.length} total records
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {contributions.length === 0 ? (
+                      <EmptyState
+                        icon={<DollarSign className="h-12 w-12" />}
+                        title="No contribution records"
+                        description="No contributions have been recorded for this member yet"
+                      />
+                    ) : (
+                      <div className="space-y-3">
+                        {contributions.slice(0, 15).map((contribution) => (
+                          <div
+                            key={contribution.id}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="p-2 bg-green-100 rounded-lg">
+                                <DollarSign className="h-4 w-4 text-green-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-semibold text-gray-900 capitalize">
+                                    {contribution.transaction_type.replace('_', ' ')}
+                                  </p>
+                                  {!contribution.verified && (
+                                    <Badge variant="warning" size="sm">Unverified</Badge>
+                                  )}
+                                  {contribution.verified && (
+                                    <Badge variant="success" size="sm">Verified</Badge>
+                                  )}
+                                </div>
+                                
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(contribution.date).toLocaleDateString()}
+                                  </span>
+                                  <span className="flex items-center gap-1 capitalize">
+                                    <CreditCard className="h-3 w-3" />
+                                    {contribution.payment_method.replace('_', ' ')}
+                                  </span>
+                                  {contribution.department?.name && (
+                                    <span className="flex items-center gap-1">
+                                      <Building2 className="h-3 w-3" />
+                                      {contribution.department.name}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {contribution.description && (
+                                  <p className="text-sm text-gray-600 mt-1 italic">
+                                    "{contribution.description}"
+                                  </p>
+                                )}
+                                
+                                {contribution.reference_number && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Ref: {contribution.reference_number}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="text-right">
+                              <p className="font-bold text-green-600 text-lg">
+                                {contribution.currency} {Number(contribution.amount).toLocaleString()}
+                              </p>
+                              {contribution.recorder && (
+                                <p className="text-xs text-gray-500">
+                                  By: {contribution.recorder.first_name} {contribution.recorder.last_name}
+                                </p>
+                              )}
+                              {contribution.verified_at && (
+                                <p className="text-xs text-green-600">
+                                  ✓ {new Date(contribution.verified_at).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {contributions.length > 15 && (
+                          <div className="text-center pt-4 border-t border-gray-200">
+                            <p className="text-sm text-gray-600">
+                              Showing latest 15 of {contributions.length} contributions
+                            </p>
+                            <Button variant="ghost" size="sm" className="mt-2">
+                              Load More Contributions
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
             )}
 
             {activeTab === 'activity' && (

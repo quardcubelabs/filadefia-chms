@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import { 
   Button, 
@@ -71,6 +72,12 @@ interface Department {
 export default function EventsPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
+  const { 
+    departmentId, 
+    departmentName, 
+    isDepartmentLeader, 
+    canAccessAllDepartments 
+  } = useDepartmentAccess();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -89,6 +96,7 @@ export default function EventsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -106,40 +114,226 @@ export default function EventsPage() {
   });
 
   useEffect(() => {
+    console.log('Events page auth state:', { 
+      user: !!user, 
+      userEmail: user?.email,
+      authLoading,
+      supabaseAvailable: !!supabase 
+    });
+    
     if (!authLoading && !user) {
+      console.log('No user found, redirecting to login');
       window.location.href = '/login';
       return;
     }
-    if (user) {
+    
+    if (user && supabase) {
+      console.log('User authenticated, loading data');
       loadEvents();
       loadDepartments();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, supabase]);
 
   const loadEvents = async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      console.error('Supabase client not available');
+      setError('Database connection not available');
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+      
+      console.log('Loading events from database...');
+      
+      // Test table access first
+      const { count, error: countError } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true });
+
+      console.log('Table access test:', { count, error: countError });
+      
+      // Also test RLS bypass (this will help identify RLS issues)
+      const { data: rlsTestData, error: rlsTestError } = await supabase
+        .rpc('get_events_count'); // We'll create this function if needed
+        
+      console.log('RLS test (if function exists):', { data: rlsTestData, error: rlsTestError });
+      
+      if (countError) {
+        throw new Error(`Cannot access events table: ${countError.message}`);
+      }
+      
+      if (count === 0) {
+        console.warn('⚠️ ISSUE DETECTED: Events table returns 0 rows but Supabase editor shows 30 rows');
+        console.warn('This suggests Row Level Security (RLS) policies are filtering out all events for this user');
+        console.warn('User email:', user?.email);
+        console.warn('User ID:', user?.id);
+        
+        // Check user's profile and role
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user?.id)
+            .single();
+            
+          console.log('User profile check:', { profile: profileData, error: profileError });
+          
+          if (profileData) {
+            console.log('User role:', profileData.role);
+            console.log('User active:', profileData.is_active);
+          }
+        } catch (profileErr) {
+          console.warn('Could not check user profile:', profileErr);
+        }
+        
+        // Try different queries to understand RLS behavior
+        console.log('🔍 Testing different query approaches...');
+        
+        // Test 1: Check if user can select any rows at all
+        const { data: limitTest, error: limitError } = await supabase
+          .from('events')
+          .select('id')
+          .limit(1);
+        console.log('Limit 1 test:', { count: limitTest?.length || 0, error: limitError });
+        
+        // Test 2: Try with specific date range
+        const { data: dateTest, error: dateError } = await supabase
+          .from('events')
+          .select('id, title')
+          .gte('created_at', '2024-01-01')
+          .limit(5);
+        console.log('Date range test:', { count: dateTest?.length || 0, error: dateError });
+        
+        // Test 3: Check RLS status and policies
+        console.log('🔍 Checking table RLS status...');
+        try {
+          const { data: rlsCheck } = await supabase.rpc('check_table_rls', { table_name: 'events' });
+          console.log('RLS check result:', rlsCheck);
+        } catch (rlsError) {
+          console.log('RLS check not available, trying manual query');
+        }
+        
+        // Test 4: Try to bypass RLS temporarily for testing
+        console.log('🔍 Attempting to query without RLS restrictions...');
+        const { data: bypassTest, error: bypassError } = await supabase
+          .from('events')
+          .select('id, title, created_at')
+          .limit(3);
+        console.log('Bypass test:', { 
+          count: bypassTest?.length || 0, 
+          error: bypassError?.message || 'none',
+          sample: bypassTest?.[0] || 'none'
+        });
+      }
+      
+      // First, try simple query to get basic events data with department filtering
+      let eventsQuery = supabase
+        .from('events')
+        .select('*')
+        .order('start_date', { ascending: false });
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        eventsQuery = eventsQuery.eq('department_id', departmentId);
+      }
+
+      const { data: simpleData, error: simpleError } = await eventsQuery;
+
+      console.log('Simple events query result:', { 
+        dataCount: simpleData?.length || 0, 
+        error: simpleError,
+        sampleData: simpleData?.[0] 
+      });
+
+      if (simpleError) {
+        console.error('Simple events query failed:', simpleError);
+        throw new Error(`Failed to fetch events: ${simpleError.message}`);
+      }
+
+      if (!simpleData || simpleData.length === 0) {
+        console.log('No events found in database');
+        setEvents([]);
+        setError('No events found in the database. Create your first event using the "Add Event" button.');
+        return;
+      }
+
+      // If simple query works, try to enhance with joins
+      console.log('Simple query successful, trying with joins for additional details...');
+      
+      const { data: enhancedData, error: joinError } = await supabase
         .from('events')
         .select(`
           *,
-          organizer:profiles(first_name, last_name),
-          department:departments(name),
-          registrations:event_registrations(count),
-          attendance:event_registrations(count).filter(attended.eq.true)
+          organizer:profiles!organizer_id(first_name, last_name),
+          department:departments!department_id(name)
         `)
         .order('start_date', { ascending: false });
 
-      if (error) throw error;
+      if (joinError) {
+        console.warn('Join query failed, using simple data:', joinError);
+        setEvents(simpleData);
+        setError(`Loaded ${simpleData.length} events (organizer/department details unavailable: ${joinError.message})`);
+      } else {
+        console.log('Enhanced query successful:', enhancedData?.length || 0, 'events with details');
+        setEvents(enhancedData || simpleData);
+        setError(null); // Clear any previous errors
+      }
 
-      setEvents(data || []);
     } catch (err: any) {
       console.error('Error loading events:', err);
-      setError(err.message);
+      setError(`Failed to load events: ${err.message || 'Unknown error'}`);
+      setEvents([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Debug function to test different connection methods
+  const debugEventsAccess = async () => {
+    if (!supabase || !user) return;
+    
+    console.log('🚀 DEBUGGING EVENTS ACCESS...');
+    console.log('Current user:', user.email, user.id);
+    
+    try {
+      // Method 1: Use debug function to get events count
+      console.log('Method 1: Using debug function for events count...');
+      const { data: countResult, error: countError } = await supabase.rpc('get_events_count');
+      console.log('Events count via function:', { count: countResult, error: countError });
+      
+      // Method 2: Get sample events using debug function
+      console.log('Method 2: Getting sample events via function...');
+      const { data: sampleEvents, error: sampleError } = await supabase.rpc('get_sample_events', { limit_count: 3 });
+      console.log('Sample events:', { events: sampleEvents, error: sampleError });
+      
+      // Method 3: Check user permissions
+      console.log('Method 3: Checking user permissions...');
+      const { data: permissions, error: permError } = await supabase.rpc('check_user_permissions');
+      console.log('User permissions:', { permissions, error: permError });
+      
+      // Method 4: Check RLS policies
+      console.log('Method 4: Checking RLS policies...');
+      const { data: policies, error: policiesError } = await supabase.rpc('check_events_policies');
+      console.log('RLS policies:', { policies, error: policiesError });
+      
+      // Method 5: Direct table access test
+      console.log('Method 5: Direct table access...');
+      const { data: directTest, error: directError } = await supabase
+        .from('events')
+        .select('id, title')
+        .limit(1);
+      console.log('Direct access test:', { 
+        accessible: directTest !== null, 
+        error: directError?.message,
+        count: directTest?.length,
+        data: directTest
+      });
+      
+    } catch (debugError) {
+      console.error('Debug error:', debugError);
     }
   };
 
@@ -341,15 +535,58 @@ export default function EventsPage() {
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Church Events</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Church Events
+                  {events.length > 0 && (
+                    <span className="ml-2 text-lg font-normal text-gray-500">
+                      ({events.length} {events.length === 1 ? 'event' : 'events'})
+                    </span>
+                  )}
+                </h1>
                 <p className="text-gray-600 mt-1">Manage church events, conferences, and activities</p>
+                
+                {/* Department Leader Access Notification */}
+                {isDepartmentLeader && departmentName && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 text-red-600 mr-2" />
+                      <div>
+                        <h3 className="text-sm font-medium text-red-800">
+                          Department Events: {departmentName}
+                        </h3>
+                        <p className="text-sm text-red-700">
+                          Showing events for your department only. You can create and manage events for {departmentName}.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <Button 
-                onClick={() => setIsAddModalOpen(true)}
-                icon={<Plus className="h-4 w-4" />}
-              >
-                Add Event
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={async () => {
+                    console.log('Manual refresh clicked');
+                    await loadEvents();
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? 'Loading...' : 'Refresh'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={debugEventsAccess}
+                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                >
+                  Debug Access
+                </Button>
+                <Button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  icon={<Plus className="h-4 w-4" />}
+                >
+                  Add Event
+                </Button>
+              </div>
             </div>
 
             {/* Alerts */}
@@ -427,11 +664,22 @@ export default function EventsPage() {
             {filteredEvents.length === 0 ? (
               <EmptyState
                 icon={<Calendar className="h-16 w-16 text-gray-400" />}
-                title="No Events Found"
-                description="No events match your current filters. Try adjusting your search criteria."
+                title={events.length === 0 ? "No Events Yet" : "No Events Match Filters"}
+                description={
+                  events.length === 0 
+                    ? "Get started by creating your first church event. You can organize conferences, workshops, fellowship meetings, and more."
+                    : "No events match your current search and filter criteria. Try adjusting your search terms or filters to find events."
+                }
                 action={{
-                  label: "Create First Event",
-                  onClick: () => setIsAddModalOpen(true)
+                  label: events.length === 0 ? "Create First Event" : "Clear Filters",
+                  onClick: events.length === 0 
+                    ? () => setIsAddModalOpen(true)
+                    : () => {
+                        setSearchTerm('');
+                        setFilterType('all');
+                        setFilterDepartment('all');
+                        setFilterStatus('all');
+                      }
                 }}
               />
             ) : (

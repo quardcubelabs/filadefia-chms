@@ -103,8 +103,8 @@ export default function ComponentsShowcase() {
               onClick={() => setSelectedTab(section.id)}
               className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all ${
                 selectedTab === section.id
-                  ? 'bg-fcc-blue-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? 'bg-red-100 border border-red-600 text-red-700 shadow-md'
+                  : 'bg-white text-gray-700 hover:bg-red-100 hover:text-red-600'
               }`}
             >
               {section.label}

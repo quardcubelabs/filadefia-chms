@@ -1,4 +1,4 @@
-import { motion, easeOut, easeInOut } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
 
 interface AnimatedChartProps {
@@ -23,7 +23,6 @@ export const AnimatedChart = ({
           transition: { 
             duration: 1.5, 
             delay: delay / 1000,
-            ease: easeOut,
             rotate: { duration: 1.2 }
           }
         };
@@ -34,8 +33,7 @@ export const AnimatedChart = ({
           animate: { scaleY: 1 },
           transition: { 
             duration: 1.2, 
-            delay: delay / 1000,
-            ease: easeOut
+            delay: delay / 1000
           }
         };
       
@@ -45,8 +43,7 @@ export const AnimatedChart = ({
           animate: { pathLength: 1, opacity: 1 },
           transition: { 
             duration: 2, 
-            delay: delay / 1000,
-            ease: easeInOut
+            delay: delay / 1000
           }
         };
       
@@ -56,8 +53,7 @@ export const AnimatedChart = ({
           animate: { scaleY: 1, opacity: 1 },
           transition: { 
             duration: 1.8, 
-            delay: delay / 1000,
-            ease: easeOut
+            delay: delay / 1000
           }
         };
       
@@ -67,8 +63,7 @@ export const AnimatedChart = ({
           animate: { opacity: 1, scale: 1 },
           transition: { 
             duration: 1, 
-            delay: delay / 1000,
-            ease: easeOut
+            delay: delay / 1000
           }
         };
     }

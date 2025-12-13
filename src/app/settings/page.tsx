@@ -140,7 +140,7 @@ export default function SettingsPage() {
         .eq('member_id', user.profile.id);
 
       setStats({
-        totalContributions: contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0,
+        totalContributions: contributions?.reduce((sum: number, c: any) => sum + Number(c.amount), 0) || 0,
         totalEvents: events?.length || 0,
         memberSince: user.profile?.created_at ? new Date(user.profile.created_at).getFullYear().toString() : 'N/A',
       });
@@ -180,16 +180,29 @@ export default function SettingsPage() {
       setIsSaving(true);
       setUploadProgress(0);
 
+      // Check user permissions first
+      const { data: userData } = await supabase.auth.getUser();
+      console.log('Upload attempt by user:', userData?.user?.id, 'Role:', user?.profile?.role);
+
       // Upload to Supabase Storage
       const fileExt = selectedPhoto.name.split('.').pop();
       const fileName = `${user.profile.id}-${Date.now()}.${fileExt}`;
+      
+      console.log('Uploading to profile-photos bucket:', fileName);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-photos')
         .upload(fileName, selectedPhoto);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        if (uploadError.message.includes('row-level security')) {
+          throw new Error('Storage access denied. The "profile-photos" bucket may not exist or lacks proper permissions.');
+        }
+        throw uploadError;
+      }
 
+      console.log('Upload successful:', uploadData);
       setUploadProgress(50);
 
       // Get public URL
@@ -197,15 +210,19 @@ export default function SettingsPage() {
         .from('profile-photos')
         .getPublicUrl(fileName);
 
+      console.log('Public URL:', publicUrl);
       setUploadProgress(75);
 
-      // Update profile
+      // Update profile in the correct table (profiles, not user_profiles)
       const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ photo_url: publicUrl })
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
         .eq('id', user.profile.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
+      }
 
       setUploadProgress(100);
       setMessage({ type: 'success', text: 'Profile photo updated successfully!' });
@@ -215,9 +232,13 @@ export default function SettingsPage() {
       
       // Refresh auth to get updated profile
       window.location.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photo:', error);
-      setMessage({ type: 'error', text: 'Failed to update profile photo.' });
+      const errorMsg = error.message || 'Unknown error occurred';
+      setMessage({ 
+        type: 'error', 
+        text: `Failed to update profile photo: ${errorMsg}. Check console for details.` 
+      });
     } finally {
       setIsSaving(false);
       setUploadProgress(0);
@@ -381,24 +402,27 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Tab Navigation */}
-          <Card className={`${cardBg} p-1`}>
-            <div className="flex space-x-1">
+          {/* Tab Navigation - Same design as image */}
+          <Card className={`${cardBg} p-0`}>
+            <nav className="flex space-x-0">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-blue-100 text-blue-700'
-                      : `${textSecondary} hover:bg-gray-100`
+                      ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
                   <span>{tab.label}</span>
+                  {activeTab === tab.id && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                  )}
                 </button>
               ))}
-            </div>
+            </nav>
           </Card>
 
           {/* Tab Content */}
@@ -534,7 +558,7 @@ export default function SettingsPage() {
                     disabled={!isEditing}
                     placeholder="Tell us about yourself..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
                   />
                 </div>
               </div>
@@ -557,7 +581,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('notifications', 'email', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -573,7 +597,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('notifications', 'push', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -589,7 +613,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('notifications', 'events', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -605,7 +629,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('notifications', 'finances', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -621,7 +645,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('notifications', 'announcements', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
               </div>
@@ -644,7 +668,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('privacy', 'profileVisible', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -660,7 +684,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('privacy', 'showEmail', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -676,7 +700,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('privacy', 'showPhone', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
               </div>
@@ -709,7 +733,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingsUpdate('security', 'loginNotifications', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
 
@@ -747,11 +771,12 @@ export default function SettingsPage() {
                   <Select
                     value={settings.appearance.theme}
                     onChange={(value) => handleSettingsUpdate('appearance', 'theme', value)}
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="system">System</option>
-                  </Select>
+                    options={[
+                      { value: 'light', label: 'Light' },
+                      { value: 'dark', label: 'Dark' },
+                      { value: 'system', label: 'System' }
+                    ]}
+                  />
                 </div>
 
                 <div>
@@ -759,11 +784,12 @@ export default function SettingsPage() {
                   <Select
                     value={settings.appearance.language}
                     onChange={(value) => handleSettingsUpdate('appearance', 'language', value)}
-                  >
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                  </Select>
+                    options={[
+                      { value: 'en', label: 'English' },
+                      { value: 'es', label: 'Español' },
+                      { value: 'fr', label: 'Français' }
+                    ]}
+                  />
                 </div>
               </div>
             </Card>
@@ -771,7 +797,7 @@ export default function SettingsPage() {
 
           {/* Photo Upload Modal */}
           {showPhotoModal && (
-            <Modal onClose={() => setShowPhotoModal(false)}>
+            <Modal isOpen={showPhotoModal} onClose={() => setShowPhotoModal(false)}>
               <div className="p-6">
                 <h2 className="text-xl font-bold mb-4">Change Profile Photo</h2>
                 
@@ -839,7 +865,7 @@ export default function SettingsPage() {
 
           {/* Password Change Modal */}
           {showPasswordModal && (
-            <Modal onClose={() => setShowPasswordModal(false)}>
+            <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)}>
               <div className="p-6">
                 <h2 className="text-xl font-bold mb-4">Change Password</h2>
                 
@@ -925,7 +951,7 @@ export default function SettingsPage() {
 
           {/* Delete Account Modal */}
           {showDeleteModal && (
-            <Modal onClose={() => setShowDeleteModal(false)}>
+            <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
               <div className="p-6">
                 <h2 className="text-xl font-bold text-red-600 mb-4">Delete Account</h2>
                 <p className="text-gray-600 mb-6">

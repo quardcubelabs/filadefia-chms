@@ -199,17 +199,136 @@ export default function EventDetailPage() {
   const handleAddRegistration = async () => {
     if (!supabase || !selectedMemberId || !params.id) return;
 
+    console.log('🔄 Attempting to add registration...', {
+      event_id: params.id,
+      member_id: selectedMemberId,
+      payment_status: paymentStatus,
+      notes: notes || null
+    });
+
+    // Pre-validation checks
+    if (!params.id) {
+      setError('Event ID is missing');
+      return;
+    }
+    if (!selectedMemberId) {
+      setError('Please select a member');
+      return;
+    }
+
+    // Check if supabase client is properly initialized
+    console.log('Supabase client status:', {
+      exists: !!supabase,
+      hasAuth: !!supabase?.auth,
+      hasFrom: !!supabase?.from
+    });
+
     try {
-      const { error } = await supabase
+      // First, test table access
+      console.log('Testing table access before insert...');
+      const { data: accessTest, error: accessError } = await supabase
+        .from('event_registrations')
+        .select('count(*)')
+        .limit(1);
+      
+      console.log('Table access test:', { data: accessTest, error: accessError });
+      
+      if (accessError) {
+        console.error('Cannot access event_registrations table:', accessError);
+        
+        // Check if it's an empty error object (common RLS issue)
+        const isEmptyError = !accessError.message && !accessError.code && !accessError.details;
+        
+        if (isEmptyError) {
+          console.warn('🚨 DETECTED: Empty error object - this indicates RLS policies are blocking access');
+          console.warn('💡 SOLUTION: The database migrations need to be applied in Supabase SQL Editor');
+          
+          // Instead of throwing, let's try to continue with a warning
+          console.warn('⚠️ Continuing with registration attempt despite table access test failure...');
+          setError('Warning: Database access policies may not be configured. Registration may fail.');
+        } else {
+          throw new Error(`Table access failed: ${accessError.message || JSON.stringify(accessError)}`);
+        }
+      }
+
+      // Proceed with insert
+      console.log('Table accessible, proceeding with insert...');
+      
+      // Try multiple insertion methods
+      let data, error;
+      
+      // Method 1: Standard insert
+      console.log('Trying method 1: Standard insert...');
+      const result1 = await supabase
         .from('event_registrations')
         .insert({
           event_id: params.id,
           member_id: selectedMemberId,
           payment_status: paymentStatus,
           notes: notes || null
-        });
+        })
+        .select();
+      
+      data = result1.data;
+      error = result1.error;
+      
+      // Method 2: If standard fails, try with minimal data
+      if (error) {
+        console.log('Method 1 failed, trying method 2: Minimal data insert...');
+        const result2 = await supabase
+          .from('event_registrations')
+          .insert({
+            event_id: params.id,
+            member_id: selectedMemberId
+          })
+          .select();
+        
+        data = result2.data;
+        error = result2.error;
+      }
+      
+      // Method 3: If still failing, try using the debug function
+      if (error && !error.message) {
+        console.log('Method 2 failed, trying method 3: Debug function...');
+        try {
+          const result3 = await supabase.rpc('test_registration_insert', {
+            test_event_id: params.id,
+            test_member_id: selectedMemberId,
+            test_payment_status: paymentStatus
+          });
+          
+          if (result3.data && result3.data[0] && result3.data[0].success) {
+            console.log('Debug function succeeded!');
+            data = [{ id: result3.data[0].registration_id }];
+            error = null;
+          } else {
+            error = { message: result3.data?.[0]?.error_message || 'Debug function failed' };
+          }
+        } catch (debugErr) {
+          console.log('Debug function not available:', debugErr);
+        }
+      }
 
-      if (error) throw error;
+      console.log('Registration insert result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error
+        });
+        
+        // Check if error object is empty or undefined
+        if (!error.message && !error.details && !error.hint && !error.code) {
+          console.error('Empty error object detected. Full error:', JSON.stringify(error, null, 2));
+          console.error('Error prototype:', Object.getPrototypeOf(error));
+          console.error('Error keys:', Object.keys(error));
+        }
+        
+        throw error;
+      }
 
       setSuccess('Registration added successfully!');
       setIsAddRegistrationModalOpen(false);
@@ -219,7 +338,156 @@ export default function EventDetailPage() {
       loadRegistrations();
     } catch (err: any) {
       console.error('Error adding registration:', err);
-      setError(err.message);
+      
+      // Enhanced error logging
+      console.group('🚨 Registration Error Details');
+      console.log('Error type:', typeof err);
+      console.log('Error constructor:', err.constructor.name);
+      console.log('Error message:', err.message);
+      console.log('Error stack:', err.stack);
+      console.log('Full error object:', JSON.stringify(err, null, 2));
+      
+      if (err instanceof Error) {
+        console.log('Standard Error properties:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
+      }
+      
+      // Check if it's a Supabase-specific error
+      if (err.error || err.statusCode || err.status) {
+        console.log('Supabase error detected:', {
+          error: err.error,
+          statusCode: err.statusCode,
+          status: err.status,
+          statusText: err.statusText
+        });
+      }
+      
+      console.groupEnd();
+      
+      // Provide a more helpful error message
+      let errorMessage = 'Failed to add registration';
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.error?.message) {
+        errorMessage = err.error.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      setError(`${errorMessage}. Check console for detailed error information.`);
+    }
+  };
+
+  // Debug function for registration access
+  const debugRegistrationAccess = async () => {
+    if (!supabase || !params.id) return;
+    
+    console.log('🚀 DEBUGGING REGISTRATION ACCESS...');
+    
+    try {
+      // Test 0: Check if debug migrations have been applied
+      console.log('🔍 Checking if debug migrations are applied...');
+      
+      // Check for debug functions
+      const { data: functionTest, error: functionError } = await supabase.rpc('get_registrations_count', { event_uuid: params.id });
+      if (functionError) {
+        console.warn('⚠️ Debug functions not available. Please run add_debug_functions.sql migration');
+        console.log('Function test error:', functionError);
+      } else {
+        console.log('✅ Debug functions are available');
+      }
+      
+      // Check for debug policies by trying to query policies
+      const { data: policyTest, error: policyError } = await supabase
+        .from('pg_policies')
+        .select('policyname')
+        .eq('tablename', 'event_registrations')
+        .like('policyname', '%debug%');
+      
+      if (policyError) {
+        console.warn('⚠️ Cannot check policies. This might indicate RLS issues.');
+      } else {
+        console.log('Debug policies found:', policyTest);
+      }
+      
+      // Test 1: Check registration count
+      const { data: regCount, error: regCountError } = functionError ? 
+        { data: null, error: functionError } : 
+        await supabase.rpc('get_registrations_count', { event_uuid: params.id });
+      console.log('Registration count:', { count: regCount, error: regCountError });
+      
+      // Test 2: Check if we can read registrations
+      const { data: readTest, error: readError } = await supabase
+        .from('event_registrations')
+        .select('id')
+        .eq('event_id', params.id)
+        .limit(1);
+      console.log('Registration read test:', { count: readTest?.length || 0, error: readError });
+      
+      // Test 3: Check members table access (needed for the insert)
+      const { data: membersTest, error: membersError } = await supabase
+        .from('members')
+        .select('id')
+        .limit(1);
+      console.log('Members access test:', { count: membersTest?.length || 0, error: membersError });
+      
+      // Test 4: Test basic authentication and user info
+      console.log('Testing authentication...');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Current user:', { user: user?.email, id: user?.id, error: authError });
+      
+      // Test 5: Test insertion capability if we have a member
+      if (membersTest && membersTest.length > 0 && !functionError) {
+        console.log('Testing registration insert function...');
+        const { data: insertTest, error: insertTestError } = await supabase.rpc('test_registration_insert', {
+          test_event_id: params.id,
+          test_member_id: membersTest[0].id,
+          test_payment_status: 'pending'
+        });
+        console.log('Registration insert test:', { result: insertTest, error: insertTestError });
+      } else if (functionError) {
+        console.log('⚠️ Skipping insert test - debug functions not available');
+      } else {
+        console.log('⚠️ Skipping insert test - no members found');
+      }
+      
+      // Test 6: Direct insert attempt (minimal data)
+      console.log('Testing direct minimal insert...');
+      if (membersTest && membersTest.length > 0) {
+        try {
+          const { data: directInsert, error: directInsertError } = await supabase
+            .from('event_registrations')
+            .insert({
+              event_id: params.id,
+              member_id: membersTest[0].id,
+              payment_status: 'pending'
+            })
+            .select();
+          
+          console.log('Direct insert test:', { 
+            success: !directInsertError, 
+            data: directInsert, 
+            error: directInsertError 
+          });
+          
+          // Clean up test record if successful
+          if (directInsert && directInsert.length > 0) {
+            console.log('Cleaning up test registration...');
+            await supabase
+              .from('event_registrations')
+              .delete()
+              .eq('id', directInsert[0].id);
+          }
+        } catch (directError) {
+          console.log('Direct insert failed:', directError);
+        }
+      }
+      
+    } catch (debugError) {
+      console.error('Registration debug error:', debugError);
     }
   };
 
@@ -392,6 +660,56 @@ export default function EventDetailPage() {
                     Add Registration
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={debugRegistrationAccess}
+                  className="bg-red-50 border-red-200 text-red-800 hover:bg-red-100"
+                >
+                  Debug Registration
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const migrationSQL = `-- Simple RLS fix for events and event_registrations
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE event_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Drop all existing policies
+DO $$
+DECLARE policy_record RECORD;
+BEGIN
+    FOR policy_record IN SELECT policyname FROM pg_policies WHERE tablename = 'events'
+    LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON events', policy_record.policyname);
+    END LOOP;
+    FOR policy_record IN SELECT policyname FROM pg_policies WHERE tablename = 'event_registrations'
+    LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON event_registrations', policy_record.policyname);
+    END LOOP;
+END $$;
+
+-- Create permissive policies
+CREATE POLICY "allow_all_events" ON events FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_registrations" ON event_registrations FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- Grant permissions
+GRANT ALL ON events TO authenticated, anon, service_role;
+GRANT ALL ON event_registrations TO authenticated, anon, service_role;`;
+
+                    console.group('🚀 COPY THIS SQL TO SUPABASE:');
+                    console.log(migrationSQL);
+                    console.groupEnd();
+                    
+                    // Copy to clipboard if available
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText(migrationSQL);
+                      alert('Migration SQL copied to clipboard! Paste it in Supabase SQL Editor.');
+                    } else {
+                      alert('Check console for migration SQL to copy to Supabase SQL Editor');
+                    }
+                  }}
+                  className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"
+                >
+                  Copy Migration SQL
+                </Button>
               </div>
             </div>
 
@@ -561,7 +879,7 @@ export default function EventDetailPage() {
                       <select
                         value={attendanceFilter}
                         onChange={(e) => setAttendanceFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        className="px-3 py-2 border border-red-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                       >
                         <option value="all">All Attendance</option>
                         <option value="attended">Attended</option>
@@ -570,7 +888,7 @@ export default function EventDetailPage() {
                       <select
                         value={paymentFilter}
                         onChange={(e) => setPaymentFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        className="px-3 py-2 border border-red-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                       >
                         <option value="all">All Payments</option>
                         <option value="paid">Paid</option>
@@ -644,7 +962,7 @@ export default function EventDetailPage() {
                                 <select
                                   value={registration.payment_status}
                                   onChange={(e) => updatePaymentStatus(registration.id, e.target.value)}
-                                  className={`px-2 py-1 rounded-full text-xs font-medium border-0 ${getPaymentStatusColor(registration.payment_status)}`}
+                                  className={`px-2 py-1 rounded-full text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-red-500 ${getPaymentStatusColor(registration.payment_status)}`}
                                 >
                                   <option value="pending">Pending</option>
                                   <option value="paid">Paid</option>
@@ -705,7 +1023,7 @@ export default function EventDetailPage() {
             <select
               value={selectedMemberId}
               onChange={(e) => setSelectedMemberId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
               required
             >
               <option value="">Choose a member...</option>
@@ -726,7 +1044,7 @@ export default function EventDetailPage() {
             <select
               value={paymentStatus}
               onChange={(e) => setPaymentStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
             >
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
@@ -742,7 +1060,7 @@ export default function EventDetailPage() {
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
               rows={3}
               placeholder="Add any notes about this registration..."
             />

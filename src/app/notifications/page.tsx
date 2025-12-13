@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useEffect, useState } from 'react';
 import { EmptyState, Button, Card, Badge, Modal, Input, Select } from '@/components/ui';
 import Sidebar from '@/components/Sidebar';
@@ -49,6 +50,7 @@ interface NotificationPreferences {
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
   const supabase = createClientComponentClient();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -313,17 +315,17 @@ export default function NotificationsPage() {
               </div>
           <div className="flex gap-3">
             {unreadCount > 0 && (
-              <Button variant="outline" onClick={markAllAsRead}>
+              <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={markAllAsRead}>
                 <CheckCheck className="w-4 h-4 mr-2" />
                 Mark All Read
               </Button>
             )}
-            <Button variant="outline" onClick={() => setShowSettings(true)}>
+            <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={() => setShowSettings(true)}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
             {notifications.length > 0 && (
-              <Button variant="outline" onClick={clearAllNotifications} className="text-red-600 hover:text-red-700">
+              <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={clearAllNotifications}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear All
               </Button>
@@ -331,18 +333,33 @@ export default function NotificationsPage() {
           </div>
         </div>
 
+        {/* Department Access Notification */}
+        {isDepartmentLeader && departmentName && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <Bell className="h-5 w-5 text-yellow-600 mr-3" />
+              <div>
+                <h3 className="font-medium text-yellow-900">Department Notifications: {departmentName}</h3>
+                <p className="text-yellow-700 text-sm mt-1">
+                  You'll receive notifications related to your department activities and system-wide announcements.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-500 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search notifications..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-red-300 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-red-50 focus:outline-none"
                 />
               </div>
             </div>
@@ -354,6 +371,7 @@ export default function NotificationsPage() {
                 { value: "unread", label: "Unread Only" },
                 { value: "read", label: "Read Only" }
               ]}
+              className="border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50"
             />
             <Select
               value={typeFilter}
@@ -367,6 +385,7 @@ export default function NotificationsPage() {
                 { value: "document", label: "Documents" },
                 { value: "system", label: "System" }
               ]}
+              className="border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50"
             />
           </div>
         </div>
@@ -420,8 +439,8 @@ export default function NotificationsPage() {
                         <div className="flex items-center gap-2">
                           {notification.action_url && (
                             <Button 
-                              variant="outline" 
                               size="sm"
+                              className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200"
                               onClick={() => {
                                 if (!notification.read) {
                                   markAsRead(notification.id);
@@ -602,7 +621,7 @@ export default function NotificationsPage() {
               <Button variant="outline" onClick={() => setShowSettings(false)}>
                 Cancel
               </Button>
-              <Button onClick={updatePreferences}>
+              <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={updatePreferences}>
                 Save Settings
               </Button>
             </div>

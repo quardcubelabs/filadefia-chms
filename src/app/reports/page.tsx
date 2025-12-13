@@ -29,6 +29,7 @@ import { Card, CardBody, Button, Badge, Loading, Alert } from '@/components/ui';
 import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import jsPDF from 'jspdf';
 
 // Update the JumuiyaData interface to include all required properties
@@ -134,10 +135,60 @@ interface ReportData {
 type ReportType = 'membership' | 'financial' | 'attendance' | 'jumuiya' | 'comprehensive';
 type ReportPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
 
+// Additional type definitions for data structures
+interface Member {
+  id: string;
+  status: string;
+  created_at: string;
+  department_members?: Array<{
+    department_id: string;
+    departments: { name: string };
+  }>;
+}
+
+interface FinancialTransaction {
+  id: string;
+  transaction_type: string;
+  amount: string | number;
+  date: string;
+  category?: string;
+}
+
+interface Event {
+  id: string;
+  event_type: string;
+  start_date: string;
+  event_registrations?: Array<{ id: string }>;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  swahili_name?: string;
+  leader_id?: string;
+  department_members?: Array<{
+    member_id: string;
+    members: {
+      id: string;
+      status: string;
+      first_name: string;
+      last_name: string;
+    };
+  }>;
+}
+
 export default function ReportsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { 
+    departmentId, 
+    departmentName, 
+    isDepartmentLeader, 
+    canAccessAllDepartments,
+    loading: departmentLoading 
+  } = useDepartmentAccess();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [reportType, setReportType] = useState<ReportType>('comprehensive');
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('monthly');
   const [startDate, setStartDate] = useState('');
@@ -182,6 +233,15 @@ export default function ReportsPage() {
     }
   }, [reportPeriod]);
 
+  // Show loading while department access is being determined
+  if (authLoading || departmentLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loading size="lg" />
+      </div>
+    );
+  }
+
   const generateReport = async () => {
     if (!startDate || !endDate) {
       setError('Please select start and end dates');
@@ -191,6 +251,9 @@ export default function ReportsPage() {
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
+
+      console.log('Generating report...', { reportType, startDate, endDate });
 
       // Fetch all data in parallel
       const [
@@ -213,7 +276,7 @@ export default function ReportsPage() {
         fetchDepartmentStats()
       ]);
 
-      setReportData({
+      const reportData = {
         ...membersData,
         ...financialData,
         ...attendanceData,
@@ -222,10 +285,16 @@ export default function ReportsPage() {
         financialStats,
         eventStats,
         departmentStats
-      });
+      };
+
+      setReportData(reportData);
+      setSuccess('Report generated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+      
+      console.log('Report generated successfully:', reportData);
     } catch (err) {
       console.error('Error generating report:', err);
-      setError('Failed to generate report. Please try again.');
+      setError('Failed to generate report. Please check your database connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -256,327 +325,826 @@ export default function ReportsPage() {
   };
 
   const fetchFinancialData = async () => {
-    const { data: transactions, error } = await supabase
-      .from('offerings')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
+    try {
+      console.log('Fetching financial data from financial_transactions table...');
+      
+      const { data: transactions, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error fetching financial data:', error);
+        throw error;
+      }
 
-    const income = transactions?.filter((t: any) => t.type === 'income').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
-    const expenses = transactions?.filter((t: any) => t.type === 'expense').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
-    const offerings = transactions?.filter((t: any) => t.category === 'offering').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
-    const tithes = transactions?.filter((t: any) => t.category === 'tithe').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+      console.log('Financial transactions found:', transactions?.length || 0);
 
-    return {
-      totalIncome: income,
-      totalExpenses: expenses,
-      netAmount: income - expenses,
-      totalOfferings: offerings,
-      totalTithes: tithes
-    };
+      if (!transactions || transactions.length === 0) {
+        return {
+          totalIncome: 0,
+          totalExpenses: 0,
+          netAmount: 0,
+          totalOfferings: 0,
+          totalTithes: 0
+        };
+      }
+
+      // Calculate totals based on transaction_type enum
+      const incomeTypes = ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'];
+      const expenseTypes = ['expense', 'welfare'];
+      
+      const income = transactions
+        .filter((t: any) => incomeTypes.includes(t.transaction_type))
+        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
+        
+      const expenses = transactions
+        .filter((t: any) => expenseTypes.includes(t.transaction_type))
+        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
+        
+      const offerings = transactions
+        .filter((t: any) => t.transaction_type === 'offering')
+        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
+        
+      const tithes = transactions
+        .filter((t: any) => t.transaction_type === 'tithe')
+        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
+
+      return {
+        totalIncome: income,
+        totalExpenses: expenses,
+        netAmount: income - expenses,
+        totalOfferings: offerings,
+        totalTithes: tithes
+      };
+    } catch (err) {
+      console.error('Error in fetchFinancialData:', err);
+      return {
+        totalIncome: 0,
+        totalExpenses: 0,
+        netAmount: 0,
+        totalOfferings: 0,
+        totalTithes: 0
+      };
+    }
   };
 
   const fetchAttendanceData = async () => {
-    const { data: attendance, error } = await supabase
-      .from('attendance')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
+    try {
+      console.log('Fetching attendance data...');
+      
+      const { data: attendance, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error fetching attendance data:', error);
+        // Don't throw error, just return default values
+        return {
+          averageAttendance: 0,
+          totalEvents: 0
+        };
+      }
 
-    const totalAttendance = attendance?.reduce((sum: number, a: any) => sum + (a.count || 0), 0) || 0;
-    const averageAttendance = attendance?.length ? totalAttendance / attendance.length : 0;
+      console.log('Attendance records found:', attendance?.length || 0);
 
-    return {
-      averageAttendance: Math.round(averageAttendance),
-      totalEvents: attendance?.length || 0
-    };
+      if (!attendance || attendance.length === 0) {
+        return {
+          averageAttendance: 0,
+          totalEvents: 0
+        };
+      }
+
+      // Group by date to count unique attendance events
+      const uniqueDates = [...new Set(attendance.map((a: any) => a.date))];
+      const totalEvents = uniqueDates.length;
+      
+      // Count total attendees
+      const totalAttendees = attendance.length;
+      const averageAttendance = totalEvents > 0 ? Math.round(totalAttendees / totalEvents) : 0;
+
+      return {
+        averageAttendance,
+        totalEvents
+      };
+    } catch (err) {
+      console.error('Error in fetchAttendanceData:', err);
+      return {
+        averageAttendance: 0,
+        totalEvents: 0
+      };
+    }
   };
 
   const fetchJumuiyasData = async (): Promise<JumuiyaData[]> => {
-    const { data: jumuiyas, error } = await supabase
-      .from('jumuiyas')
-      .select(`
-        *,
-        members:members(count),
-        offerings:offerings(amount, type)
-      `);
+    try {
+      console.log('Fetching department data (jumuiyas equivalent)...');
+      
+      // Since there's no jumuiyas table, use departments as equivalent
+      const { data: departments, error } = await supabase
+        .from('departments')
+        .select(`
+          id,
+          name,
+          swahili_name,
+          description,
+          leader_id,
+          is_active,
+          department_members(
+            member_id,
+            members(id, status)
+          )
+        `);
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error fetching departments data:', error);
+        return [];
+      }
 
-    return jumuiyas?.map((j: any) => {
-      const totalIncome = j.offerings?.filter((o: any) => o.type === 'income').reduce((sum: number, o: any) => sum + (o.amount || 0), 0) || 0;
-      const totalExpenses = j.offerings?.filter((o: any) => o.type === 'expense').reduce((sum: number, o: any) => sum + (o.amount || 0), 0) || 0;
+      console.log('Departments found:', departments?.length || 0);
+
+      if (!departments || departments.length === 0) {
+        return [];
+      }
+
+      return departments.map((dept: any) => {
+        const members = dept.department_members || [];
+        const activeMembers = members.filter((dm: any) => 
+          dm.members && dm.members.status === 'active'
+        ).length;
+        const totalMembers = members.length;
+
+        return {
+          id: dept.id,
+          name: dept.name,
+          swahiliName: dept.swahili_name || dept.name,
+          leader: 'N/A', // Would need to fetch leader details separately
+          memberCount: totalMembers,
+          activeMembers,
+          inactiveMembers: totalMembers - activeMembers,
+          recentEvents: 0,
+          totalIncome: 0, // Would need financial transactions by department
+          totalExpenses: 0,
+          netAmount: 0,
+          recentTransactions: []
+        };
+      });
+    } catch (err) {
+      console.error('Error in fetchJumuiyasData:', err);
+      return [];
+    }
+  };
+
+  const fetchMembershipStats = async () => {
+    try {
+      console.log('Fetching membership statistics...');
+      
+      let query = supabase
+        .from('members')
+        .select('id, status, created_at, department_members(department_id, departments(name))');
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        query = query.eq('department_members.department_id', departmentId);
+      }
+
+      const { data: members, error } = await query;
+
+      if (error) {
+        console.error('Error fetching membership stats:', error);
+        return {
+          activeMembers: 0,
+          newMembersThisMonth: 0,
+          membersByStatus: {},
+          membersByDepartment: [],
+          totalMembers: 0
+        };
+      }
+
+      const totalMembers = members?.length || 0;
+      const activeMembers = members?.filter((m: Member) => m.status === 'active').length || 0;
+      
+      // Calculate new members this month
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const newMembersThisMonth = members?.filter((m: Member) => {
+        const createdDate = new Date(m.created_at);
+        return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+      }).length || 0;
+
+      // Count members by status
+      const membersByStatus = members?.reduce((acc: { [key: string]: number }, member: Member) => {
+        acc[member.status] = (acc[member.status] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      // Count members by department
+      const departmentCounts: { [key: string]: number } = {};
+      members?.forEach((member: Member) => {
+        if (member.department_members && member.department_members.length > 0) {
+          member.department_members.forEach((dm: any) => {
+            if (dm.departments) {
+              const deptName = dm.departments.name;
+              departmentCounts[deptName] = (departmentCounts[deptName] || 0) + 1;
+            }
+          });
+        } else {
+          departmentCounts['Unassigned'] = (departmentCounts['Unassigned'] || 0) + 1;
+        }
+      });
+
+      const membersByDepartment = Object.entries(departmentCounts).map(([name, count]) => ({
+        name,
+        count
+      }));
 
       return {
-        id: j.id,
-        name: j.name,
-        swahiliName: j.swahili_name,
-        leader: j.leader_name,
-        memberCount: j.members?.[0]?.count || 0,
-        activeMembers: j.members?.[0]?.count || 0,
-        inactiveMembers: 0,
-        recentEvents: 0,
+        activeMembers,
+        newMembersThisMonth,
+        membersByStatus,
+        membersByDepartment,
+        totalMembers
+      };
+    } catch (err) {
+      console.error('Error in fetchMembershipStats:', err);
+      return {
+        activeMembers: 0,
+        newMembersThisMonth: 0,
+        membersByStatus: {},
+        membersByDepartment: [],
+        totalMembers: 0
+      };
+    }
+  };
+
+  const fetchFinancialStats = async () => {
+    try {
+      console.log('Fetching financial statistics...');
+      
+      let query = supabase
+        .from('financial_transactions')
+        .select(`
+          *,
+          members(department_members(department_id, departments(name)))
+        `);
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        query = query.eq('members.department_members.department_id', departmentId);
+      }
+
+      const { data: transactions, error } = await query;
+
+      if (error) {
+        console.error('Error fetching financial stats:', error);
+        return {
+          totalIncome: 0,
+          totalExpenses: 0,
+          netAmount: 0,
+          monthlyIncome: 0,
+          incomeByType: [],
+          monthlyTrends: []
+        };
+      }
+
+      if (!transactions || transactions.length === 0) {
+        return {
+          totalIncome: 0,
+          totalExpenses: 0,
+          netAmount: 0,
+          monthlyIncome: 0,
+          incomeByType: [],
+          monthlyTrends: []
+        };
+      }
+
+      const incomeTypes = ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'];
+      const expenseTypes = ['expense', 'welfare'];
+
+      const totalIncome = transactions
+        .filter((t: FinancialTransaction) => incomeTypes.includes(t.transaction_type))
+        .reduce((sum: number, t: FinancialTransaction) => sum + parseFloat(String(t.amount)), 0);
+
+      const totalExpenses = transactions
+        .filter((t: FinancialTransaction) => expenseTypes.includes(t.transaction_type))
+        .reduce((sum: number, t: FinancialTransaction) => sum + parseFloat(String(t.amount)), 0);
+
+      // Calculate this month's income
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthlyIncome = transactions
+        .filter((t: FinancialTransaction) => {
+          const transDate = new Date(t.date);
+          return incomeTypes.includes(t.transaction_type) &&
+                 transDate.getMonth() === currentMonth &&
+                 transDate.getFullYear() === currentYear;
+        })
+        .reduce((sum: number, t: FinancialTransaction) => sum + parseFloat(String(t.amount)), 0);
+
+      // Group income by type
+      const incomeByType = incomeTypes.map(type => ({
+        type,
+        amount: transactions
+          .filter((t: FinancialTransaction) => t.transaction_type === type)
+          .reduce((sum: number, t: FinancialTransaction) => sum + parseFloat(String(t.amount)), 0)
+      })).filter(item => item.amount > 0);
+
+      return {
         totalIncome,
         totalExpenses,
         netAmount: totalIncome - totalExpenses,
-        recentTransactions: []
+        monthlyIncome,
+        incomeByType,
+        monthlyTrends: [] // Could implement monthly trends calculation
       };
-    }) || [];
+    } catch (err) {
+      console.error('Error in fetchFinancialStats:', err);
+      return {
+        totalIncome: 0,
+        totalExpenses: 0,
+        netAmount: 0,
+        monthlyIncome: 0,
+        incomeByType: [],
+        monthlyTrends: []
+      };
+    }
+  };
+
+  const fetchEventStats = async () => {
+    try {
+      console.log('Fetching event statistics...');
+      
+      let query = supabase
+        .from('events')
+        .select('id, event_type, start_date, department_id, event_registrations(id)');
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        query = query.eq('department_id', departmentId);
+      }
+
+      const { data: events, error } = await query;
+
+      if (error) {
+        console.error('Error fetching event stats:', error);
+        return {
+          totalEvents: 0,
+          upcomingEvents: 0,
+          completedEvents: 0,
+          averageAttendance: 0,
+          eventsByType: []
+        };
+      }
+
+      const totalEvents = events?.length || 0;
+      const now = new Date();
+      
+      const upcomingEvents = events?.filter((e: Event) => new Date(e.start_date) > now).length || 0;
+      const completedEvents = totalEvents - upcomingEvents;
+
+      // Calculate average attendance from registrations
+      const totalRegistrations = events?.reduce((sum: number, event: Event) => 
+        sum + (event.event_registrations?.length || 0), 0) || 0;
+      const averageAttendance = totalEvents > 0 ? Math.round(totalRegistrations / totalEvents) : 0;
+
+      // Group events by type
+      const eventTypeCount: { [key: string]: number } = {};
+      events?.forEach((event: Event) => {
+        eventTypeCount[event.event_type] = (eventTypeCount[event.event_type] || 0) + 1;
+      });
+
+      const eventsByType = Object.entries(eventTypeCount).map(([type, count]) => ({
+        type,
+        count
+      }));
+
+      return {
+        totalEvents,
+        upcomingEvents,
+        completedEvents,
+        averageAttendance,
+        eventsByType
+      };
+    } catch (err) {
+      console.error('Error in fetchEventStats:', err);
+      return {
+        totalEvents: 0,
+        upcomingEvents: 0,
+        completedEvents: 0,
+        averageAttendance: 0,
+        eventsByType: []
+      };
+    }
+  };
+
+  const fetchDepartmentStats = async (): Promise<DepartmentData[]> => {
+    try {
+      console.log('Fetching department statistics...');
+      
+      const { data: departments, error } = await supabase
+        .from('departments')
+        .select(`
+          id,
+          name,
+          swahili_name,
+          leader_id,
+          department_members(
+            member_id,
+            members(id, status, first_name, last_name)
+          )
+        `);
+
+      if (error) {
+        console.error('Error fetching department stats:', error);
+        return [];
+      }
+
+      return departments?.map((dept: Department) => {
+        const members = dept.department_members || [];
+        const activeMembers = members.filter((dm: { member_id: string; members: { id: string; status: string; first_name: string; last_name: string } }) => 
+          dm.members && dm.members.status === 'active'
+        ).length;
+        const totalMembers = members.length;
+
+        return {
+          id: dept.id,
+          name: dept.name,
+          swahiliName: dept.swahili_name,
+          leader: dept.leader_id ? {
+            name: 'Department Leader', // Would need separate query for leader details
+            email: '',
+            phone: ''
+          } : undefined,
+          memberCount: totalMembers,
+          activeMembers,
+          inactiveMembers: totalMembers - activeMembers,
+          totalIncome: 0, // Would need financial transactions by department
+          totalExpenses: 0,
+          netAmount: 0,
+          recentEvents: 0,
+          recentTransactions: 0,
+          transactionCount: 0
+        };
+      }) || [];
+    } catch (err) {
+      console.error('Error in fetchDepartmentStats:', err);
+      return [];
+    }
   };
 
   const exportToPDF = () => {
     if (!reportData) return;
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
+    // Create jsPDF document
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4'
+    });
     
-    // Header
-    doc.setFontSize(20);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    // ========== COVER PAGE WITH EXACT DESIGN ==========
+    
+    // Background - light gray
+    doc.setFillColor(245, 245, 245);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    // Dark gray diagonal background element (top-left)
+    doc.setFillColor(74, 85, 104);
+    doc.rect(0, 0, 200, 150, 'F');
+    
+    // Main red diagonal shape (center-left)
+    doc.setFillColor(220, 38, 38);
+    
+    // Large red diagonal rectangle
+    doc.rect(50, 150, 300, 80, 'F');
+    
+    // Secondary red shape (center)
+    doc.rect(200, 280, 200, 60, 'F');
+    
+    // Smaller red accent shape (bottom-right)
+    doc.setFillColor(220, 38, 38);
+    doc.rect(400, 600, 100, 40, 'F');
+    
+    // Header section with logo
+    doc.setFillColor(45, 55, 72);
+    doc.rect(0, 0, pageWidth, 60, 'F');
+    
+    // Church logo (cross design)
+    doc.setFillColor(220, 38, 38);
+    doc.rect(40, 15, 30, 30, 'F');
+    
+    // Cross symbol
+    doc.setFillColor(255, 255, 255);
+    doc.rect(50, 20, 10, 20, 'F');
+    doc.rect(45, 27, 20, 6, 'F');
+    
+    // Church name in header
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Filadelfia Church Report', pageWidth / 2, 20, { align: 'center' });
+    doc.text('FILADELFIA CHURCH', 90, 35);
     
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Report Type: ${reportType.toUpperCase()}`, 20, 35);
-    doc.text(`Period: ${startDate} to ${endDate}`, 20, 42);
+    doc.text('Tanzania Assemblies of God', 90, 50);
     
-    let yPos = 55;
-
+    // Main title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(48);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Annual', 50, 180);
+    
+    doc.setFontSize(60);
+    doc.text('REPORT', 50, 240);
+    
+    // Year/Period
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'normal');
+    doc.text('2024 / 2025', 50, 320);
+    
+    // Dotted decoration
+    doc.setFillColor(255, 255, 255);
+    for (let i = 0; i < 8; i++) {
+      doc.circle(30, 370 + (i * 12), 3, 'F');
+    }
+    
+    // Bottom information panel
+    doc.setFillColor(220, 38, 38);
+    doc.rect(50, pageHeight - 200, 300, 120, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PREPARED BY', 70, pageHeight - 170);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Church Leadership Team', 70, pageHeight - 150);
+    
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PRESENTED BY', 70, pageHeight - 120);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Pastor & Executive Committee', 70, pageHeight - 100);
+    
+    // Small text at bottom
+    doc.setTextColor(102, 102, 102);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 50, pageHeight - 30);
+    doc.text(`Report Type: ${reportType.toUpperCase()}`, 50, pageHeight - 15);
+    
+    // Add new page for content
+    doc.addPage();
+    
+    // ========== CONTENT PAGES ==========
+    let yPos = 80;
+    
+    // Content page header
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Report Summary', 50, 50);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Period: ${startDate} to ${endDate}`, 50, 70);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 350, 70);
+    
     // Membership Section
     if (reportType === 'membership' || reportType === 'comprehensive') {
-      doc.setFontSize(14);
+      // Red section header background
+      doc.setFillColor(220, 38, 38);
+      doc.rect(50, yPos - 10, pageWidth - 100, 30, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text('Membership Statistics', 20, yPos);
-      yPos += 10;
+      doc.text('Membership Statistics', 60, yPos + 10);
+      yPos += 40;
+      
+      // Content box
+      doc.setFillColor(249, 249, 249);
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(50, yPos, pageWidth - 100, 120, 'FD');
 
-      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Total Members: ${reportData.totalMembers}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Active Members: ${reportData.activeMembers}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Inactive Members: ${reportData.inactiveMembers}`, 25, yPos);
-      yPos += 7;
-      doc.text(`New Members: ${reportData.newMembers}`, 25, yPos);
-      yPos += 15;
+      doc.text(`Total Members: ${reportData.totalMembers}`, 70, yPos + 25);
+      doc.text(`Active Members: ${reportData.activeMembers}`, 70, yPos + 45);
+      doc.text(`Inactive Members: ${reportData.inactiveMembers}`, 70, yPos + 65);
+      doc.text(`New Members: ${reportData.newMembers}`, 70, yPos + 85);
+      yPos += 140;
     }
 
     // Financial Section
     if (reportType === 'financial' || reportType === 'comprehensive') {
-      doc.setFontSize(14);
+      // Red section header background
+      doc.setFillColor(220, 38, 38);
+      doc.rect(50, yPos - 10, pageWidth - 100, 30, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text('Financial Statistics', 20, yPos);
-      yPos += 10;
+      doc.text('Financial Statistics', 60, yPos + 10);
+      yPos += 40;
+      
+      // Content box
+      doc.setFillColor(249, 249, 249);
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(50, yPos, pageWidth - 100, 140, 'FD');
 
-      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Total Income: ${formatCurrency(reportData.totalIncome)}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Total Expenses: ${formatCurrency(reportData.totalExpenses)}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Net Amount: ${formatCurrency(reportData.netAmount)}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Total Offerings: ${formatCurrency(reportData.totalOfferings)}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Total Tithes: ${formatCurrency(reportData.totalTithes)}`, 25, yPos);
-      yPos += 15;
+      doc.text(`Total Income: ${formatCurrency(reportData.totalIncome)}`, 70, yPos + 25);
+      doc.text(`Total Expenses: ${formatCurrency(reportData.totalExpenses)}`, 70, yPos + 45);
+      doc.text(`Net Amount: ${formatCurrency(reportData.netAmount)}`, 70, yPos + 65);
+      doc.text(`Total Offerings: ${formatCurrency(reportData.totalOfferings)}`, 70, yPos + 85);
+      doc.text(`Total Tithes: ${formatCurrency(reportData.totalTithes)}`, 70, yPos + 105);
+      yPos += 160;
     }
 
     // Attendance Section
     if (reportType === 'attendance' || reportType === 'comprehensive') {
-      doc.setFontSize(14);
+      // Red section header background
+      doc.setFillColor(220, 38, 38);
+      doc.rect(50, yPos - 10, pageWidth - 100, 30, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text('Attendance Statistics', 20, yPos);
-      yPos += 10;
+      doc.text('Attendance Statistics', 60, yPos + 10);
+      yPos += 40;
+      
+      // Content box
+      doc.setFillColor(249, 249, 249);
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(50, yPos, pageWidth - 100, 80, 'FD');
 
-      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Average Attendance: ${reportData.averageAttendance}`, 25, yPos);
-      yPos += 7;
-      doc.text(`Total Events: ${reportData.totalEvents}`, 25, yPos);
-      yPos += 15;
+      doc.text(`Average Attendance: ${reportData.averageAttendance}`, 70, yPos + 25);
+      doc.text(`Total Events: ${reportData.totalEvents}`, 70, yPos + 45);
+      yPos += 100;
     }
 
-    doc.save('filadelfia-report.pdf');
+    // Footer with decorative elements
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(102, 102, 102);
+    doc.text('--- End of Report ---', pageWidth / 2 - 50, yPos + 30);
+    
+    // Add red accent line
+    doc.setFillColor(220, 38, 38);
+    doc.rect(50, yPos + 40, pageWidth - 100, 2, 'F');
+
+    // Generate descriptive filename and download
+    const currentDate = new Date().toISOString().split('T')[0];
+    const periodText = reportPeriod === 'yearly' ? 'Annual' : 
+                      reportPeriod === 'monthly' ? 'Monthly' : 
+                      reportPeriod === 'quarterly' ? 'Quarterly' : 'Custom';
+    
+    const filename = `FCC-${periodText}-Report-${currentDate}.pdf`;
+    doc.save(filename);
   };
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-KE', {
+    return new Intl.NumberFormat('en-TZ', {
       style: 'currency',
-      currency: 'KES',
+      currency: 'TZS',
     }).format(amount);
   };
 
-  const exportReport = async (format: 'pdf' | 'csv') => {
+  const exportToCSV = () => {
     if (!reportData) return;
 
-    if (format === 'pdf') {
-      exportToPDF();
-    } else {
-      // CSV export logic would go here
-      console.log('CSV export not implemented yet');
+    let csvContent = '';
+    
+    // Report Header
+    csvContent += `Filadelfia Church Report\n`;
+    csvContent += `Report Type: ${reportType.toUpperCase()}\n`;
+    csvContent += `Period: ${startDate} to ${endDate}\n`;
+    csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+
+    // Membership Statistics
+    if (reportType === 'membership' || reportType === 'comprehensive') {
+      csvContent += `MEMBERSHIP STATISTICS\n`;
+      csvContent += `Total Members,${reportData.totalMembers}\n`;
+      csvContent += `Active Members,${reportData.activeMembers}\n`;
+      csvContent += `Inactive Members,${reportData.inactiveMembers}\n`;
+      csvContent += `New Members,${reportData.newMembers}\n\n`;
+      
+      // Members by Department
+      if (reportData.membershipStats.membersByDepartment.length > 0) {
+        csvContent += `MEMBERS BY DEPARTMENT\n`;
+        csvContent += `Department,Count\n`;
+        reportData.membershipStats.membersByDepartment.forEach(dept => {
+          csvContent += `"${dept.name}",${dept.count}\n`;
+        });
+        csvContent += '\n';
+      }
+    }
+
+    // Financial Statistics
+    if (reportType === 'financial' || reportType === 'comprehensive') {
+      csvContent += `FINANCIAL STATISTICS\n`;
+      csvContent += `Total Income,${reportData.totalIncome}\n`;
+      csvContent += `Total Expenses,${reportData.totalExpenses}\n`;
+      csvContent += `Net Amount,${reportData.netAmount}\n`;
+      csvContent += `Total Offerings,${reportData.totalOfferings}\n`;
+      csvContent += `Total Tithes,${reportData.totalTithes}\n\n`;
+
+      // Income by Type
+      if (reportData.financialStats.incomeByType.length > 0) {
+        csvContent += `INCOME BY TYPE\n`;
+        csvContent += `Type,Amount\n`;
+        reportData.financialStats.incomeByType.forEach(item => {
+          csvContent += `"${item.type}",${item.amount}\n`;
+        });
+        csvContent += '\n';
+      }
+    }
+
+    // Event Statistics
+    if (reportType === 'attendance' || reportType === 'comprehensive') {
+      csvContent += `EVENT STATISTICS\n`;
+      csvContent += `Total Events,${reportData.eventStats.totalEvents}\n`;
+      csvContent += `Upcoming Events,${reportData.eventStats.upcomingEvents}\n`;
+      csvContent += `Completed Events,${reportData.eventStats.completedEvents}\n`;
+      csvContent += `Average Attendance,${reportData.eventStats.averageAttendance}\n\n`;
+
+      // Events by Type
+      if (reportData.eventStats.eventsByType.length > 0) {
+        csvContent += `EVENTS BY TYPE\n`;
+        csvContent += `Type,Count\n`;
+        reportData.eventStats.eventsByType.forEach(item => {
+          csvContent += `"${item.type}",${item.count}\n`;
+        });
+        csvContent += '\n';
+      }
+    }
+
+    // Department Statistics
+    if (reportType === 'jumuiya' || reportType === 'comprehensive') {
+      if (reportData.departmentStats.length > 0) {
+        csvContent += `DEPARTMENT STATISTICS\n`;
+        csvContent += `Name,Swahili Name,Member Count,Active Members,Total Income,Total Expenses,Net Amount\n`;
+        reportData.departmentStats.forEach(dept => {
+          csvContent += `"${dept.name}","${dept.swahiliName || ''}",${dept.memberCount},${dept.activeMembers},${dept.totalIncome || 0},${dept.totalExpenses || 0},${dept.netAmount || 0}\n`;
+        });
+        csvContent += '\n';
+      }
+    }
+
+    // Create and download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `filadelfia-report-${reportType}-${startDate}-to-${endDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportReport = async (format: 'pdf' | 'csv') => {
+    if (!reportData) {
+      setError('No report data available. Please generate a report first.');
+      return;
+    }
+
+    try {
+      setError(null); // Clear any previous errors
+      if (format === 'pdf') {
+        exportToPDF();
+      } else {
+        exportToCSV();
+      }
+      setSuccess(`Report exported to ${format.toUpperCase()} successfully!`);
+      setTimeout(() => setSuccess(null), 3000); // Auto-hide success message
+    } catch (err) {
+      console.error('Error exporting report:', err);
+      setSuccess(null); // Clear any success messages
+      setError(`Failed to export report to ${format.toUpperCase()}`);
     }
   };
 
-  const fetchMembershipStats = async () => {
-    const { data: members, error } = await supabase
-      .from('members')
-      .select('status, department_id, departments(name)')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate);
 
-    if (error) throw error;
 
-    const membersByStatus: Record<string, number> = {};
-    const membersByDepartment: Array<{ name: string; count: number }> = [];
 
-    members?.forEach((member: any) => {
-      // Count by status
-      membersByStatus[member.status] = (membersByStatus[member.status] || 0) + 1;
 
-      // Count by department
-      const deptName = member.departments?.name || 'Unknown';
-      const existingDept = membersByDepartment.find(d => d.name === deptName);
-      if (existingDept) {
-        existingDept.count++;
-      } else {
-        membersByDepartment.push({ name: deptName, count: 1 });
-      }
-    });
 
-    const newMembersThisMonth = members?.filter((m: any) => {
-      const joinDate = new Date(m.created_at);
-      const now = new Date();
-      return joinDate.getMonth() === now.getMonth() && joinDate.getFullYear() === now.getFullYear();
-    }).length || 0;
-
-    return {
-      activeMembers: membersByStatus.active || 0,
-      newMembersThisMonth,
-      membersByStatus,
-      membersByDepartment,
-      totalMembers: members?.length || 0
-    };
-  };
-
-  const fetchFinancialStats = async () => {
-    const { data: transactions, error } = await supabase
-      .from('financial_transactions')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    if (error) throw error;
-
-    const totalIncome = transactions?.filter((t: any) => t.type === 'income').reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
-    const totalExpenses = transactions?.filter((t: any) => t.type === 'expense').reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
-
-    const incomeByType: Array<{ type: string; amount: number }> = [];
-    const monthlyTrends: Array<{ month: string; income: number; expenses: number }> = [];
-
-    // Group by type
-    const typeGroups: Record<string, number> = {};
-    transactions?.forEach((t: any) => {
-      if (t.type === 'income') {
-        typeGroups[t.category || 'other'] = (typeGroups[t.category || 'other'] || 0) + t.amount;
-      }
-    });
-
-    Object.entries(typeGroups).forEach(([type, amount]) => {
-      incomeByType.push({ type, amount });
-    });
-
-    // Monthly trends (simplified)
-    const monthlyIncome = totalIncome / 12; // Rough estimate
-
-    return {
-      totalIncome,
-      totalExpenses,
-      netAmount: totalIncome - totalExpenses,
-      monthlyIncome,
-      incomeByType,
-      monthlyTrends
-    };
-  };
-
-  const fetchEventStats = async () => {
-    const { data: events, error } = await supabase
-      .from('events')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    if (error) throw error;
-
-    const totalEvents = events?.length || 0;
-    const upcomingEvents = events?.filter((e: any) => new Date(e.date) > new Date()).length || 0;
-    const completedEvents = totalEvents - upcomingEvents;
-
-    const eventsByType: Array<{ type: string; count: number }> = [];
-    const typeGroups: Record<string, number> = {};
-
-    events?.forEach((e: any) => {
-      typeGroups[e.type || 'other'] = (typeGroups[e.type || 'other'] || 0) + 1;
-    });
-
-    Object.entries(typeGroups).forEach(([type, count]) => {
-      eventsByType.push({ type, count });
-    });
-
-    return {
-      totalEvents,
-      upcomingEvents,
-      completedEvents,
-      averageAttendance: 0, // Would need attendance data
-      eventsByType
-    };
-  };
-
-  const fetchDepartmentStats = async (): Promise<DepartmentData[]> => {
-    const { data: departments, error } = await supabase
-      .from('departments')
-      .select(`
-        *,
-        members:department_members(count),
-        leaders:department_leaders(
-          members:member_id(name, email, phone)
-        ),
-        financial_transactions!inner(amount, type, date)
-      `)
-      .gte('financial_transactions.date', startDate)
-      .lte('financial_transactions.date', endDate);
-
-    if (error) throw error;
-
-    return departments?.map((dept: any) => {
-      const totalIncome = dept.financial_transactions?.filter((t: any) => t.type === 'income').reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
-      const totalExpenses = dept.financial_transactions?.filter((t: any) => t.type === 'expense').reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
-
-      return {
-        id: dept.id,
-        name: dept.name,
-        swahiliName: dept.swahili_name,
-        leader: dept.leaders?.[0]?.members ? {
-          name: dept.leaders[0].members.name,
-          email: dept.leaders[0].members.email,
-          phone: dept.leaders[0].members.phone
-        } : undefined,
-        memberCount: dept.members?.[0]?.count || 0,
-        activeMembers: dept.members?.[0]?.count || 0,
-        inactiveMembers: 0,
-        totalIncome,
-        totalExpenses,
-        netAmount: totalIncome - totalExpenses,
-        recentEvents: 0,
-        recentTransactions: dept.financial_transactions?.length || 0,
-        transactionCount: dept.financial_transactions?.length || 0
-      };
-    }) || [];
-  };
 
   if (authLoading) {
     return (
@@ -598,6 +1166,23 @@ export default function ReportsPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports</h1>
             <p className="text-gray-600">Generate comprehensive reports for your church management system</p>
+            
+            {/* Department Leader Access Notification */}
+            {isDepartmentLeader && departmentName && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <Building2 className="h-5 w-5 text-red-600 mr-2" />
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800">
+                      Department Access: {departmentName}
+                    </h3>
+                    <p className="text-sm text-red-700">
+                      You have access to reports for your department only. Select "Comprehensive" to view all available data for your department.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Report Configuration */}
@@ -609,13 +1194,23 @@ export default function ReportsPage() {
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value as ReportType)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                   >
-                    <option value="membership">Membership</option>
-                    <option value="financial">Financial</option>
-                    <option value="attendance">Attendance</option>
-                    <option value="jumuiya">Jumuiya</option>
-                    <option value="comprehensive">Comprehensive</option>
+                    <option value="membership">
+                      {isDepartmentLeader ? `${departmentName} - Membership` : 'Membership'}
+                    </option>
+                    <option value="financial">
+                      {isDepartmentLeader ? `${departmentName} - Financial` : 'Financial'}
+                    </option>
+                    <option value="attendance">
+                      {isDepartmentLeader ? `${departmentName} - Attendance` : 'Attendance'}
+                    </option>
+                    <option value="jumuiya">
+                      {isDepartmentLeader ? `${departmentName} - Department` : 'Jumuiya'}
+                    </option>
+                    <option value="comprehensive">
+                      {isDepartmentLeader ? `${departmentName} - Comprehensive` : 'Comprehensive'}
+                    </option>
                   </select>
                 </div>
 
@@ -624,7 +1219,7 @@ export default function ReportsPage() {
                   <select
                     value={reportPeriod}
                     onChange={(e) => setReportPeriod(e.target.value as ReportPeriod)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -641,7 +1236,7 @@ export default function ReportsPage() {
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
                   />
                 </div>
 
@@ -652,7 +1247,7 @@ export default function ReportsPage() {
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
                   />
                 </div>
               </div>
@@ -665,6 +1260,35 @@ export default function ReportsPage() {
                 >
                   {loading ? <Loading /> : <FileText className="h-4 w-4" />}
                   <span>Generate Report</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    console.log('🔍 Testing database connectivity...');
+                    try {
+                      // Test basic table access
+                      const { data: membersTest, error: membersError } = await supabase.from('members').select('count(*)').single();
+                      console.log('Members table test:', { data: membersTest, error: membersError });
+                      
+                      const { data: deptTest, error: deptError } = await supabase.from('departments').select('count(*)').single();
+                      console.log('Departments table test:', { data: deptTest, error: deptError });
+                      
+                      const { data: finTest, error: finError } = await supabase.from('financial_transactions').select('count(*)').single();
+                      console.log('Financial transactions test:', { data: finTest, error: finError });
+                      
+                      const { data: eventsTest, error: eventsError } = await supabase.from('events').select('count(*)').single();
+                      console.log('Events table test:', { data: eventsTest, error: eventsError });
+                      
+                      setSuccess('Database connectivity test completed. Check console for details.');
+                    } catch (err) {
+                      console.error('Database test error:', err);
+                      setError('Database connectivity test failed. Check console for details.');
+                    }
+                  }}
+                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                >
+                  Test DB Connection
                 </Button>
 
                 {reportData && (
@@ -694,22 +1318,34 @@ export default function ReportsPage() {
           {/* Report Content */}
           {reportData && (
             <div className="space-y-8">
-              {/* Tab Navigation */}
-              <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
-                  {['membership', 'finance', 'events', 'departments'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm capitalize ${
-                        activeTab === tab
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+              {/* Tab Navigation - Exact design from image */}
+              <div className="mb-6">
+                <nav className="flex space-x-0">
+                  {[
+                    { id: 'membership', label: 'Membership', icon: Users },
+                    { id: 'finance', label: 'Finance', icon: DollarSign },
+                    { id: 'events', label: 'Events', icon: Calendar },
+                    { id: 'departments', label: 'Departments', icon: Building2 }
+                  ].map((tab) => {
+                    const IconComponent = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                          activeTab === tab.id
+                            ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <IconComponent className="h-4 w-4" />
+                        <span>{tab.label}</span>
+                        {activeTab === tab.id && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </nav>
               </div>
 
@@ -1147,6 +1783,12 @@ export default function ReportsPage() {
           {error && (
             <Alert variant="error" className="mt-6">
               {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert variant="success" className="mt-6">
+              {success}
             </Alert>
           )}
         </div>

@@ -187,7 +187,7 @@ export default function SignupPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-fcc-blue-500 focus:border-fcc-blue-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-red-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 bg-red-50 sm:text-sm"
               >
                 <option value="member">Member</option>
                 <option value="department_leader">Department Leader</option>

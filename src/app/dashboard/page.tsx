@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/lib/supabase/client';
@@ -10,7 +11,6 @@ import {
   Users,
   Search,
   Bell,
-  Mail,
   ChevronDown,
   Sun,
   Moon,
@@ -19,6 +19,12 @@ import {
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { 
+    departmentId, 
+    departmentName, 
+    isDepartmentLeader, 
+    canAccessAllDepartments 
+  } = useDepartmentAccess();
   const [darkMode, setDarkMode] = useState(false);
   const [showTimeout, setShowTimeout] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -35,9 +41,6 @@ export default function DashboardPage() {
   const [departmentLeaders, setDepartmentLeaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showMessages, setShowMessages] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -59,7 +62,6 @@ export default function DashboardPage() {
       fetchFinancialData();
       fetchDepartmentLeaders();
       fetchNotifications();
-      fetchMessages();
       fetchUserProfile();
     }
   }, [user, authLoading]);
@@ -69,8 +71,6 @@ export default function DashboardPage() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest('.dropdown-container')) {
-        setShowNotifications(false);
-        setShowMessages(false);
         setShowProfile(false);
       }
     };
@@ -86,30 +86,44 @@ export default function DashboardPage() {
 
       setLoading(true);
 
-      // Fetch total members count
-      const { data: members, error: membersError } = await supabase
+      // Fetch total members count (with department filtering for department leaders)
+      let membersQuery = supabase
         .from('members')
-        .select('id, date_of_birth')
+        .select('id, date_of_birth, department_members(department_id)')
         .eq('status', 'active');
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        membersQuery = membersQuery.eq('department_members.department_id', departmentId);
+      }
+
+      const { data: members, error: membersError } = await membersQuery;
 
       if (membersError) {
         console.error('Error fetching members:', membersError);
         return;
       }
 
-      // Fetch total departments count
-      const { data: departments, error: departmentsError } = await supabase
+      // Fetch departments count (only user's department for department leaders)
+      let departmentsQuery = supabase
         .from('departments')
         .select('id, name')
         .eq('is_active', true);
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        departmentsQuery = departmentsQuery.eq('id', departmentId);
+      }
+
+      const { data: departments, error: departmentsError } = await departmentsQuery;
 
       if (departmentsError) {
         console.error('Error fetching departments:', departmentsError);
         return;
       }
 
-      // Fetch department member counts
-      const { data: departmentStats, error: departmentStatsError } = await supabase
+      // Fetch department member counts (only user's department for department leaders)
+      let departmentStatsQuery = supabase
         .from('departments')
         .select(`
           id,
@@ -118,6 +132,13 @@ export default function DashboardPage() {
         `)
         .eq('is_active', true)
         .eq('department_members.is_active', true);
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        departmentStatsQuery = departmentStatsQuery.eq('id', departmentId);
+      }
+
+      const { data: departmentStats, error: departmentStatsError } = await departmentStatsQuery;
 
       if (departmentStatsError) {
         console.error('Error fetching department stats:', departmentStatsError);
@@ -163,12 +184,19 @@ export default function DashboardPage() {
       const supabase = createClient();
       if (!supabase) return;
 
-      // Fetch total income (all income transactions)
-      const { data: incomeData, error: incomeError } = await supabase
+      // Fetch total income (all income transactions) with department filtering
+      let incomeQuery = supabase
         .from('financial_transactions')
-        .select('amount')
+        .select('amount, members(department_members(department_id))')
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true);
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        incomeQuery = incomeQuery.eq('members.department_members.department_id', departmentId);
+      }
+
+      const { data: incomeData, error: incomeError } = await incomeQuery;
       
       if (incomeError) {
         console.error('Error fetching income data:', incomeError);
@@ -177,16 +205,23 @@ export default function DashboardPage() {
       
       const totalIncome = incomeData?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
-      // Fetch current month income
+      // Fetch current month income with department filtering
       const currentMonth = new Date();
       const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       
-      const { data: monthlyData, error: monthlyError } = await supabase
+      let monthlyQuery = supabase
         .from('financial_transactions')
-        .select('amount')
+        .select('amount, members(department_members(department_id))')
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true)
         .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        monthlyQuery = monthlyQuery.eq('members.department_members.department_id', departmentId);
+      }
+
+      const { data: monthlyData, error: monthlyError } = await monthlyQuery;
       
       if (monthlyError) {
         console.error('Error fetching monthly data:', monthlyError);
@@ -244,7 +279,7 @@ export default function DashboardPage() {
           id,
           name,
           leader_id,
-          members:members!leader_id(
+          leader:members!leader_id(
             id,
             first_name,
             last_name,
@@ -262,11 +297,11 @@ export default function DashboardPage() {
 
       // Transform the data for display
       const formattedLeaders = departmentLeadersData?.map((dept: any) => ({
-        id: dept.id,
-        name: dept.members ? `${dept.members.first_name} ${dept.members.last_name}` : 'Unknown Leader',
+        id: dept.leader?.id || dept.leader_id,
+        name: dept.leader ? `${dept.leader.first_name} ${dept.leader.last_name}` : 'Unknown Leader',
         role: `${dept.name} Leader`,
         departmentName: dept.name,
-        photo_url: dept.members?.photo_url
+        photo_url: dept.leader?.photo_url
       })) || [];
 
       setDepartmentLeaders(formattedLeaders);
@@ -312,54 +347,14 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchMessages = async () => {
-    try {
-      // Mock messages - replace with real Supabase query later
-      const mockMessages = [
-        {
-          id: 1,
-          sender: 'Pastor Michael',
-          subject: 'Sunday Service Update',
-          preview: 'Please note the change in service time...',
-          time: '2 hours ago',
-          read: false
-        },
-        {
-          id: 2,
-          sender: 'Finance Team',
-          subject: 'Monthly Financial Report',
-          preview: 'Attached is the financial report for...',
-          time: '1 day ago',
-          read: true
-        },
-        {
-          id: 3,
-          sender: 'Events Committee',
-          subject: 'Upcoming Conference',
-          preview: 'Registration for the annual conference...',
-          time: '2 days ago',
-          read: false
-        }
-      ];
 
-      setMessages(mockMessages);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  };
 
   const handleViewDepartmentLeader = (leaderId: string) => {
     // Navigate to department leader profile or details page
     window.location.href = `/members/${leaderId}`;
   };
 
-  const markNotificationAsRead = (notificationId: number) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      )
-    );
-  };
+
 
   const fetchUserProfile = async () => {
     try {
@@ -368,21 +363,42 @@ export default function DashboardPage() {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          member:members(*)
-        `)
-        .eq('id', user.id)
+        .select('*')
+        .eq('user_id', user.id)
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching profile:', error.message || error);
+        // If profile doesn't exist, create a basic one
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating basic profile...');
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: user.id,
+              email: user.email || '',
+              role: 'member',
+              first_name: user.email?.split('@')[0] || 'User',
+              last_name: '',
+              is_active: true
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            return;
+          }
+          
+          setUserProfile(newProfile);
+          return;
+        }
         return;
       }
 
       setUserProfile(profile);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+    } catch (error: any) {
+      console.error('Error fetching user profile:', error.message || error);
     }
   };
 
@@ -393,45 +409,78 @@ export default function DashboardPage() {
       setIsUpdatingProfile(true);
       const supabase = createClient();
 
+      // First, check if user has permission to upload
+      const { data: userData } = await supabase.auth.getUser();
+      console.log('Current user for upload:', userData?.user?.id, user?.profile?.role);
+
       // Upload photo to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `profiles/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(filePath, file);
+      console.log('Attempting to upload to:', filePath);
 
-      if (uploadError) throw uploadError;
+      // Try uploading to different buckets if one fails
+      let uploadData, uploadError;
+      let successfulBucket = null;
+      const bucketsToTry = ['photos', 'profile-photos', 'member-photos'];
+      
+      for (const bucket of bucketsToTry) {
+        console.log(`Attempting upload to bucket: ${bucket}`);
+        const result = await supabase.storage
+          .from(bucket)
+          .upload(filePath, file);
+        
+        if (!result.error) {
+          uploadData = result.data;
+          uploadError = null;
+          successfulBucket = bucket;
+          console.log(`Upload successful to bucket: ${bucket}`);
+          break;
+        } else {
+          console.log(`Upload failed to bucket ${bucket}:`, result.error);
+          uploadError = result.error;
+        }
+      }
 
-      // Get public URL
+      if (uploadError || !successfulBucket) {
+        console.error('All storage uploads failed:', uploadError);
+        if (uploadError?.message?.includes('row-level security')) {
+          throw new Error(`Storage access denied. Please create storage buckets (${bucketsToTry.join(', ')}) in Supabase Dashboard > Storage and set them as public.`);
+        }
+        throw new Error(`Upload failed to all buckets. Last error: ${uploadError?.message || 'Unknown error'}`);
+      }
+
+      console.log('Upload successful:', uploadData);
+
+      // Get public URL from the successful bucket
       const { data: { publicUrl } } = supabase.storage
-        .from('photos')
+        .from(successfulBucket)
         .getPublicUrl(filePath);
+
+      console.log('Public URL generated:', publicUrl);
 
       // Update profile with new photo URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ photo_url: publicUrl })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
-      if (updateError) throw updateError;
-
-      // If user has a member record, update it too
-      if (userProfile?.member) {
-        await supabase
-          .from('members')
-          .update({ photo_url: publicUrl })
-          .eq('id', userProfile.member.id);
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
       }
+
+      // Note: Member records are managed separately from profiles
 
       // Refresh user profile
       await fetchUserProfile();
       
       alert('Profile photo updated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photo:', error);
-      alert('Error uploading photo. Please try again.');
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Error uploading photo: ${errorMessage}\n\nPlease check browser console for details.`);
     } finally {
       setIsUpdatingProfile(false);
       setPhotoFile(null);
@@ -449,21 +498,11 @@ export default function DashboardPage() {
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (profileError) throw profileError;
 
-      // If user has a member record, update relevant fields
-      if (userProfile?.member && (updates.first_name || updates.last_name)) {
-        const memberUpdates: any = {};
-        if (updates.first_name) memberUpdates.first_name = updates.first_name;
-        if (updates.last_name) memberUpdates.last_name = updates.last_name;
-
-        await supabase
-          .from('members')
-          .update(memberUpdates)
-          .eq('id', userProfile.member.id);
-      }
+      // Note: Member records are managed separately from profiles
 
       // Refresh user profile
       await fetchUserProfile();
@@ -477,13 +516,7 @@ export default function DashboardPage() {
     }
   };
 
-  const markMessageAsRead = (messageId: number) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === messageId ? { ...msg, read: true } : msg
-      )
-    );
-  };
+
 
   const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
@@ -515,11 +548,11 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-4">
               {/* Search Bar */}
               <div className="relative">
-                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 ${textSecondary}`} />
+                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500`} />
                 <input
                   type="text"
                   placeholder="Search"
-                  className={`pl-12 pr-4 py-2.5 ${inputBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500 w-64`}
+                  className={`pl-12 pr-4 py-2.5 bg-red-50 ${textPrimary} border border-red-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 w-64 placeholder-red-400`}
                 />
               </div>
 
@@ -531,113 +564,23 @@ export default function DashboardPage() {
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
-              {/* Mail Icon with Dropdown */}
-              <div className="relative dropdown-container">
-                <button 
-                  onClick={() => {
-                    setShowMessages(!showMessages);
-                    setShowNotifications(false);
-                    setShowProfile(false);
-                  }}
-                  className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
-                >
-                  <Mail className="h-5 w-5" />
-                  {messages.filter(msg => !msg.read).length > 0 && (
-                    <span className="absolute top-1 right-1 h-2 w-2 bg-tag-red-500 rounded-full"></span>
-                  )}
-                </button>
 
-                {/* Messages Dropdown */}
-                {showMessages && (
-                  <div className={`absolute right-0 top-full mt-2 w-80 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto`}>
-                    <div className={`p-4 border-b ${borderColor}`}>
-                      <h3 className={`font-semibold ${textPrimary}`}>Messages</h3>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {messages.map((message) => (
-                        <div 
-                          key={message.id} 
-                          className={`p-4 border-b ${borderColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} cursor-pointer ${!message.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                          onClick={() => markMessageAsRead(message.id)}
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <p className={`font-medium text-sm ${textPrimary}`}>{message.sender}</p>
-                            <span className={`text-xs ${textSecondary}`}>{message.time}</span>
-                          </div>
-                          <p className={`text-sm font-medium ${textPrimary} mb-1`}>{message.subject}</p>
-                          <p className={`text-sm ${textSecondary} truncate`}>{message.preview}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className={`p-4 border-t ${borderColor}`}>
-                      <button 
-                        className="w-full text-center text-blue-500 hover:text-blue-600 text-sm font-medium"
-                        onClick={() => window.location.href = '/messages'}
-                      >
-                        View All Messages
-                      </button>
-                    </div>
-                  </div>
+
+              {/* Notification Bell - Redirect to Notifications Page */}
+              <button 
+                onClick={() => window.location.href = '/notifications'}
+                className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
+              >
+                <Bell className="h-5 w-5" />
+                {notifications.filter(notif => !notif.read).length > 0 && (
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-tag-red-500 rounded-full"></span>
                 )}
-              </div>
-
-              {/* Notification Bell with Dropdown */}
-              <div className="relative dropdown-container">
-                <button 
-                  onClick={() => {
-                    setShowNotifications(!showNotifications);
-                    setShowMessages(false);
-                    setShowProfile(false);
-                  }}
-                  className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
-                >
-                  <Bell className="h-5 w-5" />
-                  {notifications.filter(notif => !notif.read).length > 0 && (
-                    <span className="absolute top-1 right-1 h-2 w-2 bg-tag-red-500 rounded-full"></span>
-                  )}
-                </button>
-
-                {/* Notifications Dropdown */}
-                {showNotifications && (
-                  <div className={`absolute right-0 top-full mt-2 w-80 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto`}>
-                    <div className={`p-4 border-b ${borderColor}`}>
-                      <h3 className={`font-semibold ${textPrimary}`}>Notifications</h3>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {notifications.map((notification) => (
-                        <div 
-                          key={notification.id} 
-                          className={`p-4 border-b ${borderColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} cursor-pointer ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                          onClick={() => markNotificationAsRead(notification.id)}
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <p className={`font-medium text-sm ${textPrimary}`}>{notification.title}</p>
-                            <span className={`text-xs ${textSecondary}`}>{notification.time}</span>
-                          </div>
-                          <p className={`text-sm ${textSecondary}`}>{notification.message}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className={`p-4 border-t ${borderColor}`}>
-                      <button 
-                        className="w-full text-center text-blue-500 hover:text-blue-600 text-sm font-medium"
-                        onClick={() => window.location.href = '/notifications'}
-                      >
-                        View All Notifications
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              </button>
 
               {/* User Avatar with Profile Dropdown */}
               <div className="relative dropdown-container">
                 <button 
-                  onClick={() => {
-                    setShowProfile(!showProfile);
-                    setShowMessages(false);
-                    setShowNotifications(false);
-                  }}
+                  onClick={() => setShowProfile(!showProfile)}
                   className={`flex items-center space-x-3 pl-4 border-l ${borderColor}`}
                 >
                   <img
@@ -709,6 +652,23 @@ export default function DashboardPage() {
 
         {/* Dashboard Content */}
         <main className="p-8">
+          {/* Department Leader Access Notification */}
+          {isDepartmentLeader && departmentName && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <Building2 className="h-5 w-5 text-red-600 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800">
+                    Department Dashboard: {departmentName}
+                  </h3>
+                  <p className="text-sm text-red-700">
+                    You're viewing data specific to your department. All statistics and reports are filtered for {departmentName} members only.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-12 gap-6">
             {/* Left Column - Stats and Charts */}
             <div className="col-span-12 lg:col-span-7 space-y-6">
@@ -822,8 +782,8 @@ export default function DashboardPage() {
                                 <stop offset="100%" style={{ stopColor: '#1d4ed8', stopOpacity: 1 }} />
                               </linearGradient>
                               <linearGradient id="memberGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style={{ stopColor: '#f472b6', stopOpacity: 1 }} />
-                                <stop offset="100%" style={{ stopColor: '#ec4899', stopOpacity: 1 }} />
+                                <stop offset="0%" style={{ stopColor: '#ef4444', stopOpacity: 1 }} />
+                                <stop offset="100%" style={{ stopColor: '#dc2626', stopOpacity: 1 }} />
                               </linearGradient>
                             </defs>
                             
@@ -915,7 +875,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center justify-between space-x-6">
                         <div className="flex items-center space-x-3">
-                          <div className="w-4 h-4 rounded-sm bg-pink-500 flex-shrink-0"></div>
+                          <div className="w-4 h-4 rounded-sm bg-red-500 flex-shrink-0"></div>
                           <span className={`text-sm ${textSecondary}`}>Seniors (61+)</span>
                         </div>
                         <span className={`text-sm font-semibold ${textPrimary}`}>
@@ -941,7 +901,7 @@ export default function DashboardPage() {
                       <div className="w-2.5 h-2.5 rounded-sm bg-blue-600"></div>
                       <span className={`text-xs ${textSecondary}`}>Revenue</span>
                     </div>
-                    <select className={`px-4 py-1.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
+                    <select className={`px-4 py-1.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50`}>
                       <option>2024</option>
                       <option>2023</option>
                     </select>
@@ -1165,7 +1125,7 @@ export default function DashboardPage() {
               <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className={`text-lg font-semibold ${textPrimary}`}>Best Department Leaders</h3>
-                  <button className="text-sm text-blue-500 hover:text-blue-600 flex items-center">
+                  <button className="text-sm text-red-600 hover:text-red-700 flex items-center">
                     See all
                     <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                   </button>
@@ -1178,7 +1138,7 @@ export default function DashboardPage() {
                         <div className="flex items-center space-x-3">
                           <div className="relative">
                             {/* Badge positioned on left side */}
-                            <div className="absolute -top-1 -left-1 h-7 w-7 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center z-10">
+                            <div className="absolute -top-1 -left-1 h-7 w-7 bg-red-600 rounded-full border-2 border-white flex items-center justify-center z-10">
                               <span className="text-white text-sm font-bold">{idx + 1}</span>
                             </div>
                             <img
@@ -1200,7 +1160,7 @@ export default function DashboardPage() {
                         </div>
                         <button 
                           onClick={() => handleViewDepartmentLeader(leader.id)}
-                          className="px-5 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
+                          className="px-5 py-2 bg-red-100 border border-red-600 text-red-700 rounded-xl text-sm font-medium hover:bg-red-200 hover:text-red-800 transition-colors"
                         >
                           View
                         </button>
@@ -1312,32 +1272,17 @@ export default function DashboardPage() {
                         className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
                       />
                     </div>
-                    {userProfile.member && (
-                      <>
-                        <div>
-                          <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
-                            Member Number
-                          </label>
-                          <input
-                            type="text"
-                            value={userProfile.member.member_number || ''}
-                            readOnly
-                            className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
-                          />
-                        </div>
-                        <div>
-                          <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
-                            Phone
-                          </label>
-                          <input
-                            type="text"
-                            value={userProfile.member.phone || ''}
-                            readOnly
-                            className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
-                          />
-                        </div>
-                      </>
-                    )}
+                    <div>
+                      <label className={`block text-sm font-medium ${textSecondary} mb-1`}>
+                        Phone
+                      </label>
+                      <input
+                        type="text"
+                        value={userProfile.phone || ''}
+                        readOnly
+                        className={`w-full px-3 py-2 border ${borderColor} rounded-md ${inputBg} ${textSecondary} bg-gray-100`}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex justify-end space-x-4">

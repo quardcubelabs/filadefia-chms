@@ -8,6 +8,12 @@ import { useEffect, useState, useMemo } from 'react';
 export interface AuthUser {
   id: string;
   email: string | undefined;
+  user_metadata?: {
+    avatar_url?: string;
+    full_name?: string;
+    name?: string;
+    [key: string]: any;
+  };
   profile: Profile | null;
 }
 

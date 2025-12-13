@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import { 
   Button, 
@@ -104,6 +105,7 @@ interface Member {
 export default function DocumentsPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
+  const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
   
   const [meetingMinutes, setMeetingMinutes] = useState<MeetingMinutes[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
@@ -182,15 +184,22 @@ export default function DocumentsPage() {
   const loadMeetingMinutes = async () => {
     if (!supabase) return;
     
-      const { data, error } = await supabase
-        .from('meeting_minutes')
-        .select(`
-          *,
-          department:departments(name),
-          recorder:profiles!meeting_minutes_recorded_by_fkey(first_name, last_name),
-          approver:profiles!meeting_minutes_approved_by_fkey(first_name, last_name)
-        `)
-        .order('meeting_date', { ascending: false });    if (error) throw error;
+    let minutesQuery = supabase
+      .from('meeting_minutes')
+      .select(`
+        *,
+        department:departments(name),
+        recorder:profiles!meeting_minutes_recorded_by_fkey(first_name, last_name),
+        approver:profiles!meeting_minutes_approved_by_fkey(first_name, last_name)
+      `);
+
+    // Filter by department for department leaders
+    if (isDepartmentLeader && departmentId) {
+      minutesQuery = minutesQuery.eq('department_id', departmentId);
+    }
+
+    const { data, error } = await minutesQuery
+      .order('meeting_date', { ascending: false });    if (error) throw error;
 
     // Load attendee details for each meeting
     const minutesWithAttendees = await Promise.all(
@@ -221,13 +230,20 @@ export default function DocumentsPage() {
   const loadReports = async () => {
     if (!supabase) return;
     
-    const { data, error } = await supabase
+    let reportsQuery = supabase
       .from('reports')
       .select(`
         *,
         department:departments(name),
         generator:profiles(first_name, last_name)
-      `)
+      `);
+
+    // Filter by department for department leaders
+    if (isDepartmentLeader && departmentId) {
+      reportsQuery = reportsQuery.eq('department_id', departmentId);
+    }
+
+    const { data, error } = await reportsQuery
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -277,7 +293,7 @@ export default function DocumentsPage() {
 
     try {
       const minutesData = {
-        department_id: minutesForm.department_id,
+        department_id: isDepartmentLeader ? departmentId : minutesForm.department_id,
         meeting_date: minutesForm.meeting_date,
         agenda: minutesForm.agenda,
         minutes: minutesForm.minutes,
@@ -316,7 +332,7 @@ export default function DocumentsPage() {
       const reportData = {
         title: reportForm.title,
         type: reportForm.type,
-        department_id: reportForm.department_id || null,
+        department_id: isDepartmentLeader ? departmentId : (reportForm.department_id || null),
         content: reportForm.content,
         generated_by: user.profile.id,
         created_at: new Date().toISOString()
@@ -482,6 +498,21 @@ export default function DocumentsPage() {
               </div>
             </div>
 
+            {/* Department Access Notification */}
+            {isDepartmentLeader && departmentName && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <FileText className="h-5 w-5 text-purple-600 mr-3" />
+                  <div>
+                    <h3 className="font-medium text-purple-900">Department Documents: {departmentName}</h3>
+                    <p className="text-purple-700 text-sm mt-1">
+                      You can view and manage meeting minutes and reports for your department only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Alerts */}
             {error && (
               <Alert 
@@ -502,34 +533,36 @@ export default function DocumentsPage() {
               </Alert>
             )}
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-6">
-              <nav className="flex space-x-8">
+            {/* Tabs - Same design as image */}
+            <div className="mb-6">
+              <nav className="flex space-x-0">
                 <button
                   onClick={() => setActiveTab('minutes')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
                     activeTab === 'minutes'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4" />
-                    <span>Meeting Minutes</span>
-                  </div>
+                  <FileText className="h-4 w-4" />
+                  <span>Meeting Minutes</span>
+                  {activeTab === 'minutes' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab('reports')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
                     activeTab === 'reports'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center space-x-2">
-                    <Folder className="h-4 w-4" />
-                    <span>Reports</span>
-                  </div>
+                  <Folder className="h-4 w-4" />
+                  <span>Reports</span>
+                  {activeTab === 'reports' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                  )}
                 </button>
               </nav>
             </div>
@@ -802,14 +835,23 @@ export default function DocumentsPage() {
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Department"
-              value={minutesForm.department_id}
-              onChange={(e) => setMinutesForm({ ...minutesForm, department_id: e.target.value })}
-              required
-              placeholder="Select department..."
-              options={departments.map(dept => ({ value: dept.id, label: dept.name }))}
-            />
+            {!isDepartmentLeader ? (
+              <Select
+                label="Department"
+                value={minutesForm.department_id}
+                onChange={(e) => setMinutesForm({ ...minutesForm, department_id: e.target.value })}
+                required
+                placeholder="Select department..."
+                options={departments.map(dept => ({ value: dept.id, label: dept.name }))}
+              />
+            ) : (
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName}
+                </div>
+              </div>
+            )}
 
             <Input
               label="Meeting Date"
@@ -850,7 +892,7 @@ export default function DocumentsPage() {
                   const selected = Array.from(e.target.selectedOptions, option => option.value);
                   setMinutesForm({ ...minutesForm, attendees: selected });
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                 size={5}
               >
                 {members.map(member => (
@@ -910,16 +952,25 @@ export default function DocumentsPage() {
               ]}
             />
 
-            <Select
-              label="Department"
-              value={reportForm.department_id}
-              onChange={(e) => setReportForm({ ...reportForm, department_id: e.target.value })}
-              placeholder="Church-wide"
-              options={[
-                { value: "", label: "Church-wide" },
-                ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-              ]}
-            />
+            {!isDepartmentLeader ? (
+              <Select
+                label="Department"
+                value={reportForm.department_id}
+                onChange={(e) => setReportForm({ ...reportForm, department_id: e.target.value })}
+                placeholder="Church-wide"
+                options={[
+                  { value: "", label: "Church-wide" },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                ]}
+              />
+            ) : (
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName}
+                </div>
+              </div>
+            )}
           </div>
           
           <TextArea

@@ -30,3 +30,6 @@ export type { TableProps, PaginationProps, Column } from './Table';
 
 export { EmptyState, Loading, ErrorState } from './EmptyState';
 export type { EmptyStateProps, LoadingProps, ErrorStateProps } from './EmptyState';
+
+export { Tabs } from './Tabs';
+export type { TabItem } from './Tabs';
