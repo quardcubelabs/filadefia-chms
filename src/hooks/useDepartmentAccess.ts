@@ -37,61 +37,80 @@ export function useDepartmentAccess(): DepartmentAccess {
 
         // If user is department leader, find their department
         if (user.profile.role === 'department_leader') {
-          let memberData = null;
+          console.log('🔍 DEPARTMENT ACCESS DEBUG - Department Leader Detected:', {
+            role: user.profile.role,
+            profileName: `${user.profile.first_name} ${user.profile.last_name}`,
+            email: user.email,
+            userId: user.id
+          });
 
-          // Try to find member record by name first
-          const { data: memberByName, error: nameError } = await supabase
-            .from('members')
-            .select('id, first_name, last_name, email')
-            .eq('first_name', user.profile.first_name)
-            .eq('last_name', user.profile.last_name)
+          // Option 1: Try to find department by user_id (if departments.leader_id references profiles.user_id)
+          let departmentData = null;
+          const { data: deptByUserId, error: userIdError } = await supabase
+            .from('departments')
+            .select('id, name, leader_id')
+            .eq('leader_id', user.id)
+            .eq('is_active', true)
             .maybeSingle();
 
-          if (memberByName) {
-            memberData = memberByName;
-          } else if (user.email) {
-            // If no match by name, try by email
-            const { data: memberByEmail, error: emailError } = await supabase
+          console.log('🔍 Department search by user ID:', {
+            userId: user.id,
+            found: !!deptByUserId,
+            departmentData: deptByUserId,
+            error: userIdError
+          });
+
+          if (deptByUserId) {
+            departmentData = deptByUserId;
+          } else {
+            // Option 2: Find member record and then department (fallback to old method)
+            const { data: memberData, error: memberError } = await supabase
               .from('members')
               .select('id, first_name, last_name, email')
               .eq('email', user.email)
               .maybeSingle();
 
-            if (memberByEmail) {
-              memberData = memberByEmail;
+            console.log('🔍 Fallback member search:', {
+              email: user.email,
+              found: !!memberData,
+              memberData,
+              error: memberError
+            });
+
+            if (memberData) {
+              const { data: deptByMemberId, error: memberDeptError } = await supabase
+                .from('departments')
+                .select('id, name, leader_id')
+                .eq('leader_id', memberData.id)
+                .eq('is_active', true)
+                .maybeSingle();
+
+              console.log('🔍 Department search by member ID:', {
+                memberId: memberData.id,
+                found: !!deptByMemberId,
+                departmentData: deptByMemberId,
+                error: memberDeptError
+              });
+
+              departmentData = deptByMemberId;
             }
           }
 
-          if (!memberData) {
-            console.log('No member record found for department leader:', {
+          if (!departmentData) {
+            console.log('❌ No department found for department leader:', {
+              userId: user.id,
+              email: user.email,
               profileName: `${user.profile.first_name} ${user.profile.last_name}`,
-              email: user.email
-            });
-            setLoading(false);
-            return;
-          }
-
-          // Now find the department where this member is the leader
-          const { data: departmentData, error: deptError } = await supabase
-            .from('departments')
-            .select('id, name, leader_id')
-            .eq('leader_id', memberData.id)
-            .eq('is_active', true)
-            .maybeSingle();
-
-          if (!departmentData || deptError) {
-            console.log('No department found for member leader:', {
-              memberId: memberData.id,
-              memberName: `${memberData.first_name} ${memberData.last_name}`,
-              error: deptError
+              searchedByUserId: !!deptByUserId,
+              triedFallbackMethod: true
             });
             setLoading(false);
             return;
           }
 
           console.log('✅ Found department for leader:', {
-            memberName: `${memberData.first_name} ${memberData.last_name}`,
-            memberId: memberData.id,
+            userId: user.id,
+            email: user.email,
             departmentId: departmentData.id,
             departmentName: departmentData.name,
             dashboardUrl: `/departments/${departmentData.id}`

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert, Table } from '@/components/ui';
 import { 
@@ -40,6 +41,7 @@ export default function DepartmentDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
+  const { isDepartmentLeader, departmentId } = useDepartmentAccess();
   
   const [department, setDepartment] = useState<Department | null>(null);
   const [members, setMembers] = useState<DepartmentMember[]>([]);
@@ -138,15 +140,27 @@ export default function DepartmentDashboardPage() {
       <Sidebar />
       
       <main className="ml-20 p-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/departments')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Departments
-        </Button>
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            {!isDepartmentLeader && (
+              <Button
+                variant="ghost"
+                onClick={() => router.push('/departments')}
+                className=""
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Departments
+              </Button>
+            )}
+            {isDepartmentLeader && departmentId === params.id && (
+              <div className="flex items-center space-x-2">
+                <Building2 className="h-5 w-5 text-red-600" />
+                <h1 className="text-2xl font-bold text-gray-900">Department Dashboard</h1>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Error Alert */}
         {error && (

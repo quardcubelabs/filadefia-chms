@@ -30,7 +30,8 @@ import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import jsPDF from 'jspdf';
+import { pdf } from '@react-pdf/renderer';
+import { PDFReport } from '@/components/reports/PDFReport';
 
 // Update the JumuiyaData interface to include all required properties
 interface JumuiyaData {
@@ -795,227 +796,42 @@ export default function ReportsPage() {
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (!reportData) return;
 
-    // Create jsPDF document
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: 'a4'
-    });
-    
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    
-    // ========== COVER PAGE WITH EXACT DESIGN ==========
-    
-    // Background - light gray
-    doc.setFillColor(245, 245, 245);
-    doc.rect(0, 0, pageWidth, pageHeight, 'F');
-    
-    // Dark gray diagonal background element (top-left)
-    doc.setFillColor(74, 85, 104);
-    doc.rect(0, 0, 200, 150, 'F');
-    
-    // Main red diagonal shape (center-left)
-    doc.setFillColor(220, 38, 38);
-    
-    // Large red diagonal rectangle
-    doc.rect(50, 150, 300, 80, 'F');
-    
-    // Secondary red shape (center)
-    doc.rect(200, 280, 200, 60, 'F');
-    
-    // Smaller red accent shape (bottom-right)
-    doc.setFillColor(220, 38, 38);
-    doc.rect(400, 600, 100, 40, 'F');
-    
-    // Header section with logo
-    doc.setFillColor(45, 55, 72);
-    doc.rect(0, 0, pageWidth, 60, 'F');
-    
-    // Church logo (cross design)
-    doc.setFillColor(220, 38, 38);
-    doc.rect(40, 15, 30, 30, 'F');
-    
-    // Cross symbol
-    doc.setFillColor(255, 255, 255);
-    doc.rect(50, 20, 10, 20, 'F');
-    doc.rect(45, 27, 20, 6, 'F');
-    
-    // Church name in header
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FILADELFIA CHURCH', 90, 35);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Tanzania Assemblies of God', 90, 50);
-    
-    // Main title
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(48);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Annual', 50, 180);
-    
-    doc.setFontSize(60);
-    doc.text('REPORT', 50, 240);
-    
-    // Year/Period
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'normal');
-    doc.text('2024 / 2025', 50, 320);
-    
-    // Dotted decoration
-    doc.setFillColor(255, 255, 255);
-    for (let i = 0; i < 8; i++) {
-      doc.circle(30, 370 + (i * 12), 3, 'F');
+    try {
+      // Generate filename
+      const currentDate = new Date().toISOString().split('T')[0];
+      const periodText = reportPeriod === 'weekly' ? 'Weekly' : 
+                        reportPeriod === 'monthly' ? 'Monthly' : 
+                        reportPeriod === 'quarterly' ? 'Quarterly' : 'Custom';
+      
+      const filename = `FCC-${periodText}-Report-${currentDate}.pdf`;
+      
+      // Generate PDF using react-pdf
+      const pdfBlob = await pdf(
+        <PDFReport 
+          reportData={reportData}
+          reportType={reportType}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      ).toBlob();
+      
+      // Create download link and trigger download
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
     }
-    
-    // Bottom information panel
-    doc.setFillColor(220, 38, 38);
-    doc.rect(50, pageHeight - 200, 300, 120, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PREPARED BY', 70, pageHeight - 170);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Church Leadership Team', 70, pageHeight - 150);
-    
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PRESENTED BY', 70, pageHeight - 120);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Pastor & Executive Committee', 70, pageHeight - 100);
-    
-    // Small text at bottom
-    doc.setTextColor(102, 102, 102);
-    doc.setFontSize(9);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 50, pageHeight - 30);
-    doc.text(`Report Type: ${reportType.toUpperCase()}`, 50, pageHeight - 15);
-    
-    // Add new page for content
-    doc.addPage();
-    
-    // ========== CONTENT PAGES ==========
-    let yPos = 80;
-    
-    // Content page header
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Report Summary', 50, 50);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Period: ${startDate} to ${endDate}`, 50, 70);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 350, 70);
-    
-    // Membership Section
-    if (reportType === 'membership' || reportType === 'comprehensive') {
-      // Red section header background
-      doc.setFillColor(220, 38, 38);
-      doc.rect(50, yPos - 10, pageWidth - 100, 30, 'F');
-      
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Membership Statistics', 60, yPos + 10);
-      yPos += 40;
-      
-      // Content box
-      doc.setFillColor(249, 249, 249);
-      doc.setDrawColor(229, 231, 235);
-      doc.rect(50, yPos, pageWidth - 100, 120, 'FD');
-
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Total Members: ${reportData.totalMembers}`, 70, yPos + 25);
-      doc.text(`Active Members: ${reportData.activeMembers}`, 70, yPos + 45);
-      doc.text(`Inactive Members: ${reportData.inactiveMembers}`, 70, yPos + 65);
-      doc.text(`New Members: ${reportData.newMembers}`, 70, yPos + 85);
-      yPos += 140;
-    }
-
-    // Financial Section
-    if (reportType === 'financial' || reportType === 'comprehensive') {
-      // Red section header background
-      doc.setFillColor(220, 38, 38);
-      doc.rect(50, yPos - 10, pageWidth - 100, 30, 'F');
-      
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Financial Statistics', 60, yPos + 10);
-      yPos += 40;
-      
-      // Content box
-      doc.setFillColor(249, 249, 249);
-      doc.setDrawColor(229, 231, 235);
-      doc.rect(50, yPos, pageWidth - 100, 140, 'FD');
-
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Total Income: ${formatCurrency(reportData.totalIncome)}`, 70, yPos + 25);
-      doc.text(`Total Expenses: ${formatCurrency(reportData.totalExpenses)}`, 70, yPos + 45);
-      doc.text(`Net Amount: ${formatCurrency(reportData.netAmount)}`, 70, yPos + 65);
-      doc.text(`Total Offerings: ${formatCurrency(reportData.totalOfferings)}`, 70, yPos + 85);
-      doc.text(`Total Tithes: ${formatCurrency(reportData.totalTithes)}`, 70, yPos + 105);
-      yPos += 160;
-    }
-
-    // Attendance Section
-    if (reportType === 'attendance' || reportType === 'comprehensive') {
-      // Red section header background
-      doc.setFillColor(220, 38, 38);
-      doc.rect(50, yPos - 10, pageWidth - 100, 30, 'F');
-      
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Attendance Statistics', 60, yPos + 10);
-      yPos += 40;
-      
-      // Content box
-      doc.setFillColor(249, 249, 249);
-      doc.setDrawColor(229, 231, 235);
-      doc.rect(50, yPos, pageWidth - 100, 80, 'FD');
-
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Average Attendance: ${reportData.averageAttendance}`, 70, yPos + 25);
-      doc.text(`Total Events: ${reportData.totalEvents}`, 70, yPos + 45);
-      yPos += 100;
-    }
-
-    // Footer with decorative elements
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(102, 102, 102);
-    doc.text('--- End of Report ---', pageWidth / 2 - 50, yPos + 30);
-    
-    // Add red accent line
-    doc.setFillColor(220, 38, 38);
-    doc.rect(50, yPos + 40, pageWidth - 100, 2, 'F');
-
-    // Generate descriptive filename and download
-    const currentDate = new Date().toISOString().split('T')[0];
-    const periodText = reportPeriod === 'yearly' ? 'Annual' : 
-                      reportPeriod === 'monthly' ? 'Monthly' : 
-                      reportPeriod === 'quarterly' ? 'Quarterly' : 'Custom';
-    
-    const filename = `FCC-${periodText}-Report-${currentDate}.pdf`;
-    doc.save(filename);
   };
 
   const formatCurrency = (amount: number): string => {

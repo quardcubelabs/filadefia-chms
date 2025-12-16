@@ -53,8 +53,10 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
       });
     }
 
+    const dashboardLabel = isDepartmentLeader && departmentId ? 'Department Dashboard' : 'Dashboard';
+
     return [
-      { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: dashboardHref },
+      { icon: <Home className="h-5 w-5" />, label: dashboardLabel, href: dashboardHref },
       { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
       { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' },
       { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },

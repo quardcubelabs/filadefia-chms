@@ -66,6 +66,35 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
+  // Redirect department leaders to their specific department dashboard
+  useEffect(() => {
+    console.log('🔍 DASHBOARD REDIRECT DEBUG:', {
+      authLoading,
+      isDepartmentLeader,
+      departmentId,
+      departmentName,
+      canAccessAllDepartments,
+      user: user?.email,
+      userRole: user?.profile?.role
+    });
+
+    if (!authLoading && isDepartmentLeader && departmentId && !canAccessAllDepartments) {
+      console.log('🚀 REDIRECTING department leader to department dashboard:', {
+        departmentId,
+        departmentName,
+        redirectUrl: `/departments/${departmentId}`
+      });
+      window.location.href = `/departments/${departmentId}`;
+    } else if (!authLoading && isDepartmentLeader) {
+      console.log('⚠️ Department leader detected but no redirect:', {
+        isDepartmentLeader,
+        hasDepartmentId: !!departmentId,
+        canAccessAll: canAccessAllDepartments,
+        reason: !departmentId ? 'No department ID' : canAccessAllDepartments ? 'Can access all departments' : 'Unknown'
+      });
+    }
+  }, [authLoading, isDepartmentLeader, departmentId, departmentName, canAccessAllDepartments, user]);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
