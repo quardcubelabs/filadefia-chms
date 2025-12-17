@@ -71,6 +71,7 @@ export default function MembersPage() {
   // Load member's department assignments
   const loadMemberDepartments = async (memberId: string) => {
     try {
+      if (!supabase) return;
       const { data, error } = await supabase
         .from('department_members')
         .select('department_id')
@@ -94,6 +95,7 @@ export default function MembersPage() {
       setError(null);
       console.log('Fetching members from database...');
       
+      if (!supabase) return;
       let query = supabase
         .from('members')
         .select('*, department_members(department_id, departments(name))')
@@ -121,6 +123,7 @@ export default function MembersPage() {
   // Generate next member number
   const generateMemberNumber = async (): Promise<string> => {
     const year = new Date().getFullYear();
+    if (!supabase) return `FCC-${year}-001`;
     const { data, error } = await supabase
       .from('members')
       .select('member_number')
@@ -300,6 +303,7 @@ export default function MembersPage() {
         updated_at: new Date().toISOString(),
       };
 
+      if (!supabase) return;
       const { data, error } = await supabase
         .from('members')
         .update(cleanedData)
@@ -319,6 +323,7 @@ export default function MembersPage() {
         console.log('Updating department assignments...');
         
         // First, remove all existing department assignments
+        if (!supabase) return;
         const { error: deleteError } = await supabase
           .from('department_members')
           .delete()
@@ -338,6 +343,7 @@ export default function MembersPage() {
             is_active: true,
           }));
 
+          if (!supabase) return;
           const { error: insertError } = await supabase
             .from('department_members')
             .insert(departmentAssignments);
@@ -374,6 +380,7 @@ export default function MembersPage() {
       setSubmitting(true);
       setError(null);
 
+      if (!supabase) return;
       const { error } = await supabase
         .from('members')
         .delete()
@@ -449,6 +456,7 @@ export default function MembersPage() {
         const memberNumber = await generateMemberNumber();
 
         // Insert member
+        if (!supabase) continue;
         const { data, error } = await supabase
           .from('members')
           .insert([{
@@ -763,7 +771,7 @@ export default function MembersPage() {
                               onClick={async () => {
                                 setSelectedMember(member);
                                 const deptIds = await loadMemberDepartments(member.id);
-                                setSelectedMemberDepartments(deptIds);
+                                setSelectedMemberDepartments(deptIds || []);
                                 setShowEditModal(true);
                               }}
                             >

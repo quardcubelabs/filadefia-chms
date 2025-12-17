@@ -47,6 +47,12 @@ export default function DepartmentDashboardPage() {
   const [members, setMembers] = useState<DepartmentMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // CRUD operation states
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [showEditMember, setShowEditMember] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<DepartmentMember | null>(null);
+  const [availableMembers, setAvailableMembers] = useState<any[]>([]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -60,6 +66,7 @@ export default function DepartmentDashboardPage() {
       setError(null);
 
       // Fetch department details
+      if (!supabase) return;
       const { data: deptData, error: deptError } = await supabase
         .from('departments')
         .select('*')
@@ -69,7 +76,8 @@ export default function DepartmentDashboardPage() {
       if (deptError) throw deptError;
       setDepartment(deptData);
 
-      // Fetch department members with member details
+      // Fetch department members with member details - using fallback approach for broken relationships
+      if (!supabase) return;
       const { data: membersData, error: membersError } = await supabase
         .from('department_members')
         .select(`
@@ -81,12 +89,131 @@ export default function DepartmentDashboardPage() {
         .order('position');
 
       if (membersError) throw membersError;
-      setMembers(membersData || []);
+
+      // For broken relationships, fetch members separately and merge
+      let processedMembers = membersData || [];
+      
+      if (processedMembers.some((dm: DepartmentMember) => !dm.member)) {
+        console.log('🔧 Fixing broken member relationships...');
+        
+        // Get all member IDs from department_members
+        const memberIds = processedMembers.map((dm: DepartmentMember) => dm.member_id).filter(Boolean);
+        
+        if (memberIds.length > 0) {
+          // Fetch member details separately
+          if (!supabase) return;
+          const { data: memberDetails, error: memberError } = await supabase
+            .from('members')
+            .select('*')
+            .in('id', memberIds);
+
+          if (!memberError && memberDetails) {
+            // Merge member details back into department_members
+            processedMembers = processedMembers.map((dm: DepartmentMember) => ({
+              ...dm,
+              member: memberDetails.find((m: any) => m.id === dm.member_id) || null
+            }));
+          }
+        }
+      }
+      
+      setMembers(processedMembers);
 
     } catch (err: any) {
       setError(err.message || 'Failed to load department data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableMembers = async () => {
+    try {
+      // Get members not already in this department
+      const currentMemberIds = members.map(dm => dm.member_id).filter(Boolean);
+      
+      if (!supabase) return;
+      let query = supabase
+        .from('members')
+        .select('*')
+        .eq('status', 'active');
+        
+      if (currentMemberIds.length > 0) {
+        query = query.not('id', 'in', `(${currentMemberIds.join(',')})`);
+      }
+      
+      const { data, error } = await query.order('first_name');
+      
+      if (error) throw error;
+      setAvailableMembers(data || []);
+    } catch (err: any) {
+      console.error('Error fetching available members:', err);
+    }
+  };
+
+  const handleAddMember = async (memberId: string, position: string = 'member') => {
+    try {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('department_members')
+        .insert({
+          department_id: params.id,
+          member_id: memberId,
+          position: position,
+          joined_date: new Date().toISOString().split('T')[0],
+          is_active: true
+        })
+        .select();
+
+      if (error) throw error;
+
+      // Refresh department data
+      await fetchDepartmentData();
+      setShowAddMember(false);
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to add member');
+    }
+  };
+
+  const handleUpdateMemberPosition = async (departmentMemberId: string, newPosition: string) => {
+    try {
+      if (!supabase) return;
+      const { error } = await supabase
+        .from('department_members')
+        .update({ position: newPosition })
+        .eq('id', departmentMemberId);
+
+      if (error) throw error;
+
+      // Refresh department data
+      await fetchDepartmentData();
+      setShowEditMember(false);
+      setSelectedMember(null);
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to update member position');
+    }
+  };
+
+  const handleRemoveMember = async (departmentMemberId: string) => {
+    if (!confirm('Are you sure you want to remove this member from the department?')) {
+      return;
+    }
+    
+    try {
+      if (!supabase) return;
+      const { error } = await supabase
+        .from('department_members')
+        .update({ is_active: false })
+        .eq('id', departmentMemberId);
+
+      if (error) throw error;
+
+      // Refresh department data
+      await fetchDepartmentData();
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to remove member');
     }
   };
 
@@ -127,9 +254,9 @@ export default function DepartmentDashboardPage() {
     return <Badge variant={variants[status]} dot>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
   };
 
-  // Group members by position
-  const leadershipMembers = members.filter(m => ['chairperson', 'secretary', 'treasurer', 'coordinator'].includes(m.position));
-  const regularMembers = members.filter(m => m.position === 'member');
+  // Group members by position (filter out null member records)
+  const leadershipMembers = members.filter(m => m.member && ['chairperson', 'secretary', 'treasurer', 'coordinator'].includes(m.position));
+  const regularMembers = members.filter(m => m.member && m.position === 'member');
 
   if (!user && !authLoading) {
     return null;
@@ -249,7 +376,7 @@ export default function DepartmentDashboardPage() {
                   <div className="flex items-center justify-between mb-2">
                     <UserCheck className="h-8 w-8 text-tag-green-600" />
                     <span className="text-3xl font-bold text-tag-gray-900">
-                      {members.filter(m => m.member.status === 'active').length}
+                      {members.filter(m => m.member && m.member.status === 'active').length}
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-tag-gray-600">Active Members</p>
@@ -281,31 +408,31 @@ export default function DepartmentDashboardPage() {
                       <div
                         key={dm.id}
                         className="bg-gradient-to-br from-tag-gray-50 to-white border border-tag-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => router.push(`/members/${dm.member.id}`)}
+                        onClick={() => dm.member && router.push(`/members/${dm.member.id}`)}
                       >
                         <div className="flex flex-col items-center text-center">
                           <Avatar
-                            src={dm.member.photo_url}
-                            alt={`${dm.member.first_name} ${dm.member.last_name}`}
+                            src={dm.member?.photo_url}
+                            alt={`${dm.member?.first_name} ${dm.member?.last_name}`}
                             size="lg"
                             className="mb-3"
                           />
                           <h3 className="font-bold text-tag-gray-900 mb-1">
-                            {dm.member.first_name} {dm.member.last_name}
+                            {dm.member?.first_name} {dm.member?.last_name}
                           </h3>
                           <p className="text-xs text-tag-gray-600 mb-2">
-                            {dm.member.member_number}
+                            {dm.member?.member_number}
                           </p>
                           {getPositionBadge(dm.position)}
                           <div className="mt-3 pt-3 border-t border-tag-gray-200 w-full">
                             <div className="flex items-center justify-center text-xs text-tag-gray-600 mb-1">
                               <Phone className="h-3 w-3 mr-1" />
-                              {dm.member.phone}
+                              {dm.member?.phone}
                             </div>
-                            {dm.member.email && (
+                            {dm.member?.email && (
                               <div className="flex items-center justify-center text-xs text-tag-gray-600">
                                 <Mail className="h-3 w-3 mr-1" />
-                                {dm.member.email}
+                                {dm.member?.email}
                               </div>
                             )}
                           </div>
@@ -325,6 +452,18 @@ export default function DepartmentDashboardPage() {
                     <Users className="h-6 w-6 mr-2 text-tag-blue-600" />
                     All Members ({members.length})
                   </h2>
+                  {isDepartmentLeader && departmentId === params.id && (
+                    <Button
+                      onClick={() => {
+                        fetchAvailableMembers();
+                        setShowAddMember(true);
+                      }}
+                      className="bg-tag-red-600 hover:bg-tag-red-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Member
+                    </Button>
+                  )}
                 </div>
 
                 {members.length === 0 ? (
@@ -352,16 +491,16 @@ export default function DepartmentDashboardPage() {
                             <td className="py-4 px-4">
                               <div className="flex items-center">
                                 <Avatar
-                                  src={dm.member.photo_url}
-                                  alt={`${dm.member.first_name} ${dm.member.last_name}`}
+                                  src={dm.member?.photo_url}
+                                  alt={`${dm.member?.first_name || 'Unknown'} ${dm.member?.last_name || 'Member'}`}
                                   size="sm"
                                   className="mr-3"
                                 />
                                 <div>
                                   <p className="font-semibold text-tag-gray-900">
-                                    {dm.member.first_name} {dm.member.last_name}
+                                    {dm.member?.first_name || 'Unknown'} {dm.member?.last_name || 'Member'}
                                   </p>
-                                  <p className="text-xs text-tag-gray-600">{dm.member.member_number}</p>
+                                  <p className="text-xs text-tag-gray-600">{dm.member?.member_number || 'N/A'}</p>
                                 </div>
                               </div>
                             </td>
@@ -370,14 +509,14 @@ export default function DepartmentDashboardPage() {
                             </td>
                             <td className="py-4 px-4">
                               <div className="text-sm">
-                                <p className="text-tag-gray-900">{dm.member.phone}</p>
-                                {dm.member.email && (
+                                <p className="text-tag-gray-900">{dm.member?.phone || 'N/A'}</p>
+                                {dm.member?.email && (
                                   <p className="text-tag-gray-600 text-xs">{dm.member.email}</p>
                                 )}
                               </div>
                             </td>
                             <td className="py-4 px-4">
-                              {getStatusBadge(dm.member.status)}
+                              {dm.member ? getStatusBadge(dm.member.status) : <Badge variant="default">Unknown</Badge>}
                             </td>
                             <td className="py-4 px-4">
                               <div className="flex items-center text-sm text-tag-gray-600">
@@ -386,14 +525,38 @@ export default function DepartmentDashboardPage() {
                               </div>
                             </td>
                             <td className="py-4 px-4">
-                              <div className="flex items-center justify-end">
+                              <div className="flex items-center justify-end space-x-2">
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => router.push(`/members/${dm.member.id}`)}
+                                  onClick={() => dm.member && router.push(`/members/${dm.member.id}`)}
+                                  disabled={!dm.member}
                                 >
                                   View Profile
                                 </Button>
+                                {isDepartmentLeader && departmentId === params.id && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setSelectedMember(dm);
+                                        setShowEditMember(true);
+                                      }}
+                                      className="text-tag-blue-600 hover:text-tag-blue-700"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleRemoveMember(dm.id)}
+                                      className="text-tag-red-600 hover:text-tag-red-700"
+                                    >
+                                      Remove
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -405,6 +568,134 @@ export default function DepartmentDashboardPage() {
               </CardBody>
             </Card>
           </>
+        )}
+
+        {/* Add Member Modal */}
+        {showAddMember && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Add Member to Department</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Member
+                    </label>
+                    <select
+                      id="member-select"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">Choose a member...</option>
+                      {availableMembers.map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.first_name} {member.last_name} ({member.member_number})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Position
+                    </label>
+                    <select
+                      id="position-select"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      defaultValue="member"
+                    >
+                      <option value="member">Member</option>
+                      <option value="coordinator">Coordinator</option>
+                      <option value="secretary">Secretary</option>
+                      <option value="treasurer">Treasurer</option>
+                      <option value="chairperson">Chairperson</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAddMember(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const memberSelect = document.getElementById('member-select') as HTMLSelectElement;
+                      const positionSelect = document.getElementById('position-select') as HTMLSelectElement;
+                      
+                      if (memberSelect.value) {
+                        handleAddMember(memberSelect.value, positionSelect.value);
+                      }
+                    }}
+                    className="bg-tag-red-600 hover:bg-tag-red-700 text-white"
+                  >
+                    Add Member
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Member Modal */}
+        {showEditMember && selectedMember && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Edit Member Position
+                </h3>
+                
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    Member: <strong>{selectedMember.member?.first_name} {selectedMember.member?.last_name}</strong>
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Position
+                    </label>
+                    <select
+                      id="edit-position-select"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      defaultValue={selectedMember.position}
+                    >
+                      <option value="member">Member</option>
+                      <option value="coordinator">Coordinator</option>
+                      <option value="secretary">Secretary</option>
+                      <option value="treasurer">Treasurer</option>
+                      <option value="chairperson">Chairperson</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowEditMember(false);
+                      setSelectedMember(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const positionSelect = document.getElementById('edit-position-select') as HTMLSelectElement;
+                      handleUpdateMemberPosition(selectedMember.id, positionSelect.value);
+                    }}
+                    className="bg-tag-red-600 hover:bg-tag-red-700 text-white"
+                  >
+                    Update Position
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

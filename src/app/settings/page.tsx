@@ -128,12 +128,14 @@ export default function SettingsPage() {
     if (!user?.profile?.id) return;
     
     try {
+      if (!supabase) return;
       const { data: contributions } = await supabase
         .from('financial_transactions')
         .select('amount')
         .eq('member_id', user.profile.id)
         .eq('transaction_type', 'offering');
 
+      if (!supabase) return;
       const { data: events } = await supabase
         .from('event_attendees')
         .select('event_id')
@@ -153,6 +155,7 @@ export default function SettingsPage() {
     if (!user?.id) return;
     
     try {
+      if (!supabase) return;
       const { data } = await supabase
         .from('user_settings')
         .select('*')
@@ -181,6 +184,7 @@ export default function SettingsPage() {
       setUploadProgress(0);
 
       // Check user permissions first
+      if (!supabase) return;
       const { data: userData } = await supabase.auth.getUser();
       console.log('Upload attempt by user:', userData?.user?.id, 'Role:', user?.profile?.role);
 
@@ -190,6 +194,7 @@ export default function SettingsPage() {
       
       console.log('Uploading to profile-photos bucket:', fileName);
       
+      if (!supabase) return;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-photos')
         .upload(fileName, selectedPhoto);
@@ -206,6 +211,7 @@ export default function SettingsPage() {
       setUploadProgress(50);
 
       // Get public URL
+      if (!supabase) return;
       const { data: { publicUrl } } = supabase.storage
         .from('profile-photos')
         .getPublicUrl(fileName);
@@ -214,6 +220,7 @@ export default function SettingsPage() {
       setUploadProgress(75);
 
       // Update profile in the correct table (profiles, not user_profiles)
+      if (!supabase) return;
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -251,6 +258,7 @@ export default function SettingsPage() {
     try {
       setIsSaving(true);
       
+      if (!supabase) return;
       const { error } = await supabase
         .from('user_profiles')
         .update(editedProfile)
@@ -275,6 +283,7 @@ export default function SettingsPage() {
       setSettings(newSettings);
 
       // Save to database
+      if (!supabase) return;
       const { error } = await supabase
         .from('user_settings')
         .upsert({
@@ -305,6 +314,7 @@ export default function SettingsPage() {
     try {
       setIsSaving(true);
       
+      if (!supabase) return;
       const { error } = await supabase.auth.updateUser({
         password: passwords.new
       });

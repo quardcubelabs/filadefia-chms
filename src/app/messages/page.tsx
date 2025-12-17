@@ -255,6 +255,7 @@ export default function MessagesPage() {
   const testDatabaseConnection = async () => {
     console.log('Testing basic database connection...');
     try {
+      if (!supabase) return;
       const { data, error } = await supabase.from('profiles').select('id').limit(1);
       console.log('Database test result:', { data, error });
       return !error;
@@ -299,8 +300,8 @@ export default function MessagesPage() {
         count, 
         error: testError,
         hasData: !!testData,
-        supabaseUrl: supabase.supabaseUrl,
-        supabaseKey: supabase.supabaseKey ? 'present' : 'missing'
+        supabaseUrl: 'configured',
+        supabaseKey: 'configured'
       });
       
       if (testError) {

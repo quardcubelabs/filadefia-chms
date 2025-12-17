@@ -3,11 +3,11 @@ import { config, isSupabaseConfigured } from '@/lib/config'
 
 export function createClient() {
   if (!isSupabaseConfigured()) {
-    console.error('Supabase environment variables not configured!');
-    console.error('NEXT_PUBLIC_SUPABASE_URL:', config.supabase.url ? 'Set' : 'Missing');
-    console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', config.supabase.anonKey ? 'Set' : 'Missing');
-    // Return a mock client for build-time
-    return null as any;
+    console.warn('Supabase environment variables not configured!');
+    console.warn('NEXT_PUBLIC_SUPABASE_URL:', config.supabase.url ? 'Set' : 'Missing');
+    console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY:', config.supabase.anonKey ? 'Set' : 'Missing');
+    // Return null during build-time when env vars are missing
+    return null;
   }
   
   console.log('Creating Supabase client...');

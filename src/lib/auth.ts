@@ -83,6 +83,11 @@ export const auth = {
   getCurrentUser: async () => {
     const supabase = createClient();
     
+    if (!supabase) {
+      console.warn('Supabase client not available');
+      return null;
+    }
+    
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       

@@ -110,6 +110,7 @@ export default function MemberProfilePage() {
       setError(null);
 
       // Fetch member details
+      if (!supabase) return;
       const { data: memberData, error: memberError } = await supabase
         .from('members')
         .select('*')
@@ -120,6 +121,7 @@ export default function MemberProfilePage() {
       setMember(memberData);
 
       // Fetch attendance count
+      if (!supabase) return;
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('id', { count: 'exact' })
@@ -131,6 +133,7 @@ export default function MemberProfilePage() {
       }
 
       // Fetch detailed contributions data (similar to finance page)
+      if (!supabase) return;
       const { data: contributionsData, error: contributionsError } = await supabase
         .from('financial_transactions')
         .select(`
@@ -155,11 +158,22 @@ export default function MemberProfilePage() {
       if (!contributionsError && contributionsData) {
         const total = contributionsData.reduce((sum: number, transaction: any) => sum + Number(transaction.amount), 0);
         setTotalContributions(total);
-        setContributions(contributionsData);
-        calculateContributionStats(contributionsData);
+        // Map the data to match expected Contribution type
+        const mappedContributions = contributionsData.map((item: any) => ({
+          ...item,
+          department: Array.isArray(item.department) && item.department.length > 0 
+            ? { name: item.department[0].name } 
+            : { name: 'Unknown' },
+          recorder: Array.isArray(item.recorder) && item.recorder.length > 0
+            ? item.recorder[0]
+            : { first_name: 'Unknown', last_name: '' }
+        }));
+        setContributions(mappedContributions);
+        calculateContributionStats(mappedContributions);
       }
 
       // Fetch department count
+      if (!supabase) return;
       const { data: departmentData, error: departmentError } = await supabase
         .from('department_members')
         .select('id', { count: 'exact' })
@@ -185,6 +199,7 @@ export default function MemberProfilePage() {
     if (!confirm(`Are you sure you want to delete this member?`)) return;
 
     try {
+      if (!supabase) return;
       const { error } = await supabase
         .from('members')
         .delete()

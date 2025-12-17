@@ -30,99 +30,114 @@ export function useDepartmentAccess(): DepartmentAccess {
       try {
         // If user is administrator or pastor, they can access everything
         if (['administrator', 'pastor'].includes(user.profile.role)) {
+          console.log('✅ Admin/Pastor user - full access');
           setDepartmentInfo({ id: null, name: null });
           setLoading(false);
           return;
         }
 
-        // If user is department leader, find their department
+        // If user is department leader, find their department using NEW SIMPLIFIED APPROACH
         if (user.profile.role === 'department_leader') {
-          console.log('🔍 DEPARTMENT ACCESS DEBUG - Department Leader Detected:', {
+          console.log('🔍 SIMPLIFIED DEPARTMENT ACCESS - Department Leader:', {
             role: user.profile.role,
             profileName: `${user.profile.first_name} ${user.profile.last_name}`,
             email: user.email,
             userId: user.id
           });
 
-          // Option 1: Try to find department by user_id (if departments.leader_id references profiles.user_id)
-          let departmentData = null;
-          const { data: deptByUserId, error: userIdError } = await supabase
+          // NEW: Direct lookup using leader_user_id (after database migration)
+          const { data: departmentData, error: deptError } = await supabase
             .from('departments')
-            .select('id, name, leader_id')
-            .eq('leader_id', user.id)
+            .select('id, name, leader_user_id')
+            .eq('leader_user_id', user.id)
             .eq('is_active', true)
             .maybeSingle();
 
-          console.log('🔍 Department search by user ID:', {
+          console.log('🔍 Direct department lookup by leader_user_id:', {
             userId: user.id,
-            found: !!deptByUserId,
-            departmentData: deptByUserId,
-            error: userIdError
+            found: !!departmentData,
+            departmentData,
+            error: deptError
           });
 
-          if (deptByUserId) {
-            departmentData = deptByUserId;
+          if (departmentData) {
+            console.log('✅ Found department via new structure:', {
+              departmentId: departmentData.id,
+              departmentName: departmentData.name,
+              dashboardUrl: `/departments/${departmentData.id}`
+            });
+
+            setDepartmentInfo({ 
+              id: departmentData.id, 
+              name: departmentData.name 
+            });
           } else {
-            // Option 2: Find member record and then department (fallback to old method)
+            console.log('⚠️ No department found with new structure, trying fallback to old structure...');
+            
+            // FALLBACK: Try old structure (departments.leader_id -> members.id)
             const { data: memberData, error: memberError } = await supabase
               .from('members')
               .select('id, first_name, last_name, email')
               .eq('email', user.email)
               .maybeSingle();
 
-            console.log('🔍 Fallback member search:', {
-              email: user.email,
-              found: !!memberData,
-              memberData,
-              error: memberError
-            });
-
             if (memberData) {
-              const { data: deptByMemberId, error: memberDeptError } = await supabase
+              const { data: oldDeptData, error: oldDeptError } = await supabase
                 .from('departments')
                 .select('id, name, leader_id')
                 .eq('leader_id', memberData.id)
                 .eq('is_active', true)
                 .maybeSingle();
 
-              console.log('🔍 Department search by member ID:', {
-                memberId: memberData.id,
-                found: !!deptByMemberId,
-                departmentData: deptByMemberId,
-                error: memberDeptError
-              });
+              if (oldDeptData) {
+                console.log('⚠️ Found department via old structure - database migration needed:', {
+                  memberId: memberData.id,
+                  departmentId: oldDeptData.id,
+                  departmentName: oldDeptData.name
+                });
 
-              departmentData = deptByMemberId;
+                setDepartmentInfo({ 
+                  id: oldDeptData.id, 
+                  name: oldDeptData.name 
+                });
+              } else {
+                console.log('❌ No department found in old structure either');
+              }
+            } else {
+              console.log('❌ No matching member record found');
             }
           }
-
-          if (!departmentData) {
-            console.log('❌ No department found for department leader:', {
-              userId: user.id,
-              email: user.email,
-              profileName: `${user.profile.first_name} ${user.profile.last_name}`,
-              searchedByUserId: !!deptByUserId,
-              triedFallbackMethod: true
-            });
-            setLoading(false);
-            return;
-          }
-
-          console.log('✅ Found department for leader:', {
-            userId: user.id,
-            email: user.email,
-            departmentId: departmentData.id,
-            departmentName: departmentData.name,
-            dashboardUrl: `/departments/${departmentData.id}`
-          });
-
-          setDepartmentInfo({ 
-            id: departmentData.id, 
-            name: departmentData.name 
-          });
         }
+
+        // If user is regular member, check if they belong to a department
+        if (user.profile.role === 'member') {
+          // Check if profile has department_id (after database migration)
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('department_id')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profileData?.department_id) {
+            const { data: deptData, error: deptErr } = await supabase
+              .from('departments')
+              .select('id, name')
+              .eq('id', profileData.department_id)
+              .eq('is_active', true)
+              .single();
+
+            if (deptData && !deptErr) {
+              console.log('ℹ️ Member belongs to department:', deptData.name);
+              setDepartmentInfo({ 
+                id: deptData.id, 
+                name: deptData.name 
+              });
+            }
+          }
+        }
+
       } catch (error) {
-        console.error('Error in department access:', error);
+        console.error('💥 Error in department access check:', error);
       } finally {
         setLoading(false);
       }

@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/lib/supabase/client';
 import { Member } from '@/types';
@@ -18,13 +18,8 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { 
-    departmentId, 
-    departmentName, 
-    isDepartmentLeader, 
-    canAccessAllDepartments 
-  } = useDepartmentAccess();
   const [darkMode, setDarkMode] = useState(false);
   const [showTimeout, setShowTimeout] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -48,52 +43,29 @@ export default function DashboardPage() {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
+  // SIMPLIFIED DASHBOARD LOADING
   useEffect(() => {
-    console.log('Dashboard - Auth state:', { user: !!user, loading: authLoading });
+    console.log('🏠 DASHBOARD: Loading dashboard for authenticated user');
     
-    if (!authLoading && !user) {
+    // If auth is still loading, wait
+    if (authLoading) return;
+
+    // If no user, redirect to login
+    if (!user) {
       console.log('No user found, redirecting to login...');
-      window.location.href = '/login';
+      router.push('/login');
       return;
     }
 
-    if (user && !authLoading) {
-      fetchDashboardData();
-      fetchFinancialData();
-      fetchDepartmentLeaders();
-      fetchNotifications();
-      fetchUserProfile();
-    }
+    // Load dashboard data - user should already be properly routed here
+    console.log('✅ Loading admin dashboard for user:', user.email);
+    fetchDashboardData();
+    fetchFinancialData();
+    fetchDepartmentLeaders();
+    fetchNotifications();
+    fetchUserProfile();
+    
   }, [user, authLoading]);
-
-  // Redirect department leaders to their specific department dashboard
-  useEffect(() => {
-    console.log('🔍 DASHBOARD REDIRECT DEBUG:', {
-      authLoading,
-      isDepartmentLeader,
-      departmentId,
-      departmentName,
-      canAccessAllDepartments,
-      user: user?.email,
-      userRole: user?.profile?.role
-    });
-
-    if (!authLoading && isDepartmentLeader && departmentId && !canAccessAllDepartments) {
-      console.log('🚀 REDIRECTING department leader to department dashboard:', {
-        departmentId,
-        departmentName,
-        redirectUrl: `/departments/${departmentId}`
-      });
-      window.location.href = `/departments/${departmentId}`;
-    } else if (!authLoading && isDepartmentLeader) {
-      console.log('⚠️ Department leader detected but no redirect:', {
-        isDepartmentLeader,
-        hasDepartmentId: !!departmentId,
-        canAccessAll: canAccessAllDepartments,
-        reason: !departmentId ? 'No department ID' : canAccessAllDepartments ? 'Can access all departments' : 'Unknown'
-      });
-    }
-  }, [authLoading, isDepartmentLeader, departmentId, departmentName, canAccessAllDepartments, user]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -115,44 +87,30 @@ export default function DashboardPage() {
 
       setLoading(true);
 
-      // Fetch total members count (with department filtering for department leaders)
-      let membersQuery = supabase
+      // Fetch total members count (admin view - all members)
+      const { data: members, error: membersError } = await supabase
         .from('members')
         .select('id, date_of_birth, department_members(department_id)')
         .eq('status', 'active');
-
-      // Apply department filtering for department leaders
-      if (isDepartmentLeader && departmentId) {
-        membersQuery = membersQuery.eq('department_members.department_id', departmentId);
-      }
-
-      const { data: members, error: membersError } = await membersQuery;
 
       if (membersError) {
         console.error('Error fetching members:', membersError);
         return;
       }
 
-      // Fetch departments count (only user's department for department leaders)
-      let departmentsQuery = supabase
+      // Fetch all departments count (admin view)
+      const { data: departments, error: departmentsError } = await supabase
         .from('departments')
         .select('id, name')
         .eq('is_active', true);
-
-      // Apply department filtering for department leaders
-      if (isDepartmentLeader && departmentId) {
-        departmentsQuery = departmentsQuery.eq('id', departmentId);
-      }
-
-      const { data: departments, error: departmentsError } = await departmentsQuery;
 
       if (departmentsError) {
         console.error('Error fetching departments:', departmentsError);
         return;
       }
 
-      // Fetch department member counts (only user's department for department leaders)
-      let departmentStatsQuery = supabase
+      // Fetch department member counts (admin view - all departments)
+      const { data: departmentStats, error: departmentStatsError } = await supabase
         .from('departments')
         .select(`
           id,
@@ -161,13 +119,6 @@ export default function DashboardPage() {
         `)
         .eq('is_active', true)
         .eq('department_members.is_active', true);
-
-      // Apply department filtering for department leaders
-      if (isDepartmentLeader && departmentId) {
-        departmentStatsQuery = departmentStatsQuery.eq('id', departmentId);
-      }
-
-      const { data: departmentStats, error: departmentStatsError } = await departmentStatsQuery;
 
       if (departmentStatsError) {
         console.error('Error fetching department stats:', departmentStatsError);
@@ -181,7 +132,7 @@ export default function DashboardPage() {
         seniors: 0  // 61+
       };
 
-      members?.forEach((member: Member) => {
+      members?.forEach((member: any) => {
         const birthYear = new Date(member.date_of_birth).getFullYear();
         const age = currentYear - birthYear;
         
@@ -197,7 +148,7 @@ export default function DashboardPage() {
       setDashboardData({
         totalMembers: members?.length || 0,
         totalDepartments: departments?.length || 0,
-        departmentStats: departmentStats || [],
+        departmentStats: departmentStats || [] as any,
         membersByAge
       });
 
@@ -220,10 +171,7 @@ export default function DashboardPage() {
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true);
 
-      // Apply department filtering for department leaders
-      if (isDepartmentLeader && departmentId) {
-        incomeQuery = incomeQuery.eq('members.department_members.department_id', departmentId);
-      }
+      // Admin view - no department filtering needed
 
       const { data: incomeData, error: incomeError } = await incomeQuery;
       
@@ -245,10 +193,7 @@ export default function DashboardPage() {
         .eq('verified', true)
         .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
 
-      // Apply department filtering for department leaders
-      if (isDepartmentLeader && departmentId) {
-        monthlyQuery = monthlyQuery.eq('members.department_members.department_id', departmentId);
-      }
+      // Admin view - no department filtering needed
 
       const { data: monthlyData, error: monthlyError } = await monthlyQuery;
       
@@ -390,6 +335,7 @@ export default function DashboardPage() {
       const supabase = createClient();
       if (!user?.id) return;
 
+      if (!supabase) return;
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -401,6 +347,7 @@ export default function DashboardPage() {
         // If profile doesn't exist, create a basic one
         if (error.code === 'PGRST116') {
           console.log('Profile not found, creating basic profile...');
+          if (!supabase) return;
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
@@ -439,6 +386,7 @@ export default function DashboardPage() {
       const supabase = createClient();
 
       // First, check if user has permission to upload
+      if (!supabase) return;
       const { data: userData } = await supabase.auth.getUser();
       console.log('Current user for upload:', userData?.user?.id, user?.profile?.role);
 
@@ -456,6 +404,7 @@ export default function DashboardPage() {
       
       for (const bucket of bucketsToTry) {
         console.log(`Attempting upload to bucket: ${bucket}`);
+        if (!supabase) return;
         const result = await supabase.storage
           .from(bucket)
           .upload(filePath, file);
@@ -483,6 +432,7 @@ export default function DashboardPage() {
       console.log('Upload successful:', uploadData);
 
       // Get public URL from the successful bucket
+      if (!supabase) return '';
       const { data: { publicUrl } } = supabase.storage
         .from(successfulBucket)
         .getPublicUrl(filePath);
@@ -490,6 +440,7 @@ export default function DashboardPage() {
       console.log('Public URL generated:', publicUrl);
 
       // Update profile with new photo URL
+      if (!supabase) return '';
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ photo_url: publicUrl })
@@ -524,6 +475,7 @@ export default function DashboardPage() {
       const supabase = createClient();
 
       // Update profiles table
+      if (!supabase) return;
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updates)
@@ -554,6 +506,18 @@ export default function DashboardPage() {
   const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
   const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const buttonBg = darkMode ? 'bg-gray-800' : 'bg-gray-100';
+
+  // Show loading screen while authenticating
+  if (authLoading) {
+    return (
+      <div className={`min-h-screen ${bgColor} flex items-center justify-center`}>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className={`text-lg font-medium ${textPrimary}`}>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${bgColor}`}>
@@ -681,22 +645,7 @@ export default function DashboardPage() {
 
         {/* Dashboard Content */}
         <main className="p-8">
-          {/* Department Leader Access Notification */}
-          {isDepartmentLeader && departmentName && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <Building2 className="h-5 w-5 text-red-600 mr-2" />
-                <div>
-                  <h3 className="text-sm font-medium text-red-800">
-                    Department Dashboard: {departmentName}
-                  </h3>
-                  <p className="text-sm text-red-700">
-                    You're viewing data specific to your department. All statistics and reports are filtered for {departmentName} members only.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Admin Dashboard - Church-wide data */}
 
           <div className="grid grid-cols-12 gap-6">
             {/* Left Column - Stats and Charts */}

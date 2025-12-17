@@ -22,7 +22,14 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   
   // Create supabase client once and memoize it
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useMemo(() => {
+    try {
+      return createClient();
+    } catch (error) {
+      console.warn('Failed to create Supabase client:', error);
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -168,6 +175,12 @@ export function useAuth() {
   }, [supabase]);
 
   const signOut = async () => {
+    if (!supabase) {
+      console.warn('Supabase client not available for sign out');
+      setUser(null);
+      return;
+    }
+    
     try {
       await supabase.auth.signOut();
       setUser(null);

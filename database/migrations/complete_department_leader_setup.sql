@@ -1,46 +1,74 @@
--- Complete Department Leader Setup with lastname_fcc@gmail.com Format
--- Run this script to create/update all department leader credentials with the new email format
--- Password: FCC2026 for all department leaders
+-- Complete Database Schema Fix for Department Leader Recognition
+-- This addresses the fundamental relationship issues between users, members, and departments
 
-DO $$
-DECLARE
-    dept_record RECORD;
-    member_record RECORD;
-    leader_count INTEGER := 0;
-    updated_count INTEGER := 0;
-    new_email TEXT;
-    old_email TEXT;
-BEGIN
-    RAISE NOTICE '=== COMPLETE DEPARTMENT LEADER SETUP ===';
-    RAISE NOTICE 'Email Format: lastname_fcc@gmail.com';
-    RAISE NOTICE 'Password: FCC2026';
-    RAISE NOTICE '';
-    
-    -- STEP 1: Update existing profiles with old format (.fcc) to new format (_fcc)
-    RAISE NOTICE '1. Updating existing department leader email formats...';
-    
-    FOR dept_record IN 
-        SELECT id, email, first_name, last_name
-        FROM profiles 
-        WHERE role = 'department_leader' 
-          AND email LIKE '%.fcc@gmail.com'
-          AND email NOT LIKE '%_fcc@gmail.com'
-        ORDER BY email
-    LOOP
-        old_email := dept_record.email;
-        new_email := REPLACE(old_email, '.fcc@gmail.com', '_fcc@gmail.com');
-        
-        IF NOT EXISTS (SELECT 1 FROM profiles WHERE email = new_email) THEN
-            UPDATE profiles 
-            SET email = new_email, updated_at = NOW()
-            WHERE id = dept_record.id;
-            
-            updated_count := updated_count + 1;
-            RAISE NOTICE '   Updated: % % (%)', dept_record.first_name, dept_record.last_name, new_email;
-        END IF;
-    END LOOP;
-    
-    RAISE NOTICE '   Profiles updated: %', updated_count;
+-- Step 1: Add department relationship to members table
+ALTER TABLE members ADD COLUMN IF NOT EXISTS department_id UUID;
+ALTER TABLE members ADD CONSTRAINT IF NOT EXISTS fk_members_department 
+  FOREIGN KEY (department_id) REFERENCES departments(id);
+
+-- Step 2: Add department leadership to profiles table (for department leaders)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS led_department_id UUID;
+ALTER TABLE profiles ADD CONSTRAINT IF NOT EXISTS fk_profiles_led_department 
+  FOREIGN KEY (led_department_id) REFERENCES departments(id);
+
+-- Step 3: Create proper user_id to member_id mapping
+-- Step 4: Link Doreen's profile to member record via user_id
+UPDATE members 
+SET user_id = (
+    SELECT user_id FROM profiles 
+    WHERE email = 'mwakabonga_fcc@gmail.com'
+)
+WHERE (email ILIKE '%mwakabonga%' OR first_name ILIKE '%doreen%')
+  AND user_id IS NULL;
+
+-- Step 5: Set up Children Department with proper leadership
+UPDATE departments 
+SET leader_id = (
+    SELECT user_id FROM profiles 
+    WHERE email = 'mwakabonga_fcc@gmail.com'
+)
+WHERE name ILIKE '%children%';
+
+-- Step 6: Create the Children Department if it doesn't exist
+INSERT INTO departments (
+    id,
+    name,
+    swahili_name,
+    description,
+    leader_id,
+    is_active,
+    created_at,
+    updated_at
+) 
+SELECT 
+    gen_random_uuid(),
+    'Children Department',
+    'Idara ya Watoto',
+    'Department for children ministry and programs',
+    p.user_id,
+    true,
+    NOW(),
+    NOW()
+FROM profiles p
+WHERE p.email = 'mwakabonga_fcc@gmail.com'
+AND NOT EXISTS (
+    SELECT 1 FROM departments 
+    WHERE name = 'Children Department'
+);
+
+-- Step 7: Final verification - Show the complete relationship chain
+SELECT 'COMPLETE RELATIONSHIP VERIFICATION:' as status;
+SELECT 
+    p.user_id,
+    p.email,
+    p.first_name || ' ' || p.last_name as profile_name,
+    p.role,
+    d.id as department_id,
+    d.name as department_name,
+    '/departments/' || d.id as redirect_url
+FROM profiles p
+LEFT JOIN departments d ON d.leader_id = p.user_id
+WHERE p.email = 'mwakabonga_fcc@gmail.com';
     RAISE NOTICE '';
     
     -- STEP 2: Create profiles for department leaders that don't have them yet

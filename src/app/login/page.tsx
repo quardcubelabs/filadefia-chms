@@ -21,6 +21,7 @@ export default function LoginPage() {
     setError('');
 
     try {
+      if (!supabase) return;
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -32,6 +33,56 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        // IMMEDIATE REDIRECT LOGIC - Check user role and redirect accordingly
+        console.log('🔍 LOGIN: User authenticated, checking role...', data.user.email);
+        
+        // Get user profile to determine role and department
+        if (!supabase) return;
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, department_id, first_name, last_name')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.log('⚠️ LOGIN: Profile error, defaulting to dashboard:', profileError);
+          router.push('/dashboard');
+          return;
+        }
+
+        console.log('👤 LOGIN: User profile loaded:', profile);
+
+        // REDIRECT BASED ON ROLE
+        if (profile.role === 'department_leader') {
+          // Check if they have a department assigned
+          let departmentId = profile.department_id;
+          
+          // If no department_id in profile, check departments table
+          if (!departmentId && supabase) {
+            const { data: deptData, error: deptError } = await supabase
+              .from('departments')
+              .select('id, name')
+              .eq('leader_user_id', data.user.id)
+              .eq('is_active', true)
+              .single();
+
+            if (deptData && !deptError) {
+              departmentId = deptData.id;
+              console.log('🏢 LOGIN: Found department for leader:', deptData.name);
+            }
+          }
+
+          if (departmentId) {
+            console.log('🚀 LOGIN: Redirecting department leader to department dashboard');
+            router.replace(`/departments/${departmentId}`);
+            return;
+          } else {
+            console.log('⚠️ LOGIN: Department leader has no department, going to main dashboard');
+          }
+        }
+
+        // Default redirect for admins, pastors, or leaders without departments
+        console.log('🏠 LOGIN: Redirecting to main dashboard');
         router.push('/dashboard');
       }
     } catch (error) {
@@ -46,6 +97,7 @@ export default function LoginPage() {
       setLoading(true);
       setError('');
 
+      if (!supabase) return;
       const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

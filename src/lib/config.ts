@@ -40,7 +40,9 @@ export const config = {
 
 // Helper functions
 export const isSupabaseConfigured = (): boolean => {
-  return !!(config.supabase.url && config.supabase.anonKey);
+  const hasUrl = config.supabase.url && config.supabase.url.startsWith('http');
+  const hasKey = config.supabase.anonKey && config.supabase.anonKey.length > 10;
+  return !!(hasUrl && hasKey);
 };
 
 export const isEmailConfigured = (): boolean => {

@@ -277,15 +277,56 @@ export default function ReportsPage() {
         fetchDepartmentStats()
       ]);
 
+      const defaultMembershipStats = {
+        activeMembers: 0,
+        newMembersThisMonth: 0,
+        membersByStatus: {},
+        membersByDepartment: [],
+        totalMembers: 0
+      };
+      
+      const defaultFinancialStats = {
+        totalIncome: 0,
+        totalExpenses: 0,
+        netAmount: 0,
+        monthlyIncome: 0,
+        incomeByType: [],
+        monthlyTrends: []
+      };
+      
+      const defaultEventStats = {
+        totalEvents: 0,
+        upcomingEvents: 0,
+        completedEvents: 0,
+        averageAttendance: 0,
+        eventsByType: []
+      };
+      
+      const finalMembershipStats = membershipStats || defaultMembershipStats;
+      const finalFinancialStats = financialStats || defaultFinancialStats;
+      const finalEventStats = eventStats || defaultEventStats;
+
       const reportData = {
-        ...membersData,
-        ...financialData,
-        ...attendanceData,
         jumuiyas: jumuiyasData,
-        membershipStats,
-        financialStats,
-        eventStats,
-        departmentStats
+        membershipStats: finalMembershipStats,
+        financialStats: finalFinancialStats,
+        eventStats: finalEventStats,
+        departmentStats: departmentStats || [],
+        // Direct properties for compatibility
+        totalMembers: finalMembershipStats.totalMembers,
+        activeMembers: finalMembershipStats.activeMembers,
+        inactiveMembers: finalMembershipStats.totalMembers - finalMembershipStats.activeMembers,
+        newMembers: finalMembershipStats.newMembersThisMonth,
+        totalIncome: finalFinancialStats.totalIncome,
+        totalExpenses: finalFinancialStats.totalExpenses,
+        netAmount: finalFinancialStats.netAmount,
+        totalOfferings: finalFinancialStats.totalIncome, // Placeholder - should be calculated from specific offering types
+        totalTithes: finalFinancialStats.totalIncome * 0.1, // Placeholder - should be calculated from specific tithe transactions
+        monthlyIncome: finalFinancialStats.monthlyIncome,
+        incomeByType: finalFinancialStats.incomeByType,
+        monthlyTrends: finalFinancialStats.monthlyTrends,
+        averageAttendance: finalEventStats.averageAttendance,
+        totalEvents: finalEventStats.totalEvents
       };
 
       setReportData(reportData);
@@ -302,6 +343,7 @@ export default function ReportsPage() {
   };
 
   const fetchMembersData = async () => {
+    if (!supabase) return null;
     const { data: members, error } = await supabase
       .from('members')
       .select('*')
@@ -329,6 +371,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching financial data from financial_transactions table...');
       
+      if (!supabase) return null;
       const { data: transactions, error } = await supabase
         .from('financial_transactions')
         .select('*')
@@ -395,6 +438,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching attendance data...');
       
+      if (!supabase) return null;
       const { data: attendance, error } = await supabase
         .from('attendance')
         .select('*')
@@ -444,6 +488,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching department data (jumuiyas equivalent)...');
       
+      if (!supabase) return [];
       // Since there's no jumuiyas table, use departments as equivalent
       const { data: departments, error } = await supabase
         .from('departments')
@@ -503,6 +548,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching membership statistics...');
       
+      if (!supabase) return null;
       let query = supabase
         .from('members')
         .select('id, status, created_at, department_members(department_id, departments(name))');
@@ -526,28 +572,36 @@ export default function ReportsPage() {
       }
 
       const totalMembers = members?.length || 0;
-      const activeMembers = members?.filter((m: Member) => m.status === 'active').length || 0;
+      const activeMembers = members?.filter((m: any) => m.status === 'active').length || 0;
       
       // Calculate new members this month
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      const newMembersThisMonth = members?.filter((m: Member) => {
+      const newMembersThisMonth = members?.filter((m: any) => {
         const createdDate = new Date(m.created_at);
         return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
       }).length || 0;
 
       // Count members by status
-      const membersByStatus = members?.reduce((acc: { [key: string]: number }, member: Member) => {
+      const membersByStatus = members?.reduce((acc: { [key: string]: number }, member: any) => {
         acc[member.status] = (acc[member.status] || 0) + 1;
         return acc;
       }, {}) || {};
 
       // Count members by department
       const departmentCounts: { [key: string]: number } = {};
-      members?.forEach((member: Member) => {
+      members?.forEach((member: any) => {
         if (member.department_members && member.department_members.length > 0) {
           member.department_members.forEach((dm: any) => {
-            if (dm.departments) {
+            if (dm.departments && Array.isArray(dm.departments)) {
+              // Handle array format
+              dm.departments.forEach((dept: any) => {
+                if (dept.name) {
+                  departmentCounts[dept.name] = (departmentCounts[dept.name] || 0) + 1;
+                }
+              });
+            } else if (dm.departments && dm.departments.name) {
+              // Handle object format
               const deptName = dm.departments.name;
               departmentCounts[deptName] = (departmentCounts[deptName] || 0) + 1;
             }
@@ -585,6 +639,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching financial statistics...');
       
+      if (!supabase) return null;
       let query = supabase
         .from('financial_transactions')
         .select(`
@@ -678,6 +733,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching event statistics...');
       
+      if (!supabase) return null;
       let query = supabase
         .from('events')
         .select('id, event_type, start_date, department_id, event_registrations(id)');
@@ -745,6 +801,7 @@ export default function ReportsPage() {
     try {
       console.log('Fetching department statistics...');
       
+      if (!supabase) return [];
       const { data: departments, error } = await supabase
         .from('departments')
         .select(`
@@ -763,7 +820,7 @@ export default function ReportsPage() {
         return [];
       }
 
-      return departments?.map((dept: Department) => {
+      return departments?.map((dept: any) => {
         const members = dept.department_members || [];
         const activeMembers = members.filter((dm: { member_id: string; members: { id: string; status: string; first_name: string; last_name: string } }) => 
           dm.members && dm.members.status === 'active'
@@ -1083,6 +1140,10 @@ export default function ReportsPage() {
                   onClick={async () => {
                     console.log('🔍 Testing database connectivity...');
                     try {
+                      if (!supabase) {
+                        console.log('Supabase client not available');
+                        return;
+                      }
                       // Test basic table access
                       const { data: membersTest, error: membersError } = await supabase.from('members').select('count(*)').single();
                       console.log('Members table test:', { data: membersTest, error: membersError });
