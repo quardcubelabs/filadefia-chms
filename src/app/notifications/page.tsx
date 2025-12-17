@@ -1,11 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 // Prevent SSR/prerendering issues during build
 export const dynamic = 'force-dynamic';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import { useEffect, useState } from 'react';
 import { EmptyState, Button, Card, Badge, Modal, Input, Select } from '@/components/ui';
 import Sidebar from '@/components/Sidebar';
 import { 
@@ -25,7 +26,7 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 interface Notification {
   id: string;
@@ -54,7 +55,7 @@ interface NotificationPreferences {
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
   const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
@@ -79,7 +80,7 @@ export default function NotificationsPage() {
   }, [user, authLoading]);
 
   useEffect(() => {
-    if (user) {
+    if (user && supabase) {
       fetchNotifications();
       fetchPreferences();
       

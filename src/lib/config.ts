@@ -40,8 +40,19 @@ export const config = {
 
 // Helper functions
 export const isSupabaseConfigured = (): boolean => {
-  const hasUrl = config.supabase.url && config.supabase.url.startsWith('http');
-  const hasKey = config.supabase.anonKey && config.supabase.anonKey.length > 10;
+  const url = config.supabase.url?.trim();
+  const key = config.supabase.anonKey?.trim();
+  
+  const hasUrl = url && (url.startsWith('http://') || url.startsWith('https://'));
+  const hasKey = key && key.length > 10;
+  
+  console.log('Supabase Config Check:', {
+    url: url ? `${url.substring(0, 20)}...` : 'Missing',
+    urlValid: hasUrl,
+    keyValid: hasKey,
+    configured: !!(hasUrl && hasKey)
+  });
+  
   return !!(hasUrl && hasKey);
 };
 

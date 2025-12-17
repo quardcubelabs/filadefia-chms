@@ -19,8 +19,17 @@ export function useDepartmentAccess(): DepartmentAccess {
     name: string | null;
   }>({ id: null, name: null });
   const [loading, setLoading] = useState(true);
+  
+  // Prevent SSR execution
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+    
     const loadDepartmentAccess = async () => {
       if (!user?.profile || !supabase) {
         setLoading(false);
@@ -144,7 +153,7 @@ export function useDepartmentAccess(): DepartmentAccess {
     };
 
     loadDepartmentAccess();
-  }, [user?.profile, supabase]);
+  }, [mounted, user?.profile, supabase]);
 
   return {
     departmentId: departmentInfo.id,
