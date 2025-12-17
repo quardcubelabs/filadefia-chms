@@ -1,5 +1,8 @@
 'use client';
 
+// Prevent SSR/prerendering issues during build
+export const dynamic = 'force-dynamic';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';

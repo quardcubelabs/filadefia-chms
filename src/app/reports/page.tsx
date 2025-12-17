@@ -1,6 +1,9 @@
 
 'use client';
 
+// Prevent SSR/prerendering issues during build
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import {
   FileText,
