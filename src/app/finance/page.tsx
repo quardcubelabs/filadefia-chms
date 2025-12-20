@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { 
   Button, 
   Card, 
@@ -101,7 +101,7 @@ interface FinancialSummary {
 export default function FinancePage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
-  const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
+  const { isDepartmentLeader, departmentId, departmentName, loading: departmentLoading } = useDepartmentAccess();
   
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -153,21 +153,27 @@ export default function FinancePage() {
   ];
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !departmentLoading && !user) {
       window.location.href = '/login';
       return;
     }
-    if (user) {
+    
+    // Only load data once both auth and department access are resolved
+    if (user && !authLoading && !departmentLoading) {
+      console.log('🔄 Loading finance data - auth and department ready');
+      console.log('  - User:', user.email);
+      console.log('  - isDepartmentLeader:', isDepartmentLeader);
+      console.log('  - departmentId:', departmentId);
+      console.log('  - departmentName:', departmentName);
+      
       loadTransactions();
       loadDepartments();
       loadMembers();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, departmentLoading]); // Removed isDepartmentLeader and departmentId to prevent re-loading
 
   const loadTransactions = async () => {
-    if (!supabase) {
-      console.error('Supabase client not available');
-      setError('Database connection not available');
+    if (!supabase || !user) {
       setLoading(false);
       return;
     }
@@ -176,107 +182,35 @@ export default function FinancePage() {
       setLoading(true);
       setError(null);
       
-      console.log('Attempting to load financial transactions...');
+      console.log('Loading financial transactions...');
+      console.log('User role:', user.profile?.role);
+      console.log('Is Department Leader:', isDepartmentLeader);
+      console.log('Department:', departmentName);
       
-      // Test basic table access first
-      const { count, error: countError } = await supabase
-        .from('financial_transactions')
-        .select('*', { count: 'exact', head: true });
-
-      if (countError) {
-        console.error('Table access error:', countError);
-        throw new Error(`Cannot access financial_transactions table: ${countError.message}`);
-      }
-
-      console.log('Financial transactions count:', count);
-
-      if (count === 0) {
-        console.log('No transactions found. Database appears empty.');
-        setError(`No financial transactions found. The database appears empty.
-        
-To populate with sample data:
-1. Go to your Supabase Dashboard
-2. Navigate to SQL Editor  
-3. Run the seed_finances.sql script from the database folder
-4. Refresh this page
-
-You can also click the "Seed Sample Data" button below to add test transactions.`);
-        setTransactions([]);
-        calculateSummary([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Now fetch actual data - first try simple query without joins
-      console.log('Fetching transactions (simple query first)...');
-      let simpleQuery = supabase
-        .from('financial_transactions')
-        .select('*');
-
-      // Filter by department for department leaders
-      if (isDepartmentLeader && departmentId) {
-        simpleQuery = simpleQuery.eq('department_id', departmentId);
-      }
-
-      const { data: simpleData, error: simpleError } = await simpleQuery
-        .order('date', { ascending: false });
-
-      console.log('Simple query result - Data:', simpleData, 'Error:', simpleError);
-
-      if (simpleError) {
-        console.error('Simple query failed:', simpleError);
-        throw simpleError;
-      }
-
-      if (!simpleData || simpleData.length === 0) {
-        console.log('No data returned from simple query');
-        throw new Error('No financial transactions found after seeding. This might be an RLS (Row Level Security) issue.');
-      }
-
-      // If simple query works, try with joins
-      console.log('Simple query successful, now trying with joins...');
-      let transactionsQuery = supabase
+      // Simple query - RLS policies will handle department filtering automatically
+      const { data, error } = await supabase
         .from('financial_transactions')
         .select(`
           *,
           member:members(first_name, last_name, member_number),
           department:departments(name)
-        `);
-
-      // Filter by department for department leaders
-      if (isDepartmentLeader && departmentId) {
-        transactionsQuery = transactionsQuery.eq('department_id', departmentId);
-      }
-
-      const { data, error } = await transactionsQuery
+        `)
         .order('date', { ascending: false });
 
-      console.log('Join query result - Data:', data, 'Error:', error);
-
       if (error) {
-        console.error('Join query error:', error);
-        // If join query fails but simple query worked, fall back to simple data
-        if (simpleData && simpleData.length > 0) {
-          console.log('Using simple data without joins due to join error');
-          setTransactions(simpleData || []);
-          calculateSummary(simpleData || []);
-          setError(`Loaded ${simpleData.length} transactions (without member/department details due to join error: ${error.message})`);
-          setLoading(false);
-          return;
-        }
+        console.error('Database error:', error);
         throw error;
       }
 
-      console.log('Successfully loaded transactions:', data?.length || 0);
-      if (data && data.length > 0) {
-        console.log('Sample transaction data:', data[0]);
-        console.log('All transaction data sample:', data.slice(0, 3));
-      }
+      console.log(`✅ Loaded ${data?.length || 0} transactions (filtered by RLS)`);
       setTransactions(data || []);
       calculateSummary(data || []);
+      
     } catch (err: any) {
       console.error('Error loading transactions:', err);
       setError(err.message || 'Failed to load financial transactions');
+      setTransactions([]);
+      calculateSummary([]);
     } finally {
       setLoading(false);
     }
@@ -635,7 +569,8 @@ You can also click the "Seed Sample Data" button below to add test transactions.
                           transaction.member?.last_name?.toLowerCase().includes(searchTerm.toLowerCase())) ?? false;
     
     const matchesType = filterType === 'all' || transaction.transaction_type === filterType;
-    const matchesDepartment = filterDepartment === 'all' || transaction.department_id === filterDepartment;
+    // Department leaders already have filtered transactions from loadTransactions
+    const matchesDepartment = isDepartmentLeader ? true : (filterDepartment === 'all' || transaction.department_id === filterDepartment);
     const matchesPaymentMethod = filterPaymentMethod === 'all' || transaction.payment_method === filterPaymentMethod;
     const matchesVerified = filterVerified === 'all' || 
                            (filterVerified === 'verified' && transaction.verified) ||
@@ -649,107 +584,119 @@ You can also click the "Seed Sample Data" button below to add test transactions.
            matchesVerified && matchesDateFrom && matchesDateTo;
   });
 
-  if (authLoading || loading) {
+  if (authLoading || departmentLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loading />
-      </div>
+      <MainLayout title="Finance Management">
+        <div className="flex items-center justify-center h-64">
+          <Loading />
+        </div>
+      </MainLayout>
     );
   }
 
+  const title = isDepartmentLeader && departmentName 
+    ? `Finance - ${departmentName}` 
+    : 'Finance Management';
+    
+  const subtitle = isDepartmentLeader 
+    ? `Manage transactions for ${departmentName} department` 
+    : 'Track church income, expenses, and financial health';
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Debug Info */}
-            {error && (
-              <Alert variant="error" className="mb-4">
-                <div className="flex flex-col space-y-3">
-                  <p>{error}</p>
-                  {transactions.length === 0 && (
-                    <div className="text-sm">
-                      <p className="font-medium">To populate financial data:</p>
-                      <ol className="list-decimal list-inside mt-2 space-y-1 text-gray-600">
-                        <li>Go to your Supabase Dashboard</li>
-                        <li>Navigate to SQL Editor</li>
-                        <li>Copy and paste the contents of <code className="bg-gray-100 px-1 rounded">database/seed_finances.sql</code></li>
-                        <li>Click "Run" to execute</li>
-                      </ol>
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                        <p className="text-blue-800 text-sm font-medium">💡 Sample Data Available</p>
-                        <p className="text-blue-700 text-xs mt-1">
-                          The seed file contains 80+ realistic transactions including tithes, offerings, donations, 
-                          projects, and expenses with various payment methods (Cash, M-Pesa, Bank Transfer, etc.)
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Alert>
-            )}
-
-            {/* Header */}
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Finance Management</h1>
-                <p className="text-gray-600 mt-1">Track church income, expenses, and financial health</p>
-                {transactions.length > 0 && (
-                  <p className="text-sm text-green-600 mt-1">{transactions.length} transactions loaded</p>
-                )}
-              </div>
-              <div className="flex space-x-3">
-                {transactions.length === 0 && !loading && (
-                  <>
-                    <Button 
-                      variant="outline"
-                      onClick={loadTransactions}
-                      className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                    >
-                      Reload Data
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={seedSampleData}
-                      disabled={seeding}
-                      className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                    >
-                      {seeding ? 'Adding Sample Data...' : 'Add Sample Data'}
-                    </Button>
-                  </>
-                )}
-                <Button 
-                  variant="outline"
-                  icon={<BarChart3 className="h-4 w-4" />}
-                  onClick={() => router.push('/reports')}
-                >
-                  View Reports
-                </Button>
-                <Button 
-                  onClick={() => setIsAddModalOpen(true)}
-                  icon={<Plus className="h-4 w-4" />}
-                >
-                  Add Transaction
-                </Button>
-              </div>
-            </div>
-
-            {/* Department Access Notification */}
-            {isDepartmentLeader && departmentName && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center">
-                  <DollarSign className="h-5 w-5 text-green-600 mr-3" />
-                  <div>
-                    <h3 className="font-medium text-green-900">Department Finances: {departmentName}</h3>
-                    <p className="text-green-700 text-sm mt-1">
-                      You can view and manage financial transactions for your department only.
+    <MainLayout 
+      title={title}
+      subtitle={subtitle}
+      showSearch={true}
+      searchPlaceholder="Search transactions..."
+      onSearch={(query) => setSearchTerm(query)}
+      navbarActions={
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => console.log('Export functionality')}
+            disabled={filteredTransactions.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Transaction
+          </Button>
+        </div>
+      }
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Debug Info */}
+        {error && (
+          <Alert variant="error" className="mb-4">
+            <div className="flex flex-col space-y-3">
+              <p>{error}</p>
+              {transactions.length === 0 && (
+                <div className="text-sm">
+                  <p className="font-medium">To populate financial data:</p>
+                  <ol className="list-decimal list-inside mt-2 space-y-1 text-gray-600">
+                    <li>Go to your Supabase Dashboard</li>
+                    <li>Navigate to SQL Editor</li>
+                    <li>Copy and paste the contents of <code className="bg-gray-100 px-1 rounded">database/seed_finances.sql</code></li>
+                    <li>Click "Run" to execute</li>
+                  </ol>
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-blue-800 text-sm font-medium">💡 Sample Data Available</p>
+                    <p className="text-blue-700 text-xs mt-1">
+                      The seed file contains 80+ realistic transactions including tithes, offerings, donations, 
+                      projects, and expenses with various payment methods (Cash, M-Pesa, Bank Transfer, etc.)
                     </p>
                   </div>
                 </div>
+              )}
+            </div>
+          </Alert>
+        )}
+
+        {/* Department Quick Actions */}
+        {isDepartmentLeader && departmentName && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <DollarSign className="h-5 w-5 text-green-600 mr-3" />
+                <div>
+                  <h3 className="font-medium text-green-900">Quick Actions for {departmentName}</h3>
+                  <p className="text-green-700 text-sm mt-1">
+                    Manage your department's financial activities efficiently
+                  </p>
+                </div>
               </div>
-            )}
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="bg-white border-green-300 text-green-700 hover:bg-green-50"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Income
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddModalOpen(true);
+                    setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
+                  }}
+                  className="bg-white border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Expense
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
             {/* Alerts */}
             {error && (
@@ -769,6 +716,25 @@ You can also click the "Seed Sample Data" button below to add test transactions.
               >
                 {success}
               </Alert>
+            )}
+
+            {/* Department Access Notification */}
+            {isDepartmentLeader && departmentName && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <DollarSign className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Department Financial View - {departmentName}
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>You are viewing financial transactions for your department only. All summary statistics reflect transactions specific to {departmentName}.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Financial Summary Cards */}
@@ -859,7 +825,7 @@ You can also click the "Seed Sample Data" button below to add test transactions.
             {/* Search and Filters */}
             <Card className="mb-6">
               <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+                <div className={`grid grid-cols-1 md:grid-cols-3 ${isDepartmentLeader ? 'lg:grid-cols-5' : 'lg:grid-cols-6'} gap-4 mb-4`}>
                   <div className="md:col-span-2">
                     <Input
                       placeholder="Search transactions..."
@@ -884,15 +850,17 @@ You can also click the "Seed Sample Data" button below to add test transactions.
                       { value: "expense", label: "Expense" }
                     ]}
                   />
-                  <Select
-                    value={filterDepartment}
-                    onChange={(e) => setFilterDepartment(e.target.value)}
-                    placeholder="Department"
-                    options={[
-                      { value: "all", label: "All Departments" },
-                      ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-                    ]}
-                  />
+                  {!isDepartmentLeader && (
+                    <Select
+                      value={filterDepartment}
+                      onChange={(e) => setFilterDepartment(e.target.value)}
+                      placeholder="Department"
+                      options={[
+                        { value: "all", label: "All Departments" },
+                        ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                      ]}
+                    />
+                  )}
                   <Select
                     value={filterPaymentMethod}
                     onChange={(e) => setFilterPaymentMethod(e.target.value)}
@@ -1076,18 +1044,15 @@ You can also click the "Seed Sample Data" button below to add test transactions.
                 </CardBody>
               </Card>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Add Transaction Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add New Transaction"
-        size="lg"
-      >
-        <div className="space-y-4">
+          {/* Add Transaction Modal */}
+          <Modal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            title="Add New Transaction"
+            size="lg"
+          >
+            <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Transaction Type"
@@ -1144,8 +1109,9 @@ You can also click the "Seed Sample Data" button below to add test transactions.
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">Department</label>
                 <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                  {departmentName}
+                  {departmentName || "Unknown Department"}
                 </div>
+                <p className="text-xs text-gray-500">All transactions will be assigned to your department</p>
               </div>
             )}
           </div>
@@ -1319,6 +1285,7 @@ You can also click the "Seed Sample Data" button below to add test transactions.
         cancelText="Cancel"
         variant="danger"
       />
-    </div>
+      </div>
+    </MainLayout>
   );
 }

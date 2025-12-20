@@ -55,10 +55,9 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
 
     const dashboardLabel = isDepartmentLeader && departmentId ? 'Department Dashboard' : 'Dashboard';
 
-    return [
+    const baseNavItems = [
       { icon: <Home className="h-5 w-5" />, label: dashboardLabel, href: dashboardHref },
       { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
-      { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' },
       { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
       { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
       { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
@@ -66,6 +65,13 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
       { icon: <FileText className="h-5 w-5" />, label: 'Documents', href: '/documents' },
       { icon: <Settings className="h-5 w-5" />, label: 'Settings', href: '/settings' },
     ];
+
+    // Only show Departments page for non-department leaders
+    if (!isDepartmentLeader) {
+      baseNavItems.splice(2, 0, { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' });
+    }
+
+    return baseNavItems;
   }, [isDepartmentLeader, departmentId]);
 
   const isActive = (href: string) => pathname === href;

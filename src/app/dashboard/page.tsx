@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { createClient } from '@/lib/supabase/client';
 import { Member } from '@/types';
 import { 
   Calendar,
@@ -19,7 +18,7 @@ import {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, supabase } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [showTimeout, setShowTimeout] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -82,8 +81,10 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const supabase = createClient();
-      if (!supabase) return;
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
 
       setLoading(true);
 
@@ -94,6 +95,13 @@ export default function DashboardPage() {
         .eq('status', 'active');
 
       if (membersError) {
+        // Handle JWT expired errors
+        if (membersError.message && membersError.message.includes('JWT expired')) {
+          console.log('JWT token expired during dashboard data fetch');
+          await signOut();
+          window.location.href = '/login';
+          return;
+        }
         console.error('Error fetching members:', membersError);
         return;
       }
@@ -161,8 +169,10 @@ export default function DashboardPage() {
 
   const fetchFinancialData = async () => {
     try {
-      const supabase = createClient();
-      if (!supabase) return;
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
 
       // Fetch total income (all income transactions) with department filtering
       let incomeQuery = supabase
@@ -243,8 +253,10 @@ export default function DashboardPage() {
 
   const fetchDepartmentLeaders = async () => {
     try {
-      const supabase = createClient();
-      if (!supabase) return;
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
 
       // Fetch departments with their leaders
       const { data: departmentLeadersData, error } = await supabase
@@ -332,8 +344,10 @@ export default function DashboardPage() {
 
   const fetchUserProfile = async () => {
     try {
-      const supabase = createClient();
-      if (!user?.id) return;
+      if (!supabase || !user?.id) {
+        console.error('Supabase client not available or no user');
+        return;
+      }
 
       if (!supabase) return;
       const { data: profile, error } = await supabase
@@ -383,10 +397,12 @@ export default function DashboardPage() {
 
     try {
       setIsUpdatingProfile(true);
-      const supabase = createClient();
 
       // First, check if user has permission to upload
-      if (!supabase) return;
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
       const { data: userData } = await supabase.auth.getUser();
       console.log('Current user for upload:', userData?.user?.id, user?.profile?.role);
 
@@ -472,10 +488,12 @@ export default function DashboardPage() {
 
     try {
       setIsUpdatingProfile(true);
-      const supabase = createClient();
 
       // Update profiles table
-      if (!supabase) return;
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updates)

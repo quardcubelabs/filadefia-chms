@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { 
   Button, 
   Card, 
@@ -292,24 +292,119 @@ export default function DocumentsPage() {
   };
 
   const handleCreateMinutes = async () => {
-    if (!supabase || !user?.profile?.id) return;
+    console.log('Starting handleCreateMinutes...');
+    console.log('Supabase client:', !!supabase);
+    console.log('User profile:', user?.profile);
+    console.log('Form data:', minutesForm);
+    console.log('Is department leader:', isDepartmentLeader, 'Department ID:', departmentId);
+
+    if (!supabase) {
+      setError('Database connection not available. Please refresh the page and try again.');
+      return;
+    }
+    
+    if (!user?.profile?.id) {
+      setError('User authentication required. Please log in again.');
+      return;
+    }
+
+    // Validate required fields
+    if (!minutesForm.meeting_date) {
+      setError('Meeting date is required.');
+      return;
+    }
+    if (!minutesForm.agenda) {
+      setError('Agenda is required.');
+      return;
+    }
+    if (!minutesForm.minutes) {
+      setError('Minutes content is required.');
+      return;
+    }
+    if (!isDepartmentLeader && !minutesForm.department_id) {
+      setError('Department selection is required.');
+      return;
+    }
 
     try {
+      // Check user permissions before attempting insert
+      console.log('User role check:', {
+        userRole: user?.profile?.role,
+        isDepartmentLeader,
+        departmentId,
+        canAccessAllDepartments: user?.profile?.role === 'administrator' || user?.profile?.role === 'pastor'
+      });
+
+      // Check if user has department membership
+      if (isDepartmentLeader && departmentId) {
+        console.log('Checking department membership...');
+        
+        // First find the member record using email
+        const { data: memberData, error: memberError } = await supabase
+          .from('members')
+          .select('id, email')
+          .eq('email', user.email)
+          .single();
+        
+        console.log('Member lookup:', { memberData, memberError });
+        
+        if (memberError || !memberData) {
+          setError('Member record not found. Please contact your administrator to set up your member profile.');
+          return;
+        }
+        
+        // Then check department membership using member_id
+        const { data: membershipCheck, error: membershipError } = await supabase
+          .from('department_members')
+          .select('*')
+          .eq('member_id', memberData.id)
+          .eq('department_id', departmentId)
+          .single();
+        
+        console.log('Department membership check:', { membershipCheck, membershipError });
+        
+        if (membershipError || !membershipCheck) {
+          setError('You are not properly assigned to your department. Please contact your administrator.');
+          return;
+        }
+      }
+
       const minutesData = {
         department_id: isDepartmentLeader ? departmentId : minutesForm.department_id,
         meeting_date: minutesForm.meeting_date,
         agenda: minutesForm.agenda,
         minutes: minutesForm.minutes,
-        attendees: minutesForm.attendees,
+        attendees: Array.isArray(minutesForm.attendees) ? minutesForm.attendees : [],
         next_meeting_date: minutesForm.next_meeting_date || null,
         recorded_by: user.profile.id
       };
 
-      const { error } = await supabase
-        .from('meeting_minutes')
-        .insert(minutesData);
+      console.log('Attempting to insert meeting minutes:', minutesData);
 
-      if (error) throw error;
+      // Validate that department_id is not null/undefined
+      if (!minutesData.department_id) {
+        throw new Error('Department selection is required.');
+      }
+
+      const { data, error } = await supabase
+        .from('meeting_minutes')
+        .insert(minutesData)
+        .select();
+
+      console.log('Insert result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error details:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        // Handle specific RLS policy violations
+        if (error.code === '42501' || error.message?.includes('row-level security')) {
+          throw new Error('You do not have permission to create meeting minutes for this department. Please contact your administrator.');
+        }
+        
+        throw error;
+      }
 
       setSuccess('Meeting minutes created successfully!');
       setIsMinutesModalOpen(false);
@@ -324,7 +419,24 @@ export default function DocumentsPage() {
       loadMeetingMinutes();
     } catch (err: any) {
       console.error('Error creating meeting minutes:', err);
-      setError(err.message);
+      console.error('Error type:', typeof err);
+      console.error('Error keys:', Object.keys(err || {}));
+      console.error('Error string:', JSON.stringify(err, null, 2));
+      
+      let errorMessage = 'Failed to create meeting minutes. Please try again.';
+      
+      if (err && typeof err === 'object') {
+        // Handle RLS policy violations specifically
+        if (err.code === '42501' || err.message?.includes('row-level security')) {
+          errorMessage = 'You do not have permission to create meeting minutes for this department. Please contact your administrator.';
+        } else {
+          errorMessage = err.message || err.details || err.hint || errorMessage;
+        }
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -332,14 +444,37 @@ export default function DocumentsPage() {
     if (!supabase || !user?.profile?.id) return;
 
     try {
+      // Calculate period dates based on report type
+      const now = new Date();
+      let periodStart: Date;
+      let periodEnd: Date;
+
+      if (reportForm.type === 'monthly') {
+        periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      } else if (reportForm.type === 'quarterly') {
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        periodStart = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        periodEnd = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+      } else { // annual
+        periodStart = new Date(now.getFullYear(), 0, 1);
+        periodEnd = new Date(now.getFullYear(), 11, 31);
+      }
+
       const reportData = {
         title: reportForm.title,
         type: reportForm.type,
         department_id: isDepartmentLeader ? departmentId : (reportForm.department_id || null),
-        content: reportForm.content,
-        generated_by: user.profile.id,
-        created_at: new Date().toISOString()
+        period_start: periodStart.toISOString().split('T')[0], // YYYY-MM-DD format
+        period_end: periodEnd.toISOString().split('T')[0],
+        data: {
+          content: reportForm.content,
+          created_at: new Date().toISOString()
+        },
+        generated_by: user.profile.id
       };
+
+      console.log('Creating report with data:', reportData);
 
       const { error } = await supabase
         .from('reports')
@@ -358,7 +493,26 @@ export default function DocumentsPage() {
       loadReports();
     } catch (err: any) {
       console.error('Error creating report:', err);
-      setError(err.message);
+      console.error('Error type:', typeof err);
+      console.error('Error keys:', Object.keys(err || {}));
+      console.error('Error string:', JSON.stringify(err, null, 2));
+      
+      let errorMessage = 'Failed to create report. Please try again.';
+      
+      if (err && typeof err === 'object') {
+        // Handle RLS policy violations specifically
+        if (err.code === '42501' || err.message?.includes('row-level security')) {
+          errorMessage = 'You do not have permission to create reports for this department. Please contact your administrator.';
+        } else if (err.code === 'PGRST204') {
+          errorMessage = 'Database schema error. Please contact your administrator.';
+        } else {
+          errorMessage = err.message || err.details || err.hint || errorMessage;
+        }
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -385,7 +539,8 @@ export default function DocumentsPage() {
       }
     } catch (err: any) {
       console.error('Error deleting item:', err);
-      setError(err.message);
+      const errorMessage = err?.message || err?.details || 'Failed to delete item. Please try again.';
+      setError(errorMessage);
     }
   };
 
@@ -460,61 +615,64 @@ export default function DocumentsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loading />
-      </div>
+      <MainLayout title="Documents & Records">
+        <div className="flex items-center justify-center h-64">
+          <Loading />
+        </div>
+      </MainLayout>
     );
   }
 
+  const title = 'Documents & Records';
+  const subtitle = 'Manage meeting minutes, reports, and church documents';
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+    <MainLayout 
+      title={title}
+      subtitle={subtitle}
+      showSearch={true}
+      searchPlaceholder="Search documents..."
+      onSearch={(query) => setSearchTerm(query)}
+      navbarActions={
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline"
+            size="sm"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload File
+          </Button>
+          <Button 
+            onClick={() => {
+              if (activeTab === 'minutes') {
+                setIsMinutesModalOpen(true);
+              } else {
+                setIsReportModalOpen(true);
+              }
+            }}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {activeTab === 'minutes' ? 'Add Minutes' : 'Create Report'}
+          </Button>
+        </div>
+      }
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Department Access Notification */}
+        {isDepartmentLeader && departmentName && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <FileText className="h-5 w-5 text-purple-600 mr-3" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Documents & Records</h1>
-                <p className="text-gray-600 mt-1">Manage meeting minutes, reports, and church documents</p>
-              </div>
-              <div className="flex space-x-3">
-                <Button 
-                  variant="outline"
-                  icon={<Upload className="h-4 w-4" />}
-                >
-                  Upload File
-                </Button>
-                <Button 
-                  onClick={() => {
-                    if (activeTab === 'minutes') {
-                      setIsMinutesModalOpen(true);
-                    } else {
-                      setIsReportModalOpen(true);
-                    }
-                  }}
-                  icon={<Plus className="h-4 w-4" />}
-                >
-                  {activeTab === 'minutes' ? 'Add Minutes' : 'Create Report'}
-                </Button>
+                <h3 className="font-medium text-purple-900">Department Documents: {departmentName}</h3>
+                <p className="text-purple-700 text-sm mt-1">
+                  You can view and manage meeting minutes and reports for your department only.
+                </p>
               </div>
             </div>
-
-            {/* Department Access Notification */}
-            {isDepartmentLeader && departmentName && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center">
-                  <FileText className="h-5 w-5 text-purple-600 mr-3" />
-                  <div>
-                    <h3 className="font-medium text-purple-900">Department Documents: {departmentName}</h3>
-                    <p className="text-purple-700 text-sm mt-1">
-                      You can view and manage meeting minutes and reports for your department only.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          </div>
+        )}
 
             {/* Alerts */}
             {error && (
@@ -582,16 +740,18 @@ export default function DocumentsPage() {
                       icon={<Search className="h-4 w-4" />}
                     />
                   </div>
-                  <Select
-                    value={filterDepartment}
-                    onChange={(e) => setFilterDepartment(e.target.value)}
-                    placeholder="Department"
-                    options={[
-                      { value: "all", label: "All Departments" },
-                      ...(activeTab === 'reports' ? [{ value: "church-wide", label: "Church-wide" }] : []),
-                      ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-                    ]}
-                  />
+                  {!isDepartmentLeader && (
+                    <Select
+                      value={filterDepartment}
+                      onChange={(e) => setFilterDepartment(e.target.value)}
+                      placeholder="Department"
+                      options={[
+                        { value: "all", label: "All Departments" },
+                        ...(activeTab === 'reports' ? [{ value: "church-wide", label: "Church-wide" }] : []),
+                        ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                      ]}
+                    />
+                  )}
                   {activeTab === 'minutes' ? (
                     <Select
                       value={filterStatus}
@@ -825,14 +985,11 @@ export default function DocumentsPage() {
                 )}
               </>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Create Meeting Minutes Modal */}
-      <Modal
-        isOpen={isMinutesModalOpen}
-        onClose={() => setIsMinutesModalOpen(false)}
+          {/* Create Meeting Minutes Modal */}
+          <Modal
+            isOpen={isMinutesModalOpen}
+            onClose={() => setIsMinutesModalOpen(false)}
         title="Add Meeting Minutes"
         size="lg"
       >
@@ -1007,6 +1164,7 @@ export default function DocumentsPage() {
         cancelText="Cancel"
         variant="danger"
       />
-    </div>
+      </div>
+    </MainLayout>
   );
 }

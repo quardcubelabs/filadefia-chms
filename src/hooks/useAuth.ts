@@ -48,6 +48,36 @@ export function useAuth() {
           .single();
 
         if (error) {
+          // Handle JWT expired error specifically
+          if (error.message === 'JWT expired') {
+            console.log('JWT expired, attempting to refresh token...');
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError || !refreshData.session) {
+              console.error('Token refresh failed:', refreshError?.message);
+              // Force logout and redirect to login
+              await supabase.auth.signOut();
+              window.location.href = '/login';
+              return;
+            }
+            
+            console.log('Token refreshed successfully, retrying profile load...');
+            // Retry loading profile with refreshed token
+            const { data: retryProfile, error: retryError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', authUser.id)
+              .single();
+              
+            if (!retryError && retryProfile) {
+              setUser({
+                id: authUser.id,
+                email: authUser.email,
+                profile: retryProfile,
+              });
+              return;
+            }
+          }
           // Check if profile doesn't exist (PGRST116 is "not found" error)
           if (error.code === 'PGRST116') {
             console.log('Profile not found for user, creating basic profile...');
@@ -159,6 +189,10 @@ export function useAuth() {
       async (event: string, session: any) => {
         console.log('Auth state changed:', event);
         
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token was refreshed automatically');
+        }
+        
         if (session?.user) {
           await loadUserProfile(session.user);
         } else {
@@ -169,8 +203,26 @@ export function useAuth() {
       }
     );
 
+    // Set up proactive token refresh
+    const tokenRefreshInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.expires_at) {
+          const timeUntilExpiry = (session.expires_at * 1000) - Date.now();
+          // Refresh token if it expires in the next 5 minutes
+          if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
+            console.log('Proactively refreshing token (expires soon)...');
+            await supabase.auth.refreshSession();
+          }
+        }
+      } catch (error) {
+        console.log('Token refresh check failed:', error);
+      }
+    }, 60000); // Check every minute
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(tokenRefreshInterval);
     };
   }, [supabase]);
 

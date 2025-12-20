@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import MemberForm from '@/components/MemberForm';
 import CSVImport from '@/components/CSVImport';
 import BulkCardGenerator from '@/components/BulkCardGenerator';
@@ -535,45 +535,75 @@ export default function MembersPage() {
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <main className="ml-20 p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Users className="h-8 w-8 mr-3 text-blue-600" />
-            Member Management
-          </h1>
-          <p className="text-gray-600 mt-2">Manage church members, visitors, and their information</p>
-          
-          {/* Department Leader Access Notification */}
-          {isDepartmentLeader && departmentName && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <Briefcase className="h-5 w-5 text-red-600 mr-2" />
-                <div>
-                  <h3 className="text-sm font-medium text-red-800">
-                    Department View: {departmentName}
-                  </h3>
-                  <p className="text-sm text-red-700">
-                    Showing members from your department only. You can add, edit, and manage members within {departmentName}.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+  const title = isDepartmentLeader && departmentName 
+    ? `Members - ${departmentName}` 
+    : 'Member Management';
+    
+  const subtitle = isDepartmentLeader && departmentName
+    ? `Manage members within ${departmentName} department`
+    : 'Manage church members, visitors, and their information';
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6">
-            <Alert variant="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
+  return (
+    <MainLayout 
+      title={title}
+      subtitle={subtitle}
+      showSearch={true}
+      searchPlaceholder="Search members..."
+      onSearch={(query) => setSearchQuery(query)}
+      navbarActions={
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => console.log('CSV Import')}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Import CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => console.log('Export CSV')}
+            disabled={filteredMembers.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button
+            onClick={() => console.log('Add Member')}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Member
+          </Button>
+        </div>
+      }
+    >
+      {/* Department Leader Access Notification */}
+      {isDepartmentLeader && departmentName && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center">
+            <Briefcase className="h-5 w-5 text-red-600 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">
+                Department View: {departmentName}
+              </h3>
+              <p className="text-sm text-red-700">
+                Showing members from your department only. You can add, edit, and manage members within {departmentName}.
+              </p>
+            </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Error Alert */}
+      {error && (
+        <div className="mb-6">
+          <Alert variant="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        </div>
+      )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -1030,7 +1060,6 @@ export default function MembersPage() {
             onClose={() => setShowBulkCardModal(false)}
           />
         </Modal>
-      </main>
-    </div>
+    </MainLayout>
   );
 }

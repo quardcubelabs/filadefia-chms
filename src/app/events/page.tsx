@@ -91,7 +91,6 @@ export default function EventsPage() {
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
-  const [filterDepartment, setFilterDepartment] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   
   // Modal states
@@ -136,6 +135,16 @@ export default function EventsPage() {
       loadDepartments();
     }
   }, [user, authLoading, supabase]);
+
+  // Initialize form with department leader's department
+  useEffect(() => {
+    if (isDepartmentLeader && departmentId && !formData.department_id) {
+      setFormData(prev => ({
+        ...prev,
+        department_id: departmentId
+      }));
+    }
+  }, [isDepartmentLeader, departmentId]);
 
   const loadEvents = async () => {
     if (!supabase) {
@@ -266,7 +275,7 @@ export default function EventsPage() {
       // If simple query works, try to enhance with joins
       console.log('Simple query successful, trying with joins for additional details...');
       
-      const { data: enhancedData, error: joinError } = await supabase
+      let enhancedQuery = supabase
         .from('events')
         .select(`
           *,
@@ -274,6 +283,13 @@ export default function EventsPage() {
           department:departments!department_id(name)
         `)
         .order('start_date', { ascending: false });
+
+      // Apply department filtering for department leaders in enhanced query too
+      if (isDepartmentLeader && departmentId) {
+        enhancedQuery = enhancedQuery.eq('department_id', departmentId);
+      }
+
+      const { data: enhancedData, error: joinError } = await enhancedQuery;
 
       if (joinError) {
         console.warn('Join query failed, using simple data:', joinError);
@@ -370,7 +386,7 @@ export default function EventsPage() {
         end_date: formData.end_date,
         location: formData.location,
         organizer_id: user.profile.id,
-        department_id: formData.department_id || null,
+        department_id: isDepartmentLeader && departmentId ? departmentId : (formData.department_id || null),
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         registration_required: formData.registration_required,
         registration_deadline: formData.registration_deadline || null,
@@ -404,7 +420,7 @@ export default function EventsPage() {
         start_date: formData.start_date,
         end_date: formData.end_date,
         location: formData.location,
-        department_id: formData.department_id || null,
+        department_id: isDepartmentLeader && departmentId ? departmentId : (formData.department_id || null),
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         registration_required: formData.registration_required,
         registration_deadline: formData.registration_deadline || null,
@@ -458,7 +474,7 @@ export default function EventsPage() {
       start_date: '',
       end_date: '',
       location: '',
-      department_id: '',
+      department_id: isDepartmentLeader && departmentId ? departmentId : '',
       max_attendees: '',
       registration_required: false,
       registration_deadline: '',
@@ -475,7 +491,7 @@ export default function EventsPage() {
       start_date: new Date(event.start_date).toISOString().slice(0, 16),
       end_date: new Date(event.end_date).toISOString().slice(0, 16),
       location: event.location,
-      department_id: event.department_id || '',
+      department_id: isDepartmentLeader && departmentId ? departmentId : (event.department_id || ''),
       max_attendees: event.max_attendees?.toString() || '',
       registration_required: event.registration_required,
       registration_deadline: event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0, 16) : '',
@@ -488,14 +504,13 @@ export default function EventsPage() {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || event.event_type === filterType;
-    const matchesDepartment = filterDepartment === 'all' || event.department_id === filterDepartment;
     const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && event.is_active) ||
                          (filterStatus === 'inactive' && !event.is_active) ||
                          (filterStatus === 'upcoming' && new Date(event.start_date) > new Date()) ||
                          (filterStatus === 'past' && new Date(event.end_date) < new Date());
     
-    return matchesSearch && matchesType && matchesDepartment && matchesStatus;
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   const getEventTypeColor = (type: string) => {
@@ -577,13 +592,6 @@ export default function EventsPage() {
                   {loading ? 'Loading...' : 'Refresh'}
                 </Button>
                 <Button 
-                  variant="outline"
-                  onClick={debugEventsAccess}
-                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
-                >
-                  Debug Access
-                </Button>
-                <Button 
                   onClick={() => setIsAddModalOpen(true)}
                   icon={<Plus className="h-4 w-4" />}
                 >
@@ -615,7 +623,7 @@ export default function EventsPage() {
             {/* Search and Filters */}
             <Card className="mb-6">
               <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-2">
                     <Input
                       placeholder="Search events..."
@@ -636,15 +644,6 @@ export default function EventsPage() {
                       { value: "prayer_night", label: "Prayer Night" },
                       { value: "workshop", label: "Workshop" },
                       { value: "fellowship", label: "Fellowship" }
-                    ]}
-                  />
-                  <Select
-                    value={filterDepartment}
-                    onChange={(e) => setFilterDepartment(e.target.value)}
-                    placeholder="Department"
-                    options={[
-                      { value: "all", label: "All Departments" },
-                      ...departments.map(dept => ({ value: dept.id, label: dept.name }))
                     ]}
                   />
                   <Select
@@ -680,7 +679,6 @@ export default function EventsPage() {
                     : () => {
                         setSearchTerm('');
                         setFilterType('all');
-                        setFilterDepartment('all');
                         setFilterStatus('all');
                       }
                 }}
@@ -836,15 +834,29 @@ export default function EventsPage() {
               ]}
             />
 
-            <Select
-              label="Department"
-              value={formData.department_id}
-              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-              options={[
-                { value: "", label: "No Department" },
-                ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-              ]}
-            />
+            {isDepartmentLeader && departmentName ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department
+                </label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Events will be created for your department
+                </p>
+              </div>
+            ) : (
+              <Select
+                label="Department"
+                value={formData.department_id}
+                onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                options={[
+                  { value: "", label: "No Department" },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                ]}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -962,15 +974,29 @@ export default function EventsPage() {
               ]}
             />
 
-            <Select
-              label="Department"
-              value={formData.department_id}
-              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-              options={[
-                { value: "", label: "No Department" },
-                ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-              ]}
-            />
+            {isDepartmentLeader && departmentName ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department
+                </label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                  {departmentName}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Editing events for your department
+                </p>
+              </div>
+            ) : (
+              <Select
+                label="Department"
+                value={formData.department_id}
+                onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                options={[
+                  { value: "", label: "No Department" },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                ]}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

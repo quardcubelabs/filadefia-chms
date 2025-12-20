@@ -8,7 +8,7 @@ import Sidebar from '@/components/Sidebar';
 import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert, Table } from '@/components/ui';
 import { 
   ArrowLeft, Users, UserCheck, Crown, Briefcase, Phone, Mail,
-  Calendar, TrendingUp, Building2, Edit, Plus
+  Calendar, TrendingUp, Building2, Edit
 } from 'lucide-react';
 
 interface Department {
@@ -49,10 +49,8 @@ export default function DepartmentDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   
   // CRUD operation states
-  const [showAddMember, setShowAddMember] = useState(false);
   const [showEditMember, setShowEditMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<DepartmentMember | null>(null);
-  const [availableMembers, setAvailableMembers] = useState<any[]>([]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -123,55 +121,6 @@ export default function DepartmentDashboardPage() {
       setError(err.message || 'Failed to load department data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAvailableMembers = async () => {
-    try {
-      // Get members not already in this department
-      const currentMemberIds = members.map(dm => dm.member_id).filter(Boolean);
-      
-      if (!supabase) return;
-      let query = supabase
-        .from('members')
-        .select('*')
-        .eq('status', 'active');
-        
-      if (currentMemberIds.length > 0) {
-        query = query.not('id', 'in', `(${currentMemberIds.join(',')})`);
-      }
-      
-      const { data, error } = await query.order('first_name');
-      
-      if (error) throw error;
-      setAvailableMembers(data || []);
-    } catch (err: any) {
-      console.error('Error fetching available members:', err);
-    }
-  };
-
-  const handleAddMember = async (memberId: string, position: string = 'member') => {
-    try {
-      if (!supabase) return;
-      const { data, error } = await supabase
-        .from('department_members')
-        .insert({
-          department_id: params.id,
-          member_id: memberId,
-          position: position,
-          joined_date: new Date().toISOString().split('T')[0],
-          is_active: true
-        })
-        .select();
-
-      if (error) throw error;
-
-      // Refresh department data
-      await fetchDepartmentData();
-      setShowAddMember(false);
-      
-    } catch (err: any) {
-      setError(err.message || 'Failed to add member');
     }
   };
 
@@ -443,200 +392,7 @@ export default function DepartmentDashboardPage() {
                 </CardBody>
               </Card>
             )}
-
-            {/* All Members Table */}
-            <Card variant="default">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-tag-gray-900 flex items-center">
-                    <Users className="h-6 w-6 mr-2 text-tag-blue-600" />
-                    All Members ({members.length})
-                  </h2>
-                  {isDepartmentLeader && departmentId === params.id && (
-                    <Button
-                      onClick={() => {
-                        fetchAvailableMembers();
-                        setShowAddMember(true);
-                      }}
-                      className="bg-tag-red-600 hover:bg-tag-red-700 text-white"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Member
-                    </Button>
-                  )}
-                </div>
-
-                {members.length === 0 ? (
-                  <EmptyState
-                    icon={<Users className="h-12 w-12" />}
-                    title="No members assigned"
-                    description="This department doesn't have any members yet"
-                  />
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-tag-gray-50 border-b border-tag-gray-200">
-                        <tr>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-tag-gray-700">Member</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-tag-gray-700">Position</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-tag-gray-700">Contact</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-tag-gray-700">Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-tag-gray-700">Joined</th>
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-tag-gray-700">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-tag-gray-200">
-                        {members.map((dm) => (
-                          <tr key={dm.id} className="hover:bg-tag-gray-50 transition-colors">
-                            <td className="py-4 px-4">
-                              <div className="flex items-center">
-                                <Avatar
-                                  src={dm.member?.photo_url}
-                                  alt={`${dm.member?.first_name || 'Unknown'} ${dm.member?.last_name || 'Member'}`}
-                                  size="sm"
-                                  className="mr-3"
-                                />
-                                <div>
-                                  <p className="font-semibold text-tag-gray-900">
-                                    {dm.member?.first_name || 'Unknown'} {dm.member?.last_name || 'Member'}
-                                  </p>
-                                  <p className="text-xs text-tag-gray-600">{dm.member?.member_number || 'N/A'}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-4">
-                              {getPositionBadge(dm.position)}
-                            </td>
-                            <td className="py-4 px-4">
-                              <div className="text-sm">
-                                <p className="text-tag-gray-900">{dm.member?.phone || 'N/A'}</p>
-                                {dm.member?.email && (
-                                  <p className="text-tag-gray-600 text-xs">{dm.member.email}</p>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-4 px-4">
-                              {dm.member ? getStatusBadge(dm.member.status) : <Badge variant="default">Unknown</Badge>}
-                            </td>
-                            <td className="py-4 px-4">
-                              <div className="flex items-center text-sm text-tag-gray-600">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                {new Date(dm.joined_date).toLocaleDateString()}
-                              </div>
-                            </td>
-                            <td className="py-4 px-4">
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => dm.member && router.push(`/members/${dm.member.id}`)}
-                                  disabled={!dm.member}
-                                >
-                                  View Profile
-                                </Button>
-                                {isDepartmentLeader && departmentId === params.id && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setSelectedMember(dm);
-                                        setShowEditMember(true);
-                                      }}
-                                      className="text-tag-blue-600 hover:text-tag-blue-700"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleRemoveMember(dm.id)}
-                                      className="text-tag-red-600 hover:text-tag-red-700"
-                                    >
-                                      Remove
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
           </>
-        )}
-
-        {/* Add Member Modal */}
-        {showAddMember && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Add Member to Department</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Member
-                    </label>
-                    <select
-                      id="member-select"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    >
-                      <option value="">Choose a member...</option>
-                      {availableMembers.map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name} ({member.member_number})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Position
-                    </label>
-                    <select
-                      id="position-select"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                      defaultValue="member"
-                    >
-                      <option value="member">Member</option>
-                      <option value="coordinator">Coordinator</option>
-                      <option value="secretary">Secretary</option>
-                      <option value="treasurer">Treasurer</option>
-                      <option value="chairperson">Chairperson</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 mt-6">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowAddMember(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const memberSelect = document.getElementById('member-select') as HTMLSelectElement;
-                      const positionSelect = document.getElementById('position-select') as HTMLSelectElement;
-                      
-                      if (memberSelect.value) {
-                        handleAddMember(memberSelect.value, positionSelect.value);
-                      }
-                    }}
-                    className="bg-tag-red-600 hover:bg-tag-red-700 text-white"
-                  >
-                    Add Member
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
         )}
 
         {/* Edit Member Modal */}

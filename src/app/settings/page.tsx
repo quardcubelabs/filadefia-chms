@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { Card, Button, Input, Select, Modal } from '@/components/ui';
-import { createClient } from '@/lib/supabase/client';
 import { 
   User, 
   Mail, 
@@ -37,7 +36,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, supabase } = useAuth();
   const [darkMode] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -104,13 +103,11 @@ export default function SettingsPage() {
     memberSince: '',
   });
 
-  const supabase = createClient();
-
   useEffect(() => {
     if (!authLoading && !user) {
       window.location.href = '/login';
     }
-    if (user) {
+    if (user && supabase) {
       loadUserStats();
       loadUserSettings();
       const profile = user.profile;
@@ -149,8 +146,16 @@ export default function SettingsPage() {
         totalEvents: events?.length || 0,
         memberSince: user.profile?.created_at ? new Date(user.profile.created_at).getFullYear().toString() : 'N/A',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading user stats:', error);
+      
+      // Handle JWT expired errors
+      if (error.message && error.message.includes('JWT expired')) {
+        console.log('JWT token expired during settings data fetch');
+        await signOut();
+        window.location.href = '/login';
+        return;
+      }
     }
   };
 

@@ -526,9 +526,14 @@ export default function MessagesPage() {
     const matchesSearch = announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          announcement.content.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPriority = filterPriority === 'all' || announcement.priority === filterPriority;
-    const matchesDepartment = filterDepartment === 'all' || 
-                             (filterDepartment === 'church-wide' && !announcement.department_id) ||
-                             announcement.department_id === filterDepartment;
+    
+    // Department leaders already have filtered announcements from loadAnnouncements
+    const matchesDepartment = isDepartmentLeader ? true : (
+      filterDepartment === 'all' || 
+      (filterDepartment === 'church-wide' && !announcement.department_id) ||
+      announcement.department_id === filterDepartment
+    );
+    
     const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && announcement.is_active) ||
                          (filterStatus === 'expired' && announcement.expires_at && new Date(announcement.expires_at) < new Date());
@@ -649,7 +654,7 @@ export default function MessagesPage() {
                 {/* Search and Filters */}
                 <Card className="mb-6">
                   <CardBody>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className={`grid grid-cols-1 ${isDepartmentLeader ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
                       <div className="md:col-span-1">
                         <Input
                           placeholder="Search announcements..."
@@ -669,16 +674,19 @@ export default function MessagesPage() {
                           { value: "high", label: "High" }
                         ]}
                       />
-                      <Select
-                        value={filterDepartment}
-                        onChange={(e) => setFilterDepartment(e.target.value)}
-                        placeholder="Department"
-                        options={[
-                          { value: "all", label: "All Departments" },
-                          { value: "church-wide", label: "Church-wide" },
-                          ...departments.map(dept => ({ value: dept.id, label: dept.name }))
-                        ]}
-                      />
+                      {!isDepartmentLeader && (
+                        <Select
+                          value={filterDepartment}
+                          onChange={(e) => setFilterDepartment(e.target.value)}
+                          placeholder="Department"
+                          options={[
+                            // Only show "All Departments" option for non-department leaders
+                            ...(!isDepartmentLeader ? [{ value: "all", label: "All Departments" }] : []),
+                            { value: "church-wide", label: "Church-wide" },
+                            ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+                          ]}
+                        />
+                      )}
                       <Select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}

@@ -26,7 +26,6 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 interface Notification {
   id: string;
@@ -53,9 +52,8 @@ interface NotificationPreferences {
 }
 
 export default function NotificationsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, supabase, signOut } = useAuth();
   const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
-  const supabase = createClient();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);

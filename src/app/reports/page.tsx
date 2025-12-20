@@ -5,6 +5,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FileText,
   Download,
@@ -30,11 +31,10 @@ import {
 } from 'lucide-react';
 import { Card, CardBody, Button, Badge, Loading, Alert } from '@/components/ui';
 import Sidebar from '@/components/Sidebar';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { pdf } from '@react-pdf/renderer';
-import { PDFReport } from '@/components/reports/PDFReport';
+import PDFReport from '@/components/reports/PDFReport';
 
 // Update the JumuiyaData interface to include all required properties
 interface JumuiyaData {
@@ -182,7 +182,8 @@ interface Department {
 }
 
 export default function ReportsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { user, loading: authLoading, supabase, signOut } = useAuth();
   const { 
     departmentId, 
     departmentName, 
@@ -202,13 +203,18 @@ export default function ReportsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('membership');
 
-  const supabase = createClient();
-
   useEffect(() => {
     if (!authLoading && !user) {
-      window.location.href = '/login';
+      console.log('No user found, redirecting to login...');
+      router.push('/login');
+      return;
     }
-  }, [user, authLoading]);
+    
+    // Handle JWT token refresh for persistent sessions
+    if (user && !authLoading) {
+      console.log('Reports page - User authenticated:', user.email);
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     // Set default date range based on period
@@ -257,28 +263,55 @@ export default function ReportsPage() {
       setError(null);
       setSuccess(null);
 
-      console.log('Generating report...', { reportType, startDate, endDate });
+      console.log('🚀 REPORT GENERATION STARTED');
+      console.log('📋 Report Configuration:', { 
+        reportType, 
+        reportPeriod, 
+        startDate, 
+        endDate,
+        isDepartmentLeader,
+        departmentId,
+        departmentName 
+      });
 
-      // Fetch all data in parallel
-      const [
-        membersData,
-        financialData,
-        attendanceData,
-        jumuiyasData,
-        membershipStats,
-        financialStats,
-        eventStats,
-        departmentStats
-      ] = await Promise.all([
-        fetchMembersData(),
-        fetchFinancialData(),
-        fetchAttendanceData(),
-        fetchJumuiyasData(),
-        fetchMembershipStats(),
-        fetchFinancialStats(),
-        fetchEventStats(),
-        fetchDepartmentStats()
-      ]);
+      // Fetch data conditionally based on reportType for better performance
+      let membersData = null;
+      let financialData = null;
+      let attendanceData = null;
+      let jumuiyasData = null;
+      let membershipStats = null;
+      let financialStats = null;
+      let eventStats = null;
+      let departmentStats = null;
+
+      console.log(`🔍 Fetching data for report type: ${reportType}`);
+
+      // Only fetch data that's needed for the selected report type
+      if (reportType === 'membership' || reportType === 'comprehensive') {
+        console.log('📊 Fetching membership data...');
+        membersData = await fetchMembersData();
+        membershipStats = await fetchMembershipStats();
+      }
+
+      if (reportType === 'financial' || reportType === 'comprehensive') {
+        console.log('💰 Fetching financial data...');
+        financialData = await fetchFinancialData();
+        financialStats = await fetchFinancialStats();
+      }
+
+      if (reportType === 'attendance' || reportType === 'comprehensive') {
+        console.log('📅 Fetching attendance data...');
+        // attendanceData = await fetchAttendanceData();
+        // eventStats = await fetchEventStats();
+      }
+
+      if (reportType === 'jumuiya' || reportType === 'comprehensive') {
+        console.log('🏘️ Fetching jumuiya data...');
+        // jumuiyasData = await fetchJumuiyasData();
+        // departmentStats = await fetchDepartmentStats();
+      }
+
+      console.log('✅ Data fetching completed for:', reportType);
 
       const defaultMembershipStats = {
         activeMembers: 0,
@@ -310,7 +343,7 @@ export default function ReportsPage() {
       const finalEventStats = eventStats || defaultEventStats;
 
       const reportData = {
-        jumuiyas: jumuiyasData,
+        jumuiyas: jumuiyasData || [],
         membershipStats: finalMembershipStats,
         financialStats: finalFinancialStats,
         eventStats: finalEventStats,
@@ -337,8 +370,17 @@ export default function ReportsPage() {
       setTimeout(() => setSuccess(null), 3000);
       
       console.log('Report generated successfully:', reportData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error generating report:', err);
+      
+      // Handle JWT expired errors
+      if (err.message && err.message.includes('JWT expired')) {
+        console.log('JWT token expired, redirecting to login...');
+        await signOut();
+        router.push('/login');
+        return;
+      }
+      
       setError('Failed to generate report. Please check your database connection and try again.');
     } finally {
       setLoading(false);
@@ -346,43 +388,98 @@ export default function ReportsPage() {
   };
 
   const fetchMembersData = async () => {
-    if (!supabase) return null;
-    const { data: members, error } = await supabase
-      .from('members')
-      .select('*')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate);
+    if (!supabase) {
+      console.error('Supabase client not available');
+      return null;
+    }
+    
+    try {
+      console.log('Fetching members data...');
+      console.log('Date range:', { startDate, endDate });
+      console.log('Department filter:', { isDepartmentLeader, departmentId, departmentName });
+      
+      let query = supabase
+        .from('members')
+        .select('*, department_members(department_id, departments(name))')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
 
-    if (error) throw error;
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        console.log(`🔒 Applying department filter for members data: ${departmentId}`);
+        query = query.eq('department_members.department_id', departmentId);
+      }
 
-    const activeMembers = members?.filter((m: any) => m.status === 'active').length || 0;
-    const inactiveMembers = members?.filter((m: any) => m.status === 'inactive').length || 0;
+      const { data: members, error } = await query;
 
-    return {
-      totalMembers: members?.length || 0,
-      activeMembers,
-      inactiveMembers,
-      newMembers: members?.filter((m: any) => {
-        const joinDate = new Date(m.created_at);
-        return joinDate >= new Date(startDate) && joinDate <= new Date(endDate);
-      }).length || 0,
-      monthlyTrends: []
-    };
+      if (error) {
+        // Handle JWT expired errors
+        if (error.message && error.message.includes('JWT expired')) {
+          console.log('JWT token expired during members data fetch');
+          await signOut();
+          router.push('/login');
+          return null;
+        }
+        throw error;
+      }
+
+      const activeMembers = members?.filter((m: any) => m.status === 'active').length || 0;
+      const inactiveMembers = members?.filter((m: any) => m.status === 'inactive').length || 0;
+
+      return {
+        totalMembers: members?.length || 0,
+        activeMembers,
+        inactiveMembers,
+        newMembers: members?.filter((m: any) => {
+          const joinDate = new Date(m.created_at);
+          return joinDate >= new Date(startDate) && joinDate <= new Date(endDate);
+        }).length || 0,
+        monthlyTrends: []
+      };
+    } catch (err: any) {
+      console.error('Error in fetchMembersData:', err);
+      if (err.message && err.message.includes('JWT expired')) {
+        await signOut();
+        router.push('/login');
+        return null;
+      }
+      return null;
+    }
   };
 
   const fetchFinancialData = async () => {
     try {
       console.log('Fetching financial data from financial_transactions table...');
+      console.log('Date range:', { startDate, endDate });
+      console.log('Department filter:', { isDepartmentLeader, departmentId, departmentName });
       
       if (!supabase) return null;
-      const { data: transactions, error } = await supabase
+      
+      let query = supabase
         .from('financial_transactions')
         .select('*')
         .gte('date', startDate)
         .lte('date', endDate);
 
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        console.log(`🔒 Applying department filter for financial data: ${departmentId}`);
+        query = query.eq('department_id', departmentId);
+      }
+
+      const { data: transactions, error } = await query;
+
       if (error) {
         console.error('Error fetching financial data:', error);
+        
+        // Handle JWT expired errors
+        if (error.message && error.message.includes('JWT expired')) {
+          console.log('JWT token expired during financial data fetch');
+          await signOut();
+          router.push('/login');
+          return null;
+        }
+        
         throw error;
       }
 
@@ -425,8 +522,17 @@ export default function ReportsPage() {
         totalOfferings: offerings,
         totalTithes: tithes
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in fetchFinancialData:', err);
+      
+      // Handle JWT expired errors
+      if (err.message && err.message.includes('JWT expired')) {
+        console.log('JWT token expired during financial data processing');
+        await signOut();
+        router.push('/login');
+        return null;
+      }
+      
       return {
         totalIncome: 0,
         totalExpenses: 0,
@@ -641,18 +747,17 @@ export default function ReportsPage() {
   const fetchFinancialStats = async () => {
     try {
       console.log('Fetching financial statistics...');
+      console.log('Department filter:', { isDepartmentLeader, departmentId, departmentName });
       
       if (!supabase) return null;
       let query = supabase
         .from('financial_transactions')
-        .select(`
-          *,
-          members(department_members(department_id, departments(name)))
-        `);
+        .select('*');
 
       // Apply department filtering for department leaders
       if (isDepartmentLeader && departmentId) {
-        query = query.eq('members.department_members.department_id', departmentId);
+        console.log(`🔒 Applying department filter for financial stats: ${departmentId}`);
+        query = query.eq('department_id', departmentId);
       }
 
       const { data: transactions, error } = await query;
@@ -1238,7 +1343,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.membershipStats.activeMembers}
+                            {reportData?.membershipStats?.activeMembers || 0}
                           </p>
                           <p className="text-sm text-gray-600">Active Members</p>
                         </div>
@@ -1249,7 +1354,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.membershipStats.newMembersThisMonth}
+                            {reportData?.membershipStats?.newMembersThisMonth || 0}
                           </p>
                           <p className="text-sm text-gray-600">New This Month</p>
                         </div>
@@ -1260,7 +1365,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <Building2 className="h-8 w-8 text-orange-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.membershipStats.membersByDepartment.length}
+                            {reportData?.membershipStats?.membersByDepartment?.length || 0}
                           </p>
                           <p className="text-sm text-gray-600">Departments</p>
                         </div>
@@ -1271,7 +1376,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.membershipStats.totalMembers}
+                            {reportData?.membershipStats?.totalMembers || 0}
                           </p>
                           <p className="text-sm text-gray-600">Total Members</p>
                         </div>
@@ -1284,7 +1389,7 @@ export default function ReportsPage() {
                       <CardBody>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Members by Status</h3>
                         <div className="space-y-3">
-                          {Object.entries(reportData.membershipStats.membersByStatus).map(([status, count]) => (
+                          {Object.entries(reportData?.membershipStats?.membersByStatus || {}).map(([status, count]) => (
                             <div key={status} className="flex justify-between items-center">
                               <span className="capitalize text-gray-600">{status}</span>
                               <div className="flex items-center space-x-2">
@@ -1293,7 +1398,7 @@ export default function ReportsPage() {
                                   <div
                                     className="h-2 bg-blue-600 rounded-full"
                                     style={{
-                                      width: `${(count / reportData.membershipStats.totalMembers * 100)}%`
+                                      width: `${((count as number) / (reportData?.membershipStats?.totalMembers || 1) * 100)}%`
                                     }}
                                   />
                                 </div>
@@ -1308,7 +1413,7 @@ export default function ReportsPage() {
                       <CardBody>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Members by Department</h3>
                         <div className="space-y-3">
-                          {reportData.membershipStats.membersByDepartment.slice(0, 5).map((dept) => (
+                          {(reportData?.membershipStats?.membersByDepartment || []).slice(0, 5).map((dept) => (
                             <div key={dept.name} className="flex justify-between items-center">
                               <span className="text-gray-600">{dept.name}</span>
                               <div className="flex items-center space-x-2">
@@ -1317,7 +1422,7 @@ export default function ReportsPage() {
                                   <div
                                     className="h-2 bg-green-600 rounded-full"
                                     style={{
-                                      width: `${(dept.count / reportData.membershipStats.totalMembers * 100)}%`
+                                      width: `${(dept.count / (reportData?.membershipStats?.totalMembers || 1) * 100)}%`
                                     }}
                                   />
                                 </div>
@@ -1340,7 +1445,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {formatCurrency(reportData.financialStats.totalIncome)}
+                            {formatCurrency(reportData?.financialStats?.totalIncome || 0)}
                           </p>
                           <p className="text-sm text-gray-600">Total Income</p>
                         </div>
@@ -1351,7 +1456,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <TrendingDown className="h-8 w-8 text-red-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {formatCurrency(reportData.financialStats.totalExpenses)}
+                            {formatCurrency(reportData?.financialStats?.totalExpenses || 0)}
                           </p>
                           <p className="text-sm text-gray-600">Total Expenses</p>
                         </div>
@@ -1361,14 +1466,14 @@ export default function ReportsPage() {
                       <CardBody>
                         <div className="text-center">
                           <DollarSign className={`h-8 w-8 mx-auto mb-2 ${
-                            reportData.financialStats.totalIncome - reportData.financialStats.totalExpenses >= 0
+                            (reportData?.financialStats?.totalIncome || 0) - (reportData?.financialStats?.totalExpenses || 0) >= 0
                               ? 'text-green-600' : 'text-red-600'
                           }`} />
                           <p className={`text-2xl font-bold ${
-                            reportData.financialStats.totalIncome - reportData.financialStats.totalExpenses >= 0
+                            (reportData?.financialStats?.totalIncome || 0) - (reportData?.financialStats?.totalExpenses || 0) >= 0
                               ? 'text-green-600' : 'text-red-600'
                           }`}>
-                            {formatCurrency(reportData.financialStats.totalIncome - reportData.financialStats.totalExpenses)}
+                            {formatCurrency((reportData?.financialStats?.totalIncome || 0) - (reportData?.financialStats?.totalExpenses || 0))}
                           </p>
                           <p className="text-sm text-gray-600">Net Amount</p>
                         </div>
@@ -1379,7 +1484,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <CreditCard className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {formatCurrency(reportData.financialStats.monthlyIncome)}
+                            {formatCurrency(reportData?.financialStats?.monthlyIncome || 0)}
                           </p>
                           <p className="text-sm text-gray-600">Monthly Income</p>
                         </div>
@@ -1392,7 +1497,7 @@ export default function ReportsPage() {
                       <CardBody>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Income by Type</h3>
                         <div className="space-y-3">
-                          {reportData.financialStats.incomeByType.map((item) => (
+                          {(reportData?.financialStats?.incomeByType || []).map((item) => (
                             <div key={item.type} className="flex justify-between items-center">
                               <span className="capitalize text-gray-600">{item.type}</span>
                               <div className="flex items-center space-x-2">
@@ -1401,7 +1506,7 @@ export default function ReportsPage() {
                                   <div
                                     className="h-2 bg-green-600 rounded-full"
                                     style={{
-                                      width: `${(item.amount / reportData.financialStats.totalIncome * 100)}%`
+                                      width: `${(item.amount / (reportData?.financialStats?.totalIncome || 1) * 100)}%`
                                     }}
                                   />
                                 </div>
@@ -1416,7 +1521,7 @@ export default function ReportsPage() {
                       <CardBody>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h3>
                         <div className="space-y-3">
-                          {reportData.financialStats.monthlyTrends.map((item) => (
+                          {(reportData?.financialStats?.monthlyTrends || []).map((item) => (
                             <div key={item.month} className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">{item.month}</span>
@@ -1429,7 +1534,7 @@ export default function ReportsPage() {
                                   <div
                                     className="h-2 bg-green-600 rounded"
                                     style={{
-                                      width: item.income > 0 ? `${Math.min(item.income / Math.max(...reportData.financialStats.monthlyTrends.map((t: any) => t.income)) * 100, 100)}%` : '0%'
+                                      width: item.income > 0 ? `${Math.min(item.income / Math.max(...(reportData?.financialStats?.monthlyTrends || []).map((t: any) => t.income)) * 100, 100)}%` : '0%'
                                     }}
                                   />
                                 </div>
@@ -1437,7 +1542,7 @@ export default function ReportsPage() {
                                   <div
                                     className="h-2 bg-red-600 rounded"
                                     style={{
-                                      width: item.expenses > 0 ? `${Math.min(item.expenses / Math.max(...reportData.financialStats.monthlyTrends.map((t: any) => t.expenses)) * 100, 100)}%` : '0%'
+                                      width: item.expenses > 0 ? `${Math.min(item.expenses / Math.max(...(reportData?.financialStats?.monthlyTrends || []).map((t: any) => t.expenses)) * 100, 100)}%` : '0%'
                                     }}
                                   />
                                 </div>
@@ -1460,7 +1565,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <Calendar className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.eventStats.totalEvents}
+                            {reportData?.eventStats?.totalEvents || 0}
                           </p>
                           <p className="text-sm text-gray-600">Total Events</p>
                         </div>
@@ -1471,7 +1576,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <Clock className="h-8 w-8 text-green-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.eventStats.upcomingEvents}
+                            {reportData?.eventStats?.upcomingEvents || 0}
                           </p>
                           <p className="text-sm text-gray-600">Upcoming</p>
                         </div>
@@ -1482,7 +1587,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <CheckCircle className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.eventStats.completedEvents}
+                            {reportData?.eventStats?.completedEvents || 0}
                           </p>
                           <p className="text-sm text-gray-600">Completed</p>
                         </div>
@@ -1493,7 +1598,7 @@ export default function ReportsPage() {
                         <div className="text-center">
                           <Users className="h-8 w-8 text-orange-600 mx-auto mb-2" />
                           <p className="text-2xl font-bold text-gray-900">
-                            {reportData.eventStats.averageAttendance}
+                            {reportData?.eventStats?.averageAttendance || 0}
                           </p>
                           <p className="text-sm text-gray-600">Avg. Attendance</p>
                         </div>
@@ -1505,7 +1610,7 @@ export default function ReportsPage() {
                     <CardBody>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Events by Type</h3>
                       <div className="space-y-3">
-                        {reportData.eventStats.eventsByType.map((item) => (
+                        {(reportData?.eventStats?.eventsByType || []).map((item) => (
                           <div key={item.type} className="flex justify-between items-center">
                             <span className="text-gray-600">{item.type}</span>
                             <div className="flex items-center space-x-2">
@@ -1514,7 +1619,7 @@ export default function ReportsPage() {
                                 <div
                                   className="h-2 bg-blue-600 rounded-full"
                                   style={{
-                                    width: `${(item.count / reportData.eventStats.totalEvents * 100)}%`
+                                    width: `${(item.count / (reportData?.eventStats?.totalEvents || 1) * 100)}%`
                                   }}
                                 />
                               </div>
@@ -1536,7 +1641,7 @@ export default function ReportsPage() {
                       <CardBody className="text-center">
                         <Building2 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                         <p className="text-sm text-gray-600">Total Departments</p>
-                        <p className="text-2xl font-bold text-gray-900">{reportData.departmentStats.length}</p>
+                        <p className="text-2xl font-bold text-gray-900">{reportData?.departmentStats?.length || 0}</p>
                       </CardBody>
                     </Card>
                     <Card>
@@ -1544,7 +1649,7 @@ export default function ReportsPage() {
                         <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
                         <p className="text-sm text-gray-600">Total Members</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {reportData.departmentStats.reduce((sum: number, dept: DepartmentData) => sum + dept.memberCount, 0)}
+                          {(reportData?.departmentStats || []).reduce((sum: number, dept: DepartmentData) => sum + dept.memberCount, 0)}
                         </p>
                       </CardBody>
                     </Card>
@@ -1553,7 +1658,7 @@ export default function ReportsPage() {
                         <DollarSign className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
                         <p className="text-sm text-gray-600">Total Income</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {formatCurrency(reportData.departmentStats.reduce((sum: number, dept: DepartmentData) => sum + (dept.totalIncome || 0), 0))}
+                          {formatCurrency((reportData?.departmentStats || []).reduce((sum: number, dept: DepartmentData) => sum + (dept.totalIncome || 0), 0))}
                         </p>
                       </CardBody>
                     </Card>
@@ -1562,7 +1667,7 @@ export default function ReportsPage() {
                         <UserCheck className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                         <p className="text-sm text-gray-600">With Leaders</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {reportData.departmentStats.filter((dept: DepartmentData) => dept.leader).length}
+                          {(reportData?.departmentStats || []).filter((dept: DepartmentData) => dept.leader).length}
                         </p>
                       </CardBody>
                     </Card>
@@ -1587,7 +1692,7 @@ export default function ReportsPage() {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {reportData.departmentStats
+                            {(reportData?.departmentStats || [])
                               .sort((a: DepartmentData, b: DepartmentData) => (b.totalIncome || 0) - (a.totalIncome || 0))
                               .map((dept: DepartmentData) => (
                               <tr key={dept.id} className="hover:bg-gray-50">
