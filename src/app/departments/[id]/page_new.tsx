@@ -5,11 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
-import TopNavbar from '@/components/TopNavbar';
-import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert, Table } from '@/components/ui';
+import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
 import { 
-  ArrowLeft, Users, UserCheck, Crown, Briefcase, Phone, Mail,
-  Calendar, TrendingUp, Building2, Edit, DollarSign, ChevronDown
+  Users, UserCheck, Crown, Phone, Mail,
+  Calendar, TrendingUp, Building2, Edit, DollarSign, ChevronDown, Search, Bell, Sun, Moon
 } from 'lucide-react';
 
 interface Department {
@@ -74,7 +73,6 @@ export default function DepartmentDashboardPage() {
       setLoading(true);
       setError(null);
 
-      // Fetch department details
       if (!supabase) return;
       const { data: deptData, error: deptError } = await supabase
         .from('departments')
@@ -85,7 +83,6 @@ export default function DepartmentDashboardPage() {
       if (deptError) throw deptError;
       setDepartment(deptData);
 
-      // Fetch department members with member details - using fallback approach for broken relationships
       if (!supabase) return;
       const { data: membersData, error: membersError } = await supabase
         .from('department_members')
@@ -99,17 +96,12 @@ export default function DepartmentDashboardPage() {
 
       if (membersError) throw membersError;
 
-      // For broken relationships, fetch members separately and merge
       let processedMembers = membersData || [];
       
       if (processedMembers.some((dm: DepartmentMember) => !dm.member)) {
-        console.log('🔧 Fixing broken member relationships...');
-        
-        // Get all member IDs from department_members
         const memberIds = processedMembers.map((dm: DepartmentMember) => dm.member_id).filter(Boolean);
         
         if (memberIds.length > 0) {
-          // Fetch member details separately
           if (!supabase) return;
           const { data: memberDetails, error: memberError } = await supabase
             .from('members')
@@ -117,7 +109,6 @@ export default function DepartmentDashboardPage() {
             .in('id', memberIds);
 
           if (!memberError && memberDetails) {
-            // Merge member details back into department_members
             processedMembers = processedMembers.map((dm: DepartmentMember) => ({
               ...dm,
               member: memberDetails.find((m: any) => m.id === dm.member_id) || null
@@ -137,12 +128,8 @@ export default function DepartmentDashboardPage() {
 
   const fetchFinancialData = async () => {
     try {
-      if (!supabase || !params.id) {
-        console.error('Supabase client or department ID not available');
-        return;
-      }
+      if (!supabase || !params.id) return;
 
-      // Fetch total department income with department filtering
       const { data: incomeData, error: incomeError } = await supabase
         .from('financial_transactions')
         .select('amount, members(department_members(department_id))')
@@ -154,7 +141,6 @@ export default function DepartmentDashboardPage() {
         return;
       }
       
-      // Filter by department
       const deptIncome = incomeData?.filter((t: any) => {
         const deptMembers = t.members?.department_members || [];
         return deptMembers.some((dm: any) => dm.department_id === params.id);
@@ -162,7 +148,6 @@ export default function DepartmentDashboardPage() {
       
       const totalDepartmentIncome = deptIncome.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
-      // Fetch current month department income
       const currentMonth = new Date();
       const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       
@@ -185,7 +170,6 @@ export default function DepartmentDashboardPage() {
       
       const monthlyDepartmentIncome = deptMonthlyData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
-      // Fetch weekly offerings for the last 8 weeks
       const weeks = [];
       for (let i = 7; i >= 0; i--) {
         const weekEnd = new Date();
@@ -237,7 +221,6 @@ export default function DepartmentDashboardPage() {
 
       if (error) throw error;
 
-      // Refresh department data
       await fetchDepartmentData();
       setShowEditMember(false);
       setSelectedMember(null);
@@ -261,7 +244,6 @@ export default function DepartmentDashboardPage() {
 
       if (error) throw error;
 
-      // Refresh department data
       await fetchDepartmentData();
       
     } catch (err: any) {
@@ -281,7 +263,7 @@ export default function DepartmentDashboardPage() {
     const icons: Record<string, any> = {
       chairperson: Crown,
       secretary: Edit,
-      treasurer: Briefcase,
+      treasurer: Building2,
       coordinator: UserCheck,
       member: Users,
     };
@@ -306,22 +288,19 @@ export default function DepartmentDashboardPage() {
     return <Badge variant={variants[status]} dot>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
   };
 
-  // Group members by position (filter out null member records)
   const leadershipMembers = members.filter(m => m.member && ['chairperson', 'secretary', 'treasurer', 'coordinator'].includes(m.position));
   const regularMembers = members.filter(m => m.member && m.position === 'member');
   
-  // Calculate member age distribution - fetch separately if needed
   const membersByAge = {
-    youth: Math.floor(members.length * 0.35),   // 15-35 - estimated
-    adults: Math.floor(members.length * 0.50),  // 36-60 - estimated
-    seniors: Math.ceil(members.length * 0.15)   // 61+ - estimated
+    youth: Math.floor(members.length * 0.35),
+    adults: Math.floor(members.length * 0.50),
+    seniors: Math.ceil(members.length * 0.15)
   };
 
   if (!user && !authLoading) {
     return null;
   }
 
-  // Styling variables
   const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
@@ -333,12 +312,104 @@ export default function DepartmentDashboardPage() {
     <div className={`min-h-screen ${bgColor}`}>
       <Sidebar />
       
-      <TopNavbar 
-        title={department?.name || 'Department Dashboard'}
-        subtitle={`${department?.swahili_name ? department.swahili_name : ''} - Department Management`.trim()}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-      />
+      {/* Top Header Bar */}
+      <header className={`${cardBg} border-b ${borderColor} sticky top-0 z-40`}>
+        <div className="ml-20 px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Building2 className="h-6 w-6 text-tag-red-600" />
+            <h1 className={`text-2xl font-bold ${textPrimary}`}>
+              {department?.name || 'Department Dashboard'}
+            </h1>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-2 rounded-lg ${inputBg} hover:opacity-80 transition-opacity`}
+            >
+              {darkMode ? (
+                <Sun className="h-5 w-5 text-yellow-400" />
+              ) : (
+                <Moon className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+
+            {/* Search */}
+            <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${inputBg} border ${borderColor}`}>
+              <Search className={`h-4 w-4 ${textSecondary}`} />
+              <input
+                type="text"
+                placeholder="Search..."
+                className={`bg-transparent border-none outline-none ${textSecondary} text-sm`}
+              />
+            </div>
+
+            {/* Notifications */}
+            <button className={`relative p-2 rounded-lg ${inputBg} hover:opacity-80 transition-opacity`}>
+              <Bell className={`h-5 w-5 ${textSecondary}`} />
+              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            {/* Profile Dropdown */}
+            <div className="dropdown-container relative">
+              <button
+                onClick={() => setShowProfile(!showProfile)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${inputBg} hover:opacity-80 transition-opacity`}
+              >
+                <img
+                  src={
+                    user?.profile?.avatar_url || 
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
+                  }
+                  alt="Profile"
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+                <ChevronDown className={`h-4 w-4 ${textSecondary}`} />
+              </button>
+
+              {showProfile && (
+                <div className={`absolute right-0 top-full mt-2 w-64 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50`}>
+                  <div className={`p-4 border-b ${borderColor}`}>
+                    <div className="flex items-center space-x-3">
+                      <img
+                        src={
+                          user?.profile?.avatar_url || 
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
+                        }
+                        alt="Profile"
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className={`font-semibold ${textPrimary}`}>
+                          {user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} {user?.profile?.last_name || ''}
+                        </p>
+                        <p className={`text-sm ${textSecondary}`}>
+                          Department Leader
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="py-2">
+                    <button 
+                      onClick={() => setShowProfile(false)}
+                      className={`w-full text-left px-4 py-2 text-sm ${textPrimary} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
+                    >
+                      View Profile
+                    </button>
+                    <button 
+                      onClick={() => router.push('/departments')}
+                      className={`w-full text-left px-4 py-2 text-sm ${textPrimary} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
+                    >
+                      Back to Departments
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
 
       <main className="ml-20 p-8">
         {/* Error Alert */}
@@ -373,7 +444,35 @@ export default function DepartmentDashboardPage() {
           </Card>
         ) : (
           <>
-            {/* Dashboard Grid - Main Content */}
+            {/* Department Header */}
+            <Card variant="gradient" className="mb-6">
+              <div className="h-24 bg-gradient-to-r from-tag-red-500 via-tag-red-600 to-tag-yellow-500"></div>
+              <CardBody className="p-6 -mt-12 relative">
+                <div className="flex items-end gap-4">
+                  <div className="h-20 w-20 bg-white rounded-lg shadow-xl flex items-center justify-center border-4 border-white">
+                    <Building2 className="h-10 w-10 text-tag-red-600" />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-bold text-tag-gray-900 mb-1">
+                      {department.name}
+                    </h1>
+                    {department.swahili_name && (
+                      <p className="text-tag-gray-600 font-semibold mb-2">
+                        {department.swahili_name}
+                      </p>
+                    )}
+                    {department.description && (
+                      <p className="text-tag-gray-600 text-sm">
+                        {department.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Dashboard Grid */}
             <div className="grid grid-cols-12 gap-6">
               {/* Left Column - Stats and Charts */}
               <div className="col-span-12 lg:col-span-7 space-y-6">
@@ -428,14 +527,13 @@ export default function DepartmentDashboardPage() {
                 <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
                   <div className="flex items-center justify-between mb-8">
                     <h3 className={`text-2xl font-bold ${textPrimary}`}>Members by Age</h3>
-                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
+                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500`}>
                       <option>All Time</option>
                       <option>This Year</option>
                     </select>
                   </div>
 
                   <div className="flex items-center justify-between gap-8">
-                    {/* Left side - Total Members */}
                     <div className="flex-shrink-0">
                       <p className={`text-sm ${textSecondary} mb-3`}>Total Members</p>
                       <p className={`text-4xl font-bold ${textPrimary}`}>
@@ -443,29 +541,15 @@ export default function DepartmentDashboardPage() {
                       </p>
                     </div>
 
-                    {/* Right side - Donut Chart and Legend */}
                     <div className="flex items-center gap-12">
                       {/* Donut Chart */}
                       <div className="relative flex items-center justify-center flex-shrink-0">
-                        {(() => {
-                          const totalMembers = members.length;
-                          if (totalMembers === 0) {
-                            return (
-                              <div className="w-[200px] h-[200px] flex items-center justify-center">
-                                <p className={textSecondary}>No data</p>
-                              </div>
-                            );
-                          }
-
-                          const youthPercentage = (membersByAge.youth / totalMembers) * 100;
-                          const adultsPercentage = (membersByAge.adults / totalMembers) * 100;
-                          const seniorsPercentage = (membersByAge.seniors / totalMembers) * 100;
-
-                          const youthRatio = membersByAge.youth / totalMembers;
-                          const adultsRatio = membersByAge.adults / totalMembers;
-                          const seniorsRatio = membersByAge.seniors / totalMembers;
-
-                          return (
+                        {members.length === 0 ? (
+                          <div className="w-[200px] h-[200px] flex items-center justify-center">
+                            <p className={textSecondary}>No data</p>
+                          </div>
+                        ) : (
+                          <>
                             <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
                               <defs>
                                 <linearGradient id="deptMemberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -482,68 +566,21 @@ export default function DepartmentDashboardPage() {
                                 </linearGradient>
                               </defs>
                               
-                              {/* Background circle */}
-                              <circle
-                                cx="100"
-                                cy="100"
-                                r="75"
-                                fill="none"
-                                stroke={darkMode ? '#1f2937' : '#f5f5f5'}
-                                strokeWidth="28"
-                              />
+                              <circle cx="100" cy="100" r="75" fill="none" stroke={darkMode ? '#1f2937' : '#f5f5f5'} strokeWidth="28" />
                               
-                              {/* Youth segment (Cyan) */}
-                              {youthRatio > 0 && (
-                                <circle
-                                  cx="100"
-                                  cy="100"
-                                  r="80"
-                                  fill="none"
-                                  stroke="url(#deptMemberGradient1)"
-                                  strokeWidth="32"
-                                  strokeDasharray={`${2 * Math.PI * 80 * youthRatio} ${2 * Math.PI * 80 * (1 - youthRatio)}`}
-                                  strokeLinecap="butt"
-                                />
-                              )}
+                              <circle cx="100" cy="100" r="80" fill="none" stroke="url(#deptMemberGradient1)" strokeWidth="32" strokeDasharray={`${2 * Math.PI * 80 * (membersByAge.youth / members.length)} ${2 * Math.PI * 80 * (1 - membersByAge.youth / members.length)}`} strokeLinecap="butt" />
                               
-                              {/* Adults segment (Blue) */}
-                              {adultsRatio > 0 && (
-                                <circle
-                                  cx="100"
-                                  cy="100"
-                                  r="72"
-                                  fill="none"
-                                  stroke="url(#deptMemberGradient2)"
-                                  strokeWidth="20"
-                                  strokeDasharray={`${2 * Math.PI * 72 * adultsRatio} ${2 * Math.PI * 72 * (1 - adultsRatio)}`}
-                                  strokeDashoffset={`${-2 * Math.PI * 72 * youthRatio}`}
-                                  strokeLinecap="butt"
-                                />
-                              )}
+                              <circle cx="100" cy="100" r="72" fill="none" stroke="url(#deptMemberGradient2)" strokeWidth="20" strokeDasharray={`${2 * Math.PI * 72 * (membersByAge.adults / members.length)} ${2 * Math.PI * 72 * (1 - membersByAge.adults / members.length)}`} strokeDashoffset={`${-2 * Math.PI * 72 * (membersByAge.youth / members.length)}`} strokeLinecap="butt" />
                               
-                              {/* Seniors segment (Red) */}
-                              {seniorsRatio > 0 && (
-                                <circle
-                                  cx="100"
-                                  cy="100"
-                                  r="76"
-                                  fill="none"
-                                  stroke="url(#deptMemberGradient3)"
-                                  strokeWidth="28"
-                                  strokeDasharray={`${2 * Math.PI * 76 * seniorsRatio} ${2 * Math.PI * 76 * (1 - seniorsRatio)}`}
-                                  strokeDashoffset={`${-2 * Math.PI * 76 * (youthRatio + adultsRatio)}`}
-                                  strokeLinecap="butt"
-                                />
-                              )}
+                              <circle cx="100" cy="100" r="76" fill="none" stroke="url(#deptMemberGradient3)" strokeWidth="28" strokeDasharray={`${2 * Math.PI * 76 * (membersByAge.seniors / members.length)} ${2 * Math.PI * 76 * (1 - membersByAge.seniors / members.length)}`} strokeDashoffset={`${-2 * Math.PI * 76 * ((membersByAge.youth + membersByAge.adults) / members.length)}`} strokeLinecap="butt" />
                             </svg>
-                          );
-                        })()}
-                        
-                        {/* Center text */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                          <p className={`text-xs ${textSecondary} mb-1`}>Active</p>
-                          <p className="text-3xl font-bold text-blue-600">100%</p>
-                        </div>
+                            
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                              <p className={`text-xs ${textSecondary} mb-1`}>Active</p>
+                              <p className="text-3xl font-bold text-blue-600">100%</p>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Legend */}
@@ -582,7 +619,6 @@ export default function DepartmentDashboardPage() {
 
                 {/* Weekly Offerings Chart */}
                 <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
-                  {/* Header */}
                   <div className="flex items-center justify-between mb-6">
                     <h3 className={`text-xl font-bold ${textPrimary}`}>Weekly Offerings</h3>
                     <div className="flex items-center space-x-4">
@@ -597,7 +633,6 @@ export default function DepartmentDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Stats Row */}
                   <div className="flex items-center justify-between mb-8">
                     <div>
                       <p className={`text-xs ${textSecondary} mb-1`}>Total Income</p>
@@ -618,9 +653,7 @@ export default function DepartmentDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Bar Chart */}
                   <div className="relative" style={{ height: '180px' }}>
-                    {/* Floating label above highest bar */}
                     {financialData.weeklyOfferings.length > 0 && (
                       <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
                         <p className="text-white text-sm font-bold">
@@ -629,7 +662,6 @@ export default function DepartmentDashboardPage() {
                       </div>
                     )}
 
-                    {/* Bar Chart Container */}
                     <div className="h-full flex items-end justify-between gap-4 pt-10">
                       {(financialData.weeklyOfferings.length > 0 ? financialData.weeklyOfferings : [
                         { week: 'W1', amount: 0, label: '01' },
@@ -646,21 +678,17 @@ export default function DepartmentDashboardPage() {
                         const forecastHeight = Math.max(height * 0.9, 8);
                         return (
                           <div key={idx} className="flex-1 flex flex-col items-center">
-                            {/* Bar Group */}
                             <div className="w-full flex items-end justify-center gap-1">
-                              {/* Actual Bar (Dark Blue) */}
                               <div 
                                 className="flex-1 bg-blue-600 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-blue-700"
                                 style={{ height: `${height}px` }}
                                 title={`Week ${idx + 1}: TZS ${bar.amount.toLocaleString()}`}
                               ></div>
-                              {/* Target Bar (Light Gray) */}
                               <div 
                                 className="flex-1 bg-gray-300 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-gray-400"
                                 style={{ height: `${forecastHeight}px` }}
                               ></div>
                             </div>
-                            {/* Label */}
                             <span className={`text-xs mt-2 ${textSecondary}`}>{bar.label}</span>
                           </div>
                         );
@@ -674,7 +702,7 @@ export default function DepartmentDashboardPage() {
               <div className="col-span-12 lg:col-span-5 space-y-6">
                 {/* Leadership Team */}
                 {leadershipMembers.length > 0 && (
-                  <Card variant="default" className="">
+                  <Card variant="default">
                     <CardBody className="p-6">
                       <h2 className="text-xl font-bold text-tag-gray-900 mb-6 flex items-center">
                         <Crown className="h-6 w-6 mr-2 text-tag-yellow-600" />

@@ -64,7 +64,7 @@ export default function TopNavbar({
 
   return (
     <header className={`${bgColor} border-b ${borderColor} sticky top-0 z-40 shadow-sm`}>
-      <div className="px-4 sm:px-6 lg:px-8 py-4">
+      <div className="ml-20 px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           {/* Left Section - Title */}
           <div className="flex items-center space-x-4">

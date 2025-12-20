@@ -187,15 +187,22 @@ export default function FinancePage() {
       console.log('Is Department Leader:', isDepartmentLeader);
       console.log('Department:', departmentName);
       
-      // Simple query - RLS policies will handle department filtering automatically
-      const { data, error } = await supabase
+      // Build query - filter by department if user is a department leader
+      let query = supabase
         .from('financial_transactions')
         .select(`
           *,
           member:members(first_name, last_name, member_number),
           department:departments(name)
-        `)
-        .order('date', { ascending: false });
+        `);
+
+      // If user is a department leader, filter by their department
+      if (isDepartmentLeader && departmentId) {
+        console.log('Filtering by department ID:', departmentId);
+        query = query.eq('department_id', departmentId);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
 
       if (error) {
         console.error('Database error:', error);
@@ -594,9 +601,7 @@ export default function FinancePage() {
     );
   }
 
-  const title = isDepartmentLeader && departmentName 
-    ? `Finance - ${departmentName}` 
-    : 'Finance Management';
+  const title = 'Finance Management';
     
   const subtitle = isDepartmentLeader 
     ? `Manage transactions for ${departmentName} department` 
@@ -606,29 +611,6 @@ export default function FinancePage() {
     <MainLayout 
       title={title}
       subtitle={subtitle}
-      showSearch={true}
-      searchPlaceholder="Search transactions..."
-      onSearch={(query) => setSearchTerm(query)}
-      navbarActions={
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => console.log('Export functionality')}
-            disabled={filteredTransactions.length === 0}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Transaction
-          </Button>
-        </div>
-      }
     >
       <div className="max-w-7xl mx-auto">
         {/* Debug Info */}

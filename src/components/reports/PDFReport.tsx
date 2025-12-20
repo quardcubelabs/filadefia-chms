@@ -1,7 +1,8 @@
 import React from 'react';
-import { Document, pdf } from '@react-pdf/renderer';
-import CoverPage from './CoverPageReport';
-import MainReportDocument, { MainReportPages } from './MainReportDocument';
+import { Document } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
+import { CoverPageComponent } from './CoverPageReport';
+import { MainReportPages } from './MainReportDocument';
 
 interface PDFReportProps {
   reportData: {
@@ -53,9 +54,7 @@ interface PDFReportProps {
 const PDFReport: React.FC<PDFReportProps> = ({ reportData, reportType, startDate, endDate }) => {
   return (
     <Document>
-      {/* Import the cover page component */}
-      <CoverPage reportType={reportType as 'annual' | 'financial' | 'membership' | 'custom'} />
-      {/* Import the main report component */}
+      <CoverPageComponent reportType={reportType as 'annual' | 'financial' | 'membership' | 'custom'} />
       <MainReportPages reportData={reportData} reportType={reportType} />
     </Document>
   );
@@ -63,26 +62,28 @@ const PDFReport: React.FC<PDFReportProps> = ({ reportData, reportType, startDate
 
 // Utility functions for generating PDF blobs
 export const generateCombinedReportBlob = async (reportData: PDFReportProps['reportData'], reportType: string, startDate?: string, endDate?: string): Promise<Blob> => {
-  const doc = <PDFReport reportData={reportData} reportType={reportType} startDate={startDate} endDate={endDate} />;
-  return await pdf(doc).toBlob();
+  const doc = pdf(
+    <PDFReport reportData={reportData} reportType={reportType} startDate={startDate} endDate={endDate} />
+  );
+  return await doc.toBlob();
 };
 
 export const generateCoverPageBlob = async (reportType: string): Promise<Blob> => {
-  const doc = (
-    <Document>
-      <CoverPage reportType={reportType as 'annual' | 'financial' | 'membership' | 'custom'} />
-    </Document>
+  const doc = pdf(
+    <Document><CoverPageComponent reportType={reportType as 'annual' | 'financial' | 'membership' | 'custom'} /></Document>
   );
-  return await pdf(doc).toBlob();
+  return await doc.toBlob();
 };
 
 export const generateMainReportBlob = async (reportData: PDFReportProps['reportData'], reportType: string, startDate?: string, endDate?: string): Promise<Blob> => {
-  const doc = <MainReportDocument reportData={reportData} reportType={reportType} />;
-  return await pdf(doc).toBlob();
+  const doc = pdf(
+    <Document><MainReportPages reportData={reportData} reportType={reportType} /></Document>
+  );
+  return await doc.toBlob();
 };
 
 // Export the separate components for independent use
-export { default as CoverPage } from './CoverPageReport';
-export { MainReportDocument } from './MainReportDocument';
+export { CoverPageComponent } from './CoverPageReport';
+export { MainReportPages } from './MainReportDocument';
 
 export default PDFReport;

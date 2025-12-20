@@ -295,39 +295,63 @@ const MainReport: React.FC<MainReportProps> = ({ reportData, reportType }) => {
           <Text style={styles.headerSubtitle}>Annual Report {currentYear}</Text>
         </View>
         
-        {/* Executive Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Executive Summary</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{reportData.totalMembers || 0}</Text>
-              <Text style={styles.statLabel}>Total Members</Text>
+        {/* Executive Summary - Show for comprehensive only or in combo with other types */}
+        {(reportType === 'comprehensive' || reportType === 'membership' || reportType === 'financial' || reportType === 'attendance') && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Executive Summary</Text>
+            <View style={styles.statsGrid}>
+              {(reportType === 'comprehensive' || reportType === 'membership') && (
+                <>
+                  <View style={styles.statCard}>
+                    <Text style={styles.statValue}>{reportData.totalMembers || 0}</Text>
+                    <Text style={styles.statLabel}>Total Members</Text>
+                  </View>
+                  <View style={styles.statCardLast}>
+                    <Text style={styles.statValue}>{reportData.activeMembers || 0}</Text>
+                    <Text style={styles.statLabel}>Active Members</Text>
+                  </View>
+                </>
+              )}
+              {(reportType === 'comprehensive' || reportType === 'financial') && (
+                <>
+                  <View style={styles.statCard}>
+                    <Text style={styles.statValue}>{formatCurrency(totalIncome)}</Text>
+                    <Text style={styles.statLabel}>Total Income</Text>
+                  </View>
+                  <View style={styles.statCardLast}>
+                    <Text style={styles.statValue}>{formatCurrency(totalExpenses)}</Text>
+                    <Text style={styles.statLabel}>Total Expenses</Text>
+                  </View>
+                </>
+              )}
+              {reportType === 'comprehensive' && (
+                <>
+                  <View style={styles.statCard}>
+                    <Text style={styles.statValue}>{reportData.totalEvents || 0}</Text>
+                    <Text style={styles.statLabel}>Events Held</Text>
+                  </View>
+                  <View style={styles.statCardLast}>
+                    <Text style={styles.statValue}>{reportData.activeAnnouncements || 0}</Text>
+                    <Text style={styles.statLabel}>Active Announcements</Text>
+                  </View>
+                </>
+              )}
             </View>
-            <View style={styles.statCardLast}>
-              <Text style={styles.statValue}>{formatCurrency(totalIncome)}</Text>
-              <Text style={styles.statLabel}>Total Income</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{reportData.totalEvents || 0}</Text>
-              <Text style={styles.statLabel}>Events Held</Text>
-            </View>
-            <View style={styles.statCardLast}>
-              <Text style={styles.statValue}>{formatCurrency(totalExpenses)}</Text>
-              <Text style={styles.statLabel}>Total Expenses</Text>
-            </View>
+            
+            {(reportType === 'comprehensive' || reportType === 'financial') && (
+              <View style={styles.highlightBox}>
+                <Text style={styles.highlightTitle}>Financial Health</Text>
+                <Text style={styles.highlightText}>
+                  Net Income: {formatCurrency(netIncome)} | 
+                  {netIncome >= 0 ? ' Positive financial position' : ' Requires financial attention'}
+                </Text>
+              </View>
+            )}
           </View>
-          
-          <View style={styles.highlightBox}>
-            <Text style={styles.highlightTitle}>Financial Health</Text>
-            <Text style={styles.highlightText}>
-              Net Income: {formatCurrency(netIncome)} | 
-              {netIncome >= 0 ? ' Positive financial position' : ' Requires financial attention'}
-            </Text>
-          </View>
-        </View>
+        )}
         
-        {/* Membership Overview */}
-        {reportData.members && reportData.members.length > 0 && (
+        {/* Membership Overview - Only show for membership and comprehensive reports */}
+        {(reportType === 'membership' || reportType === 'comprehensive') && reportData.members && reportData.members.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Membership Overview</Text>
             <View style={styles.table}>
@@ -369,8 +393,8 @@ const MainReport: React.FC<MainReportProps> = ({ reportData, reportType }) => {
         </View>
       </Page>
         
-        {/* Page 2: Financial Details */}
-        {reportData.finances && reportData.finances.length > 0 && (
+        {/* Page 2: Financial Details - Only show for financial and comprehensive reports */}
+        {(reportType === 'financial' || reportType === 'comprehensive') && reportData.finances && reportData.finances.length > 0 && (
           <Page size="A4" style={styles.page}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Financial Report Details</Text>
@@ -441,8 +465,8 @@ const MainReport: React.FC<MainReportProps> = ({ reportData, reportType }) => {
         </Page>
         )}
         
-        {/* Page 3: Events and Activities */}
-        {reportData.events && reportData.events.length > 0 && (
+        {/* Page 3: Events and Activities - Only show for comprehensive reports */}
+        {reportType === 'comprehensive' && reportData.events && reportData.events.length > 0 && (
           <Page size="A4" style={styles.page}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Events and Activities</Text>

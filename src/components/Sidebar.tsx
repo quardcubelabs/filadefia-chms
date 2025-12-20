@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import UserDropdown from '@/components/UserDropdown';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Home,
   Calendar,
@@ -37,6 +37,46 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const { user, supabase } = useAuth();
+  const [eventCount, setEventCount] = useState<number>(0);
+  const [messageCount, setMessageCount] = useState<number>(0);
+
+  // Load event and message counts
+  useEffect(() => {
+    const loadCounts = async () => {
+      if (!user || !supabase) return;
+      
+      try {
+        // Load event count
+        let eventQuery = supabase
+          .from('events')
+          .select('*', { count: 'exact', head: true });
+        
+        if (isDepartmentLeader && departmentId) {
+          eventQuery = eventQuery.eq('department_id', departmentId);
+        }
+
+        const { count: evtCount } = await eventQuery;
+        setEventCount(evtCount || 0);
+
+        // Load message count
+        let messageQuery = supabase
+          .from('announcements')
+          .select('*', { count: 'exact', head: true });
+        
+        if (isDepartmentLeader && departmentId) {
+          messageQuery = messageQuery.eq('department_id', departmentId);
+        }
+
+        const { count: msgCount } = await messageQuery;
+        setMessageCount(msgCount || 0);
+      } catch (error) {
+        console.error('Error loading sidebar counts:', error);
+      }
+    };
+
+    loadCounts();
+  }, [user, supabase, isDepartmentLeader, departmentId]);
 
   const navItems: NavItem[] = useMemo(() => {
     const dashboardHref = isDepartmentLeader && departmentId 
@@ -58,8 +98,8 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
     const baseNavItems = [
       { icon: <Home className="h-5 w-5" />, label: dashboardLabel, href: dashboardHref },
       { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
-      { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: 3 },
-      { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: 12 },
+      { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: eventCount },
+      { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: messageCount },
       { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
       { icon: <BarChart3 className="h-5 w-5" />, label: 'Reports', href: '/reports' },
       { icon: <FileText className="h-5 w-5" />, label: 'Documents', href: '/documents' },
@@ -72,7 +112,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
     }
 
     return baseNavItems;
-  }, [isDepartmentLeader, departmentId]);
+  }, [isDepartmentLeader, departmentId, eventCount, messageCount]);
 
   const isActive = (href: string) => pathname === href;
 
@@ -170,13 +210,6 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
             );
           })}
         </nav>
-
-        {/* User Dropdown - only show when expanded */}
-        {isExpanded && (
-          <div className="px-5 mb-4">
-            <UserDropdown darkMode={darkMode} />
-          </div>
-        )}
 
         {/* Expand/Collapse Indicator */}
         <div className="px-5 mt-auto">

@@ -535,9 +535,7 @@ export default function MembersPage() {
     return null;
   }
 
-  const title = isDepartmentLeader && departmentName 
-    ? `Members - ${departmentName}` 
-    : 'Member Management';
+  const title = 'Members Management';
     
   const subtitle = isDepartmentLeader && departmentName
     ? `Manage members within ${departmentName} department`
@@ -547,37 +545,6 @@ export default function MembersPage() {
     <MainLayout 
       title={title}
       subtitle={subtitle}
-      showSearch={true}
-      searchPlaceholder="Search members..."
-      onSearch={(query) => setSearchQuery(query)}
-      navbarActions={
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => console.log('CSV Import')}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Import CSV
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => console.log('Export CSV')}
-            disabled={filteredMembers.length === 0}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button
-            onClick={() => console.log('Add Member')}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Member
-          </Button>
-        </div>
-      }
     >
       {/* Department Leader Access Notification */}
       {isDepartmentLeader && departmentName && (

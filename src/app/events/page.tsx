@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { 
   Button, 
   Card, 
@@ -544,42 +544,36 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+    <MainLayout
+      title="Events Management"
+      subtitle="Manage church events, conferences, and activities"
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Department Leader Access Notification */}
+        {isDepartmentLeader && departmentName && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <Calendar className="h-5 w-5 text-red-600 mr-2" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Church Events
-                  {events.length > 0 && (
-                    <span className="ml-2 text-lg font-normal text-gray-500">
-                      ({events.length} {events.length === 1 ? 'event' : 'events'})
-                    </span>
-                  )}
-                </h1>
-                <p className="text-gray-600 mt-1">Manage church events, conferences, and activities</p>
-                
-                {/* Department Leader Access Notification */}
-                {isDepartmentLeader && departmentName && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                      <Calendar className="h-5 w-5 text-red-600 mr-2" />
-                      <div>
-                        <h3 className="text-sm font-medium text-red-800">
-                          Department Events: {departmentName}
-                        </h3>
-                        <p className="text-sm text-red-700">
-                          Showing events for your department only. You can create and manage events for {departmentName}.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <h3 className="text-sm font-medium text-red-800">
+                  Department Events: {departmentName}
+                </h3>
+                <p className="text-sm text-red-700">
+                  Showing events for your department only. You can create and manage events for {departmentName}.
+                </p>
               </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            {events.length > 0 && (
+              <span className="text-sm font-normal text-gray-500">
+                ({events.length} {events.length === 1 ? 'event' : 'events'})
+              </span>
+            )}
+          </div>
               <div className="flex gap-2">
                 <Button 
                   variant="outline"
@@ -790,20 +784,17 @@ export default function EventsPage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Add Event Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add New Event"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <Input
-            label="Event Title"
+        {/* Add Event Modal */}
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="Add New Event"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Event Title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="Enter event title"
@@ -932,11 +923,11 @@ export default function EventsPage() {
             Create Event
           </Button>
         </div>
-      </Modal>
+        </Modal>
 
-      {/* Edit Event Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
+        {/* Edit Event Modal */}
+        <Modal
+          isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         title="Edit Event"
         size="lg"
@@ -1072,19 +1063,20 @@ export default function EventsPage() {
             Update Event
           </Button>
         </div>
-      </Modal>
+        </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteEvent}
-        title="Delete Event"
-        message={`Are you sure you want to delete "${selectedEvent?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-      />
-    </div>
-  );
-}
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteEvent}
+          title="Delete Event"
+          message={`Are you sure you want to delete "${selectedEvent?.title}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+        />
+        </div>
+      </MainLayout>
+    );
+  }

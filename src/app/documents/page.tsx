@@ -623,40 +623,13 @@ export default function DocumentsPage() {
     );
   }
 
-  const title = 'Documents & Records';
+  const title = 'Documents Management';
   const subtitle = 'Manage meeting minutes, reports, and church documents';
 
   return (
     <MainLayout 
       title={title}
       subtitle={subtitle}
-      showSearch={true}
-      searchPlaceholder="Search documents..."
-      onSearch={(query) => setSearchTerm(query)}
-      navbarActions={
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline"
-            size="sm"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload File
-          </Button>
-          <Button 
-            onClick={() => {
-              if (activeTab === 'minutes') {
-                setIsMinutesModalOpen(true);
-              } else {
-                setIsReportModalOpen(true);
-              }
-            }}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {activeTab === 'minutes' ? 'Add Minutes' : 'Create Report'}
-          </Button>
-        </div>
-      }
     >
       <div className="max-w-7xl mx-auto">
         {/* Department Access Notification */}

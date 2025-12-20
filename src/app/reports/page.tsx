@@ -1,4 +1,3 @@
-
 'use client';
 
 // Prevent SSR/prerendering issues during build
@@ -30,7 +29,7 @@ import {
   Eye
 } from 'lucide-react';
 import { Card, CardBody, Button, Badge, Loading, Alert } from '@/components/ui';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { pdf } from '@react-pdf/renderer';
@@ -277,6 +276,7 @@ export default function ReportsPage() {
       // Fetch data conditionally based on reportType for better performance
       let membersData = null;
       let financialData = null;
+      let eventsData = null;
       let attendanceData = null;
       let jumuiyasData = null;
       let membershipStats = null;
@@ -297,6 +297,12 @@ export default function ReportsPage() {
         console.log('💰 Fetching financial data...');
         financialData = await fetchFinancialData();
         financialStats = await fetchFinancialStats();
+      }
+
+      if (reportType === 'comprehensive') {
+        console.log('📅 Fetching events data...');
+        eventsData = await fetchEventsData();
+        // eventStats = await fetchEventStats();
       }
 
       if (reportType === 'attendance' || reportType === 'comprehensive') {
@@ -342,12 +348,48 @@ export default function ReportsPage() {
       const finalFinancialStats = financialStats || defaultFinancialStats;
       const finalEventStats = eventStats || defaultEventStats;
 
+      // Transform data into arrays for PDF rendering
+      // membersData and financialData might be arrays, need to handle them
+      const membersArray = Array.isArray(membersData) ? membersData.map((member: any) => ({
+        id: member.id || '',
+        first_name: member.first_name || '',
+        last_name: member.last_name || '',
+        email: member.email || '',
+        department_name: member.department_members && member.department_members.length > 0 
+          ? member.department_members[0]?.departments?.name || 'Unassigned'
+          : 'Unassigned',
+        is_active: member.status === 'active',
+        created_at: member.created_at || new Date().toISOString()
+      })) : [];
+
+      const financesArray = Array.isArray(financialData) ? financialData.map((finance: any) => ({
+        id: finance.id || '',
+        description: finance.description || '',
+        amount: parseFloat(String(finance.amount)) || 0,
+        type: finance.type === 'income' || ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'].includes(finance.transaction_type) ? 'income' : 'expense',
+        date: finance.date || new Date().toISOString(),
+        department_name: finance.department_name || 'General'
+      })) : [];
+
+      const eventsArray = Array.isArray(eventsData) ? eventsData.map((event: any) => ({
+        id: event.id || '',
+        title: event.title || '',
+        description: event.description || '',
+        date: event.date || new Date().toISOString(),
+        location: event.location || 'TBA',
+        department_name: event.department_name || 'General'
+      })) : [];
+
       const reportData = {
         jumuiyas: jumuiyasData || [],
         membershipStats: finalMembershipStats,
         financialStats: finalFinancialStats,
         eventStats: finalEventStats,
         departmentStats: departmentStats || [],
+        // Raw data arrays for PDF rendering
+        members: membersArray,
+        finances: financesArray,
+        events: eventsArray,
         // Direct properties for compatibility
         totalMembers: finalMembershipStats.totalMembers,
         activeMembers: finalMembershipStats.activeMembers,
@@ -423,19 +465,8 @@ export default function ReportsPage() {
         throw error;
       }
 
-      const activeMembers = members?.filter((m: any) => m.status === 'active').length || 0;
-      const inactiveMembers = members?.filter((m: any) => m.status === 'inactive').length || 0;
-
-      return {
-        totalMembers: members?.length || 0,
-        activeMembers,
-        inactiveMembers,
-        newMembers: members?.filter((m: any) => {
-          const joinDate = new Date(m.created_at);
-          return joinDate >= new Date(startDate) && joinDate <= new Date(endDate);
-        }).length || 0,
-        monthlyTrends: []
-      };
+      // Return the full array of members for PDF rendering
+      return members || [];
     } catch (err: any) {
       console.error('Error in fetchMembersData:', err);
       if (err.message && err.message.includes('JWT expired')) {
@@ -485,43 +516,8 @@ export default function ReportsPage() {
 
       console.log('Financial transactions found:', transactions?.length || 0);
 
-      if (!transactions || transactions.length === 0) {
-        return {
-          totalIncome: 0,
-          totalExpenses: 0,
-          netAmount: 0,
-          totalOfferings: 0,
-          totalTithes: 0
-        };
-      }
-
-      // Calculate totals based on transaction_type enum
-      const incomeTypes = ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'];
-      const expenseTypes = ['expense', 'welfare'];
-      
-      const income = transactions
-        .filter((t: any) => incomeTypes.includes(t.transaction_type))
-        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
-        
-      const expenses = transactions
-        .filter((t: any) => expenseTypes.includes(t.transaction_type))
-        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
-        
-      const offerings = transactions
-        .filter((t: any) => t.transaction_type === 'offering')
-        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
-        
-      const tithes = transactions
-        .filter((t: any) => t.transaction_type === 'tithe')
-        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
-
-      return {
-        totalIncome: income,
-        totalExpenses: expenses,
-        netAmount: income - expenses,
-        totalOfferings: offerings,
-        totalTithes: tithes
-      };
+      // Return the raw transactions for PDF
+      return transactions || [];
     } catch (err: any) {
       console.error('Error in fetchFinancialData:', err);
       
@@ -533,13 +529,7 @@ export default function ReportsPage() {
         return null;
       }
       
-      return {
-        totalIncome: 0,
-        totalExpenses: 0,
-        netAmount: 0,
-        totalOfferings: 0,
-        totalTithes: 0
-      };
+      return null;
     }
   };
 
@@ -590,6 +580,76 @@ export default function ReportsPage() {
         averageAttendance: 0,
         totalEvents: 0
       };
+    }
+  };
+
+  const fetchEventsData = async () => {
+    try {
+      console.log('Fetching events data...');
+      console.log('Date range:', { startDate, endDate });
+      console.log('Department filter:', { isDepartmentLeader, departmentId, departmentName });
+      
+      if (!supabase) return null;
+      
+      // First try simple query to avoid join issues
+      let query = supabase
+        .from('events')
+        .select('id, title, description, start_date, location, department_id')
+        .gte('start_date', startDate)
+        .lte('start_date', endDate)
+        .order('start_date', { ascending: false });
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        console.log(`🔒 Applying department filter for events data: ${departmentId}`);
+        query = query.eq('department_id', departmentId);
+      }
+
+      const { data: events, error } = await query;
+
+      if (error) {
+        console.error('Error fetching events data:', error);
+        return null;
+      }
+
+      console.log('Events found:', events?.length || 0);
+
+      if (!events || events.length === 0) {
+        return [];
+      }
+
+      // Now try to get department names if needed
+      const eventIds = events.map(e => e.department_id).filter(Boolean);
+      let departmentMap: { [key: string]: string } = {};
+      
+      if (eventIds.length > 0) {
+        const { data: departments } = await supabase
+          .from('departments')
+          .select('id, name')
+          .in('id', eventIds);
+        
+        if (departments) {
+          departmentMap = departments.reduce((acc: any, dept: any) => {
+            acc[dept.id] = dept.name;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Map events to the expected format
+      const formattedEvents = events.map((event: any) => ({
+        id: event.id,
+        title: event.title || '',
+        description: event.description || '',
+        date: event.start_date || '',
+        location: event.location || 'TBA',
+        department_name: event.department_id ? (departmentMap[event.department_id] || 'General') : 'General'
+      }));
+
+      return formattedEvents;
+    } catch (err: any) {
+      console.error('Error in fetchEventsData:', err);
+      return null;
     }
   };
 
@@ -974,14 +1034,16 @@ export default function ReportsPage() {
       const filename = `FCC-${periodText}-Report-${currentDate}.pdf`;
       
       // Generate PDF using react-pdf
-      const pdfBlob = await pdf(
+      const doc = pdf(
         <PDFReport 
           reportData={reportData}
           reportType={reportType}
           startDate={startDate}
           endDate={endDate}
         />
-      ).toBlob();
+      );
+
+      const pdfBlob = await doc.toBlob();
       
       // Create download link and trigger download
       const url = URL.createObjectURL(pdfBlob);
@@ -1140,33 +1202,27 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports</h1>
-            <p className="text-gray-600">Generate comprehensive reports for your church management system</p>
-            
-            {/* Department Leader Access Notification */}
-            {isDepartmentLeader && departmentName && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center">
-                  <Building2 className="h-5 w-5 text-red-600 mr-2" />
-                  <div>
-                    <h3 className="text-sm font-medium text-red-800">
-                      Department Access: {departmentName}
-                    </h3>
-                    <p className="text-sm text-red-700">
-                      You have access to reports for your department only. Select "Comprehensive" to view all available data for your department.
-                    </p>
-                  </div>
-                </div>
+    <MainLayout
+      title="Reports Management"
+      subtitle="Generate comprehensive reports for your church management system"
+    >
+      <div className="max-w-7xl">
+        {/* Department Leader Access Notification */}
+        {isDepartmentLeader && departmentName && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <Building2 className="h-5 w-5 text-red-600 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-red-800">
+                  Department Access: {departmentName}
+                </h3>
+                <p className="text-sm text-red-700">
+                  You have access to reports for your department only. Select "Comprehensive" to view all available data for your department.
+                </p>
               </div>
-            )}
+            </div>
           </div>
-
-          {/* Report Configuration */}
+        )}
           <Card className="mb-8">
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1777,7 +1833,6 @@ export default function ReportsPage() {
             </Alert>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
+      </MainLayout>
+    );
+  }

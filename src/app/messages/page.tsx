@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { 
   Button, 
   Card, 
@@ -550,42 +550,18 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Messages & Communications</h1>
-                <p className="text-gray-600 mt-1">Manage announcements and member communications</p>
-              </div>
-              <div className="flex space-x-3">
-                <Button 
-                  onClick={() => setIsAnnouncementModalOpen(true)}
-                  icon={<Megaphone className="h-4 w-4" />}
-                  variant="outline"
-                >
-                  New Announcement
-                </Button>
-                <Button 
-                  onClick={() => setIsCommunicationModalOpen(true)}
-                  icon={<Send className="h-4 w-4" />}
-                >
-                  Send Message
-                </Button>
-              </div>
-            </div>
-
-            {/* Department Access Notification */}
-            {isDepartmentLeader && departmentName && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center">
-                  <MessageSquare className="h-5 w-5 text-blue-600 mr-3" />
-                  <div>
-                    <h3 className="font-medium text-blue-900">Department Messages: {departmentName}</h3>
+    <MainLayout
+      title="Messages Management"
+      subtitle="Manage announcements and member communications"
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Department Access Notification */}
+          {isDepartmentLeader && departmentName && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <MessageSquare className="h-5 w-5 text-blue-600 mr-3" />
+                <div>
+                  <h3 className="font-medium text-blue-900">Department Messages: {departmentName}</h3>
                     <p className="text-blue-700 text-sm mt-1">
                       You can view and manage messages and announcements for your department only.
                     </p>
@@ -879,12 +855,9 @@ export default function MessagesPage() {
                 )}
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Create Announcement Modal */}
-      <Modal
+        {/* Create Announcement Modal */}
+        <Modal
         isOpen={isAnnouncementModalOpen}
         onClose={() => setIsAnnouncementModalOpen(false)}
         title="Create New Announcement"
@@ -957,17 +930,17 @@ export default function MessagesPage() {
             Create Announcement
           </Button>
         </div>
-      </Modal>
+        </Modal>
 
-      {/* Send Communication Modal */}
-      <Modal
-        isOpen={isCommunicationModalOpen}
-        onClose={() => setIsCommunicationModalOpen(false)}
-        title="Send Message"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Send Communication Modal */}
+        <Modal
+          isOpen={isCommunicationModalOpen}
+          onClose={() => setIsCommunicationModalOpen(false)}
+          title="Send Message"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Message Type"
               value={communicationForm.type}
@@ -1050,14 +1023,14 @@ export default function MessagesPage() {
           <Button onClick={handleSendCommunication}>
             {communicationForm.scheduled_at ? 'Schedule Message' : 'Send Now'}
           </Button>
-        </div>
-      </Modal>
+          </div>
+        </Modal>
 
-      {/* Edit Announcement Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Announcement"
+        {/* Edit Announcement Modal */}
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="Edit Announcement"
         size="lg"
       >
         <div className="space-y-4">
@@ -1142,19 +1115,20 @@ export default function MessagesPage() {
             Update Announcement
           </Button>
         </div>
-      </Modal>
+        </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteAnnouncement}
-        title="Delete Announcement"
-        message={`Are you sure you want to delete "${selectedItem?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-      />
-    </div>
-  );
-}
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteAnnouncement}
+          title="Delete Announcement"
+          message={`Are you sure you want to delete "${selectedItem?.title}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+        />
+        </div>
+      </MainLayout>
+    );
+  }
