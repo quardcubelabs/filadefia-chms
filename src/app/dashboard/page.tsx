@@ -4,16 +4,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import TopNavbar from '@/components/TopNavbar';
 import { Member } from '@/types';
 import { 
-  Calendar,
+  Building2,
+  Crown,
   Users,
-  Search,
-  Bell,
-  ChevronDown,
-  Sun,
-  Moon,
-  Building2
+  ChevronDown
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -544,122 +541,13 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="ml-20">
-        {/* Header */}
-        <header className={`${cardBg} border-b ${borderColor} sticky top-0 z-40`}>
-          <div className="px-8 py-5 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className={`text-2xl font-bold ${textPrimary} flex items-center`}>
-                  Hello {user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} 👋
-                </h1>
-                <p className={`text-sm ${textSecondary} mt-1`}>Tanzania Assemblies of God - FCC</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500`} />
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className={`pl-12 pr-4 py-2.5 bg-red-50 ${textPrimary} border border-red-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 w-64 placeholder-red-400`}
-                />
-              </div>
-
-              {/* Theme Toggle */}
-              <button 
-                onClick={() => setDarkMode(!darkMode)}
-                className={`p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
-              >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-
-
-
-              {/* Notification Bell - Redirect to Notifications Page */}
-              <button 
-                onClick={() => window.location.href = '/notifications'}
-                className={`relative p-2.5 rounded-xl ${buttonBg} ${textSecondary} hover:text-tag-red-500 transition-colors`}
-              >
-                <Bell className="h-5 w-5" />
-                {notifications.filter(notif => !notif.read).length > 0 && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-tag-red-500 rounded-full"></span>
-                )}
-              </button>
-
-              {/* User Avatar with Profile Dropdown */}
-              <div className="relative dropdown-container">
-                <button 
-                  onClick={() => setShowProfile(!showProfile)}
-                  className={`flex items-center space-x-3 pl-4 border-l ${borderColor}`}
-                >
-                  <img
-                    src={
-                      user?.profile?.avatar_url || 
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
-                    }
-                    alt={`${user?.profile?.first_name || 'User'} ${user?.profile?.last_name || ''}`.trim()}
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                  <ChevronDown className={`h-4 w-4 ${textSecondary}`} />
-                </button>
-
-                {/* Profile Dropdown */}
-                {showProfile && (
-                  <div className={`absolute right-0 top-full mt-2 w-64 ${cardBg} border ${borderColor} rounded-xl shadow-lg z-50`}>
-                    <div className={`p-4 border-b ${borderColor}`}>
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={
-                            user?.profile?.avatar_url || 
-                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'User'}`
-                          }
-                          alt="Profile"
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <p className={`font-semibold ${textPrimary}`}>
-                            {user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} {user?.profile?.last_name || ''}
-                          </p>
-                          <p className={`text-sm ${textSecondary}`}>
-                            {user?.profile?.role || 'Member'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="py-2">
-                      <button 
-                        onClick={() => {
-                          setShowProfile(false);
-                          setShowProfileModal(true);
-                        }}
-                        className={`w-full text-left px-4 py-2 text-sm ${textPrimary} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
-                      >
-                        View Profile
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setShowProfile(false);
-                          setShowSettingsModal(true);
-                        }}
-                        className={`w-full text-left px-4 py-2 text-sm ${textPrimary} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
-                      >
-                        Settings
-                      </button>
-                      <button 
-                        onClick={signOut}
-                        className={`w-full text-left px-4 py-2 text-sm text-red-500 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* Top Navbar */}
+        <TopNavbar
+          title={`Hello ${user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} 👋`}
+          subtitle="Tanzania Assemblies of God - FCC"
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+        />
 
         {/* Dashboard Content */}
         <main className="p-8">
@@ -1134,8 +1022,8 @@ export default function DashboardPage() {
                         <div className="flex items-center space-x-3">
                           <div className="relative">
                             {/* Badge positioned on left side */}
-                            <div className="absolute -top-1 -left-1 h-7 w-7 bg-red-600 rounded-full border-2 border-white flex items-center justify-center z-10">
-                              <span className="text-white text-sm font-bold">{idx + 1}</span>
+                            <div className="absolute -top-1 -left-1 h-6 w-6 bg-red-600 rounded-full border-2 border-white flex items-center justify-center z-10">
+                              <Crown className="text-white h-3.5 w-3.5" />
                             </div>
                             <img
                               src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}

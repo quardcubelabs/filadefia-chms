@@ -163,12 +163,12 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
               <Link
                 key={index}
                 href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group relative border-l-4 ${
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
                   active
-                    ? 'bg-red-100 border-red-600 text-red-700 shadow-md ring-1 ring-red-200'
+                    ? 'bg-red-100 text-red-700 shadow-md ring-1 ring-red-200'
                     : darkMode
-                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white hover:shadow-md border-transparent'
-                    : 'text-gray-600 hover:bg-red-100 hover:text-red-600 hover:shadow-sm border-transparent hover:border-red-300'
+                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white hover:shadow-md'
+                    : 'text-gray-600 hover:bg-red-100 hover:text-red-600 hover:shadow-sm'
                 }`}
               >
                 {/* Icon */}
