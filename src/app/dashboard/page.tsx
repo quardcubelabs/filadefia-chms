@@ -1083,26 +1083,36 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   {/* Profile Photo Section */}
                   <div className="text-center">
-                    <div className="relative inline-block">
-                      <img
-                        src={userProfile.photo_url || '/default-avatar.png'}
-                        alt="Profile"
-                        className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-                      />
-                      <label className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setPhotoFile(file);
-                              handlePhotoUpload(file);
-                            }
-                          }}
+                    <div className="relative inline-block w-44 h-44 overflow-visible">
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                        <circle cx="64" cy="64" r="54" fill="none" stroke="#ffffff" strokeWidth="6" />
+                        <circle cx="64" cy="64" r="64" fill="none" stroke="#fee2e2" strokeWidth="6" />
+                      </svg>
+
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full overflow-hidden bg-white shadow-inner">
+                        <img
+                          src={userProfile.photo_url || '/default-avatar.png'}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
                         />
-                        📷
+                      </div>
+
+                      <label className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md cursor-pointer">
+                        <div className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setPhotoFile(file);
+                                handlePhotoUpload(file);
+                              }
+                            }}
+                          />
+                          📷
+                        </div>
                       </label>
                     </div>
                     {isUpdatingProfile && (

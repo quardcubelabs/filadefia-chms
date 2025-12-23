@@ -364,12 +364,22 @@ export default function MemberProfilePage() {
               <div className="h-32 bg-gradient-to-r from-tag-red-500 via-tag-red-600 to-tag-yellow-500"></div>
               <CardBody className="p-6 -mt-16 relative">
                 <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
-                  <Avatar
-                    src={member.photo_url}
-                    alt={`${member.first_name} ${member.last_name}`}
-                    size="xl"
-                    className="border-4 border-white shadow-xl"
-                  />
+                  <div className="relative w-36 h-36 overflow-visible">
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                        {/* inner white ring to create gap */}
+                        <circle cx="64" cy="64" r="50" fill="none" stroke="#ffffff" strokeWidth="6" />
+                        {/* outer pale ring (full circle) */}
+                        <circle cx="64" cy="64" r="60" fill="none" stroke="#4ce976ff" strokeWidth="6" />
+                      </svg>
+
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full overflow-hidden bg-white shadow-inner">
+                      <img
+                        src={member.photo_url || '/default-avatar.png'}
+                        alt={`${member.first_name} ${member.last_name}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
                   
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
