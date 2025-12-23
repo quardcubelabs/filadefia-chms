@@ -218,6 +218,7 @@ const styles = StyleSheet.create({
 interface MainReportProps {
   reportData: {
     totalMembers?: number;
+    activeMembers?: number;
     totalFinances?: number;
     totalEvents?: number;
     activeAnnouncements?: number;
