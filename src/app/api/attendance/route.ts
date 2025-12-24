@@ -4,6 +4,19 @@ import { createClient } from '@supabase/supabase-js';
 // POST - Save attendance records
 export async function POST(request: NextRequest) {
   try {
+    // Check environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return NextResponse.json({ 
+        error: 'NEXT_PUBLIC_SUPABASE_URL is not configured' 
+      }, { status: 500 });
+    }
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ 
+        error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' 
+      }, { status: 500 });
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -77,10 +90,15 @@ export async function POST(request: NextRequest) {
 
     if (checkError) {
       console.error('Error checking existing records:', checkError);
-      return NextResponse.json(
-        { error: 'Failed to check existing attendance records' },
-        { status: 500 }
-      );
+      // If the table doesn't exist, that's ok - we'll create it on insert
+      if (checkError.code !== 'PGRST116' && !checkError.message?.includes('relation') && !checkError.message?.includes('does not exist')) {
+        return NextResponse.json(
+          { error: 'Failed to check existing attendance records', details: checkError.message },
+          { status: 500 }
+        );
+      }
+      // Table doesn't exist, continue with insert (will create table structure)
+      console.log('Attendance table may not exist yet, continuing with insert...');
     }
 
     // If there are existing records, delete them first to avoid duplicates

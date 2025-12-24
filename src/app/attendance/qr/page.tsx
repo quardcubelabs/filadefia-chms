@@ -123,8 +123,8 @@ export default function QRAttendancePage() {
   };
 
   const createQRSession = async () => {
-    if (!user?.profile?.id) {
-      alert('User profile not loaded. Please refresh the page and try again.');
+    if (!user?.id) {
+      alert('User not logged in. Please refresh the page and try again.');
       return;
     }
 
@@ -141,7 +141,7 @@ export default function QRAttendancePage() {
         department_id: selectedDepartment === 'all' ? null : selectedDepartment,
         session_name: sessionName || `${attendanceType.replace('_', ' ')} - ${selectedDate}`,
         expires_at: expiresAt.toISOString(),
-        recorded_by: user?.profile?.id
+        recorded_by: user?.id
       };
 
       const response = await fetch('/api/attendance/qr-session', {
@@ -338,15 +338,15 @@ export default function QRAttendancePage() {
             <div className="mt-6">
               <button
                 onClick={createQRSession}
-                disabled={creating || !user?.profile?.id}
+                disabled={creating || !user?.id}
                 className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center justify-center space-x-2"
               >
                 <QrCode className="w-5 h-5" />
                 <span>
                   {creating 
                     ? 'Creating...' 
-                    : !user?.profile?.id 
-                      ? 'Loading Profile...' 
+                    : !user?.id 
+                      ? 'Please Login...' 
                       : 'Generate QR Code'
                   }
                 </span>
