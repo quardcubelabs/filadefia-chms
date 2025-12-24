@@ -4,6 +4,19 @@ import { createClient } from '@supabase/supabase-js';
 // GET - Fetch attendance statistics
 export async function GET(request: NextRequest) {
   try {
+    // Check environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return NextResponse.json({ 
+        error: 'NEXT_PUBLIC_SUPABASE_URL is not configured' 
+      }, { status: 500 });
+    }
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ 
+        error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' 
+      }, { status: 500 });
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -324,7 +337,21 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: statistics });
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Unexpected error in attendance stats:', error);
+    
+    // More detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = error instanceof Error && error.stack ? error.stack : 'No stack trace';
+    
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: errorDetails,
+      url: request.url
+    });
+    
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+    }, { status: 500 });
   }
 }

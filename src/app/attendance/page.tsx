@@ -121,11 +121,15 @@ export default function AttendancePage() {
       }
 
       const response = await fetch(`/api/attendance/stats?${params}`);
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch attendance stats: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('API Error:', errorData);
+        throw new Error(`Failed to fetch attendance stats (${response.status}): ${errorData.error || 'Unknown error'}`);
       }
       
       const data = await response.json();
+      console.log('API Response:', data);
       
       if (data.data && data.data.overview) {
         const { overview, dateStats } = data.data;
