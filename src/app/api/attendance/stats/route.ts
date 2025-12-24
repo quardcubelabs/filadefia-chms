@@ -54,6 +54,54 @@ export async function GET(request: NextRequest) {
         startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
     }
 
+    // Check if attendance table exists and has data
+    const { data: attendanceData, error: attendanceError } = await supabase
+      .from('attendance')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .limit(1);
+    
+    // If attendance table doesn't exist or has no data, return mock data
+    if (attendanceError || !attendanceData || attendanceData.length === 0) {
+      console.log('Attendance table empty or not found, returning mock data:', attendanceError?.message);
+      
+      // Try to get member count for more realistic mock data
+      let totalMembers = 0;
+      try {
+        const { data: membersData } = await supabase
+          .from('members')
+          .select('id')
+          .eq('status', 'active');
+        totalMembers = membersData?.length || 0;
+      } catch (memberError) {
+        console.log('Members table also empty/not found:', memberError);
+      }
+      
+      // Return mock statistics for empty database
+      const mockStats = {
+        overview: {
+          totalMembers,
+          presentCount: 0,
+          absentCount: 0,
+          attendanceRate: 0,
+          weeklyTrend: 0,
+          totalSessions: 0
+        },
+        dateStats: [],
+        trendData: [],
+        typeStats: [],
+        topAttendees: [],
+        period: {
+          type: period,
+          startDate,
+          endDate
+        }
+      };
+      
+      return NextResponse.json({ data: mockStats });
+    }
+
     // Base attendance query
     let attendanceQuery = supabase
       .from('attendance')
