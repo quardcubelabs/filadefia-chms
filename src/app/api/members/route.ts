@@ -19,13 +19,28 @@ export async function GET(request: NextRequest) {
       .order('first_name', { ascending: true });
 
     if (departmentId) {
-      query = query.in('id',
-        supabase
-          .from('department_members')
-          .select('member_id')
-          .eq('department_id', departmentId)
-          .eq('is_active', true)
-      );
+      // First get the member IDs from department_members
+      const { data: departmentMembers, error: deptError } = await supabase
+        .from('department_members')
+        .select('member_id')
+        .eq('department_id', departmentId)
+        .eq('is_active', true);
+
+      if (deptError) {
+        console.error('Error fetching department members:', deptError);
+        return NextResponse.json({ error: deptError.message }, { status: 500 });
+      }
+
+      // Extract the member IDs
+      const memberIds = departmentMembers?.map(dm => dm.member_id) || [];
+      
+      // Filter members by the department member IDs
+      if (memberIds.length > 0) {
+        query = query.in('id', memberIds);
+      } else {
+        // No members in this department, return empty result
+        return NextResponse.json({ data: [] });
+      }
     }
 
     const { data, error } = await query;

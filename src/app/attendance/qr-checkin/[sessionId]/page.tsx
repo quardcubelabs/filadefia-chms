@@ -139,9 +139,9 @@ export default function QRCheckInPage() {
     return cleaned;
   };
 
-  const isSessionExpired = sessionInfo && (
+  const isSessionExpired = Boolean(sessionInfo && (
     !sessionInfo.is_active || new Date() > new Date(sessionInfo.expires_at)
-  );
+  ));
 
   if (loading) {
     return (
