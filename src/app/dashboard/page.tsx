@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
+import AttendanceCard from '@/components/AttendanceCard';
 import { Member } from '@/types';
 import { 
   Building2,
@@ -867,70 +868,11 @@ export default function DashboardPage() {
 
             {/* Right Column */}
             <div className="col-span-12 lg:col-span-5 space-y-6">
-              {/* Attendance Line Chart */}
-              <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>Attendance</h3>
-                  </div>
-                  <select className={`px-4 py-2 ${inputBg} ${textSecondary} border ${borderColor} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
-                    <option>Regularly</option>
-                    <option>Monthly</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center space-x-6 mb-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded-sm bg-cyan-400"></div>
-                    <span className={`text-sm ${textSecondary}`}>New</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded-sm bg-blue-600"></div>
-                    <span className={`text-sm ${textSecondary}`}>Regular</span>
-                  </div>
-                </div>
-
-                {/* Line Chart Visualization */}
-                <div className="relative h-56 mt-8">
-                  {/* Value label on chart */}
-                  <div className="absolute top-8 right-32 bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">
-                    <p className={`text-xs ${textSecondary}`}>Regular</p>
-                    <p className="text-lg font-bold text-blue-600">650</p>
-                  </div>
-
-                  <svg className="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
-                    {/* Cyan smooth wave - crossing pattern */}
-                    <path
-                      d="M 0 140 C 50 100, 80 80, 100 100 S 150 140, 200 130 S 250 100, 300 110 S 350 130, 400 120 S 450 100, 500 110 S 550 120, 600 100"
-                      fill="none"
-                      stroke="#22d3ee"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Blue smooth wave - main wave with crossings */}
-                    <path
-                      d="M 0 150 C 50 130, 80 110, 100 120 S 150 150, 200 140 S 250 80, 300 90 S 350 100, 400 80 S 450 70, 500 90 S 550 100, 600 80"
-                      fill="none"
-                      stroke="#2563eb"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Dot on blue line at Thursday */}
-                    <circle cx="400" cy="80" r="7" fill="#2563eb" stroke="white" strokeWidth="3"/>
-                    {/* Vertical line from dot */}
-                    <line x1="400" y1="80" x2="400" y2="200" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="5 5" opacity="0.5"/>
-                  </svg>
-                  
-                  {/* X-axis labels */}
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-between px-4">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
-                      <span key={day} className={`text-sm ${idx === 4 ? textPrimary + ' font-medium' : textSecondary}`}>{day}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              {/* Attendance Card */}
+              <AttendanceCard 
+                period="monthly"
+                className="rounded-3xl"
+              />
 
               {/* Visitors Area Chart */}
               <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>

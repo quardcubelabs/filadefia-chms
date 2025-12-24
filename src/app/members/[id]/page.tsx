@@ -7,11 +7,11 @@ import Sidebar from '@/components/Sidebar';
 import DepartmentAssignment from '@/components/DepartmentAssignment';
 import PhotoUpload from '@/components/PhotoUpload';
 import MembershipCard from '@/components/MembershipCard';
-import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
+import { Button, Card, CardBody, Badge, EmptyState, Loading, Alert } from '@/components/ui';
 import { 
   ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, Calendar, 
   Briefcase, Users, Heart, FileText, History, DollarSign,
-  User, Home, Building2, AlertCircle, CreditCard
+  User, Building2, AlertCircle, CreditCard
 } from 'lucide-react';
 
 interface Member {
@@ -45,12 +45,6 @@ interface Member {
   updated_at: string;
 }
 
-interface AttendanceRecord {
-  id: string;
-  date: string;
-  service_type: string;
-  present: boolean;
-}
 
 interface Contribution {
   id: string;
@@ -79,7 +73,6 @@ export default function MemberProfilePage() {
   const { user, loading: authLoading, supabase } = useAuth();
   
   const [member, setMember] = useState<Member | null>(null);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

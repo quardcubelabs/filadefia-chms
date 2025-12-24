@@ -647,6 +647,14 @@ export default function EventDetailPage() {
               <div className="flex space-x-3">
                 <Button
                   variant="outline"
+                  onClick={() => router.push(`/attendance/record?event_id=${event.id}&date=${event.start_date.split('T')[0]}&type=special_event`)}
+                  icon={<UserCheck className="h-4 w-4" />}
+                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                >
+                  Record Attendance
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => router.push(`/events/${event.id}/edit`)}
                   icon={<Edit className="h-4 w-4" />}
                 >

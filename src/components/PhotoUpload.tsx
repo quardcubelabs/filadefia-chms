@@ -57,22 +57,9 @@ export default function PhotoUpload({
       const fileName = `${memberId}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Check if bucket exists, create if not
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some((b: any) => b.name === BUCKET_NAME);
-
-      if (!bucketExists) {
-        const { error: bucketError } = await supabase.storage.createBucket(BUCKET_NAME, {
-          public: true,
-          fileSizeLimit: MAX_FILE_SIZE,
-          allowedMimeTypes: ALLOWED_TYPES,
-        });
-
-        if (bucketError) {
-          console.error('Bucket creation error:', bucketError);
-          throw new Error('Failed to create storage bucket. Please contact administrator.');
-        }
-      }
+      // NOTE: Creating buckets requires a service role key and must be done server-side.
+      // The client should assume the bucket already exists. If it doesn't, create it
+      // in the Supabase dashboard or via a server-side migration using the service_role key.
 
       // Delete old photo if exists
       if (currentPhotoUrl) {
@@ -90,7 +77,13 @@ export default function PhotoUpload({
           upsert: true,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        const msg = uploadError?.status === 403 || /permission/i.test(uploadError?.message || '')
+          ? `Permission denied uploading to storage bucket '${BUCKET_NAME}'. Ensure the bucket exists and your user has upload permissions.`
+          : (uploadError.message || 'Failed to upload to storage');
+        throw new Error(msg);
+      }
 
       // Get public URL
       const { data: urlData } = supabase.storage
