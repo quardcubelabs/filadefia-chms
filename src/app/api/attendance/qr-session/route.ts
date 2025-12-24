@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
+import { getSiteUrl } from '@/lib/config';
 
 // POST - Create QR attendance session
 export async function POST(request: NextRequest) {
@@ -52,7 +53,8 @@ export async function POST(request: NextRequest) {
     // For now, we'll use a temporary approach with the events table or create a custom table
 
     // Generate QR code URL - points to check-in page
-    const checkInUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/attendance/qr-checkin/${sessionId}`;
+    const baseUrl = getSiteUrl(request);
+    const checkInUrl = `${baseUrl}/attendance/qr-checkin/${sessionId}`;
     
     // Generate QR code
     const qrCodeDataUrl = await QRCode.toDataURL(checkInUrl, {

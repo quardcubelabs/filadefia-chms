@@ -15,6 +15,11 @@ export const config = {
     denomination: process.env.NEXT_PUBLIC_CHURCH_DENOMINATION || 'Tanzania Assemblies of God (TAG)',
   },
   
+  // Site configuration
+  site: {
+    url: process.env.NEXT_PUBLIC_SITE_URL || '',
+  },
+  
   // Email configuration
   email: {
     host: process.env.SMTP_HOST || '',
@@ -71,6 +76,31 @@ export const getMobileMoneyProviders = (): string[] => {
   if (config.mobileMoney.airtelMoney) providers.push('Airtel Money');
   if (config.mobileMoney.crdb) providers.push('CRDB Bank');
   return providers;
+};
+
+// Get site URL with smart defaults
+export const getSiteUrl = (request?: Request): string => {
+  // First try the environment variable
+  if (config.site.url) {
+    return config.site.url;
+  }
+  
+  // If in server context with request, try to construct from headers
+  if (request) {
+    const host = request.headers.get('host');
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    
+    if (host) {
+      return `${protocol}://${host}`;
+    }
+  }
+  
+  // Fallback based on environment
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://tag-fcc.vercel.app';
+  }
+  
+  return 'http://localhost:3000';
 };
 
 export default config;

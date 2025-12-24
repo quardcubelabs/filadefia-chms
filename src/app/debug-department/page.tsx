@@ -80,7 +80,7 @@ export default function DebugDepartmentPage() {
                   <strong>URL:</strong> <code>/departments/{departmentId}</code>
                 </p>
                 <p className="text-green-700 mt-2">
-                  <strong>Full URL:</strong> <code>http://localhost:3000/departments/{departmentId}</code>
+                  <strong>Full URL:</strong> <code>{window.location.origin}/departments/{departmentId}</code>
                 </p>
               </div>
             )}
