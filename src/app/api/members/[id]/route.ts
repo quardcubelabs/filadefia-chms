@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check environment variables
@@ -24,7 +24,7 @@ export async function GET(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: 'Member ID is required' }, { status: 400 });
