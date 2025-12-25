@@ -35,7 +35,10 @@ GRANT EXECUTE ON FUNCTION get_departments() TO authenticated;
 
 -- Also ensure service_role can directly access departments table (it should by default)
 -- Service role should bypass RLS, but let's be explicit
-CREATE POLICY IF NOT EXISTS "service_role_departments_access" 
+-- First drop policy if it exists, then create it
+DROP POLICY IF EXISTS "service_role_departments_access" ON departments;
+
+CREATE POLICY "service_role_departments_access" 
 ON departments 
 FOR ALL 
 TO service_role 
