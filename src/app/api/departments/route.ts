@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     console.log('Departments API called at:', new Date().toISOString());
     console.log('Environment variables check:');
     console.log('- NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log('- SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('- NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY);
     
     // Check environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -16,17 +16,17 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
     
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.log('Missing SUPABASE_SERVICE_ROLE_KEY');
+    if (!process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Missing NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY');
       return NextResponse.json({ 
-        error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' 
+        error: 'NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured' 
       }, { status: 500 });
     }
 
     console.log('Creating Supabase client...');
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!,
       {
         auth: {
           autoRefreshToken: false,
