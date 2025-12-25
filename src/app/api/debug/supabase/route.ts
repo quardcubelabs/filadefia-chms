@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const debugAuth = searchParams.get('debug_auth');
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
 
     // Check environment variables
     const envCheck = {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         isValid: supabaseUrl?.startsWith('https://') || false,
         preview: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'Missing'
       },
-      SUPABASE_SERVICE_ROLE_KEY: {
+      NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY: {
         exists: !!supabaseKey,
         isValid: (supabaseKey?.length || 0) > 100,
         preview: supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'Missing'
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Test Supabase connection if keys are present
     let connectionTest = null;
-    if (envCheck.NEXT_PUBLIC_SUPABASE_URL.exists && envCheck.SUPABASE_SERVICE_ROLE_KEY.exists) {
+    if (envCheck.NEXT_PUBLIC_SUPABASE_URL.exists && envCheck.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY.exists) {
       try {
         const supabase = createClient(supabaseUrl!, supabaseKey!);
         

@@ -11,15 +11,15 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
     
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ 
-        error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' 
+        error: 'NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured' 
       }, { status: 500 });
     }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!
     );
     console.log('Attendance API called');
     const body = await request.json();
