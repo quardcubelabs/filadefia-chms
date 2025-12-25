@@ -170,6 +170,28 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
 
+        // Update session check-in count after updating existing record
+        try {
+          // Get total present count for this session
+          const { data: presentRecords } = await supabase
+            .from('attendance')
+            .select('id')
+            .eq('date', sessionData.date)
+            .eq('attendance_type', sessionData.attendance_type)
+            .eq('present', true);
+
+          const totalPresentCount = presentRecords?.length || 0;
+
+          await supabase
+            .from('qr_attendance_sessions')
+            .update({ 
+              check_ins: totalPresentCount
+            })
+            .eq('id', session_id);
+        } catch (updateError) {
+          console.log('Error updating session count:', updateError);
+        }
+
         return NextResponse.json({
           data: {
             member,
@@ -213,12 +235,22 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
 
-      // Update session check-in count
+      // Update session check-in count with actual present count for this session
       try {
+        // Get total present count for this session
+        const { data: presentRecords } = await supabase
+          .from('attendance')
+          .select('id')
+          .eq('date', sessionData.date)
+          .eq('attendance_type', sessionData.attendance_type)
+          .eq('present', true);
+
+        const totalPresentCount = presentRecords?.length || 0;
+
         await supabase
           .from('qr_attendance_sessions')
           .update({ 
-            check_ins: (sessionData.check_ins || 0) + 1 
+            check_ins: totalPresentCount
           })
           .eq('id', session_id);
       } catch (updateError) {

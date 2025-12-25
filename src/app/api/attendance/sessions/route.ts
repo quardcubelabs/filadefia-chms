@@ -58,6 +58,15 @@ export async function GET(request: NextRequest) {
 
     // Get detailed counts for each session
     const sessions = Array.from(sessionsMap.values());
+    
+    // Get total active members for proper percentage calculation
+    const { data: allMembers } = await supabase
+      .from('members')
+      .select('id')
+      .eq('status', 'active');
+    
+    const totalActiveMembers = allMembers?.length || 0;
+    
     for (const session of sessions) {
       const { data: sessionData } = await supabase
         .from('attendance')
@@ -69,9 +78,14 @@ export async function GET(request: NextRequest) {
         session.total_records = sessionData.length;
         session.present_count = sessionData.filter(a => a.present).length;
         session.absent_count = sessionData.filter(a => !a.present).length;
-        session.attendance_rate = session.total_records > 0 
-          ? (session.present_count / session.total_records) * 100 
+        
+        // Calculate attendance rate based on total active members instead of just recorded attendance
+        session.attendance_rate = totalActiveMembers > 0 
+          ? (session.present_count / totalActiveMembers) * 100 
           : 0;
+        
+        // Add total members count for display
+        session.total_members = totalActiveMembers;
       }
     }
 
