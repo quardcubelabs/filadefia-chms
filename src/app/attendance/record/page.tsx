@@ -84,12 +84,23 @@ export default function RecordAttendancePage() {
       
       // Load departments
       const deptResponse = await fetch('/api/departments');
-      if (!deptResponse.ok) {
-        throw new Error(`Failed to fetch departments: ${deptResponse.status}`);
-      }
       const deptData = await deptResponse.json();
+      
+      if (!deptResponse.ok) {
+        console.error('Department API error:', deptData.error);
+        // Set empty departments array to allow continuation
+        setDepartments([]);
+        alert(`Failed to load departments: ${deptData.error || 'Unknown error'}`);
+        return;
+      }
+      
       if (deptData.data) {
         setDepartments(deptData.data);
+        
+        // Show message if no departments found
+        if (deptData.data.length === 0 && deptData.message) {
+          alert(deptData.message);
+        }
       }
       
       // If no department selected but user is department leader, select their department
