@@ -31,34 +31,16 @@ export async function GET(request: NextRequest) {
         auth: {
           autoRefreshToken: false,
           persistSession: false,
-        },
-        db: {
-          schema: 'public'
         }
       }
     );
 
     console.log('Attempting to query departments table...');
-    let data = null;
-    let error = null;
-
-    // First try direct table access
-    const directResult = await supabase
+    const { data, error } = await supabase
       .from('departments')
       .select('id, name, swahili_name')
       .eq('is_active', true)
       .order('name', { ascending: true });
-
-    data = directResult.data;
-    error = directResult.error;
-
-    // If direct access fails due to RLS, try using RPC function
-    if (error && (error.message.includes('policy') || error.code === 'PGRST301' || error.message.includes('JWT'))) {
-      console.log('Direct access failed, trying RPC function...');
-      const rpcResult = await supabase.rpc('get_departments');
-      data = rpcResult.data;
-      error = rpcResult.error;
-    }
 
     if (error) {
       console.error('Supabase error details:');
@@ -66,30 +48,20 @@ export async function GET(request: NextRequest) {
       console.error('- Message:', error.message);
       console.error('- Details:', error.details);
       console.error('- Hint:', error.hint);
-      console.error('- Full error object:', JSON.stringify(error, null, 2));
       
-      // If departments table doesn't exist, return empty array with explanation
+      // If departments table doesn't exist, return default departments
       if (error.code === '42P01') {
-        return NextResponse.json({ 
-          data: [],
-          message: 'Departments table not found. Please set up the departments in your database.'
-        });
-      }
-      
-      // If RPC function doesn't exist, that's expected - continue to default departments
-      if (error.message.includes('get_departments') && error.message.includes('does not exist')) {
-        console.log('RPC function not found, using default departments...');
+        console.log('Departments table not found, using default departments...');
         // Continue to default departments logic below
+      } else if (error.message.includes('policy') || error.code === 'PGRST301' || error.message.includes('JWT')) {
+        // If RLS policy issue, provide specific guidance
+        return NextResponse.json({ 
+          error: 'Database access denied due to RLS policies.',
+          details: error.message,
+          suggestion: 'Run this SQL command in Supabase: CREATE POLICY "service_role_full_access" ON departments FOR ALL TO service_role USING (true) WITH CHECK (true);'
+        }, { status: 401 });
       } else {
-        // If authentication/API key error, provide specific guidance  
-        if (error.message.includes('Invalid API key') || error.message.includes('JWT') || error.code === 'PGRST301') {
-          return NextResponse.json({ 
-            error: 'Database access denied. This might be due to RLS policies or invalid API key.',
-            details: error.message,
-            suggestion: 'Run the fix_departments_rls.sql script in your database or check your SUPABASE_SERVICE_ROLE_KEY.'
-          }, { status: 401 });
-        }
-        
+        // Other database errors
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }
