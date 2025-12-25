@@ -55,15 +55,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data, error } = await query;
+    let { data, error } = await query;
+
+    // If RLS blocks direct access, try RPC function
+    if (error && (error.message.includes('policy') || error.code === 'PGRST301' || error.message.includes('JWT'))) {
+      console.log('Direct member access failed, trying RPC function...');
+      const rpcResult = await supabase.rpc('get_members', departmentId ? { dept_id: departmentId } : {});
+      data = rpcResult.data;
+      error = rpcResult.error;
+    }
 
     if (error) {
       console.error('Error fetching members:', error);
+      
+      // If members table doesn't exist, return empty array
+      if (error.code === '42P01') {
+        return NextResponse.json({ 
+          data: [],
+          message: 'Members table not found. Please set up the members in your database.'
+        });
+      }
+      
+      // If RLS policy issue
+      if (error.message.includes('policy') || error.code === 'PGRST301' || error.message.includes('JWT')) {
+        return NextResponse.json({ 
+          error: 'Database access denied due to RLS policies.',
+          details: error.message,
+          suggestion: 'Run the complete_attendance_setup.sql script in your database.'
+        }, { status: 401 });
+      }
+      
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
-  } catch (error) {
+    return NextResponse.json({ data: data || [] });
+  } catch (error: any) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
