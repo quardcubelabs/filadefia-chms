@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       event_id: event_id || null,
       department_id: department_id || null,
       session_name: session_name || `${attendance_type.replace('_', ' ')} - ${date}`,
-      created_by: recorded_by,
+      created_by: recorded_by || 'system',
       expires_at: expirationTime.toISOString(),
       is_active: true,
       check_ins: 0

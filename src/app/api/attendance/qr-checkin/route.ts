@@ -57,12 +57,45 @@ export async function POST(request: NextRequest) {
         member = data;
       }
     } else if (phone_number) {
-      const { data, error } = await supabase
+      // Clean and format phone number for search
+      const cleanPhone = phone_number.replace(/[\s\-\+]/g, '');
+      
+      // Try exact match first
+      let { data, error } = await supabase
         .from('members')
         .select('id, first_name, last_name, member_number, phone, status')
         .eq('phone', phone_number)
         .eq('status', 'active')
         .single();
+      
+      // If exact match fails, try with cleaned phone number
+      if (error && cleanPhone !== phone_number) {
+        const result = await supabase
+          .from('members')
+          .select('id, first_name, last_name, member_number, phone, status')
+          .eq('phone', cleanPhone)
+          .eq('status', 'active')
+          .single();
+        
+        data = result.data;
+        error = result.error;
+      }
+      
+      // If still not found, try partial matching (last 9 digits for Tanzanian numbers)
+      if (error && cleanPhone.length >= 9) {
+        const lastNineDigits = cleanPhone.slice(-9);
+        const result = await supabase
+          .from('members')
+          .select('id, first_name, last_name, member_number, phone, status')
+          .ilike('phone', `%${lastNineDigits}`)
+          .eq('status', 'active')
+          .limit(1);
+        
+        if (result.data && result.data.length > 0) {
+          data = result.data[0];
+          error = null;
+        }
+      }
       
       if (!error && data) {
         member = data;
@@ -81,8 +114,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (!member) {
+      console.log('Member lookup failed:', { member_id, phone_number, member_number });
+      
+      // Provide more specific error messages
+      let errorMessage = 'Member not found or inactive.';
+      if (phone_number) {
+        errorMessage += ` Phone number: ${phone_number}`;
+      } else if (member_number) {
+        errorMessage += ` Member number: ${member_number}`;
+      }
+      errorMessage += ' Please contact church administration.';
+      
       return NextResponse.json({ 
-        error: 'Member not found or inactive. Please contact church administration.' 
+        error: errorMessage,
+        debug: {
+          searchCriteria: { member_id, phone_number, member_number },
+          suggestion: 'Check if the member is registered and active in the system'
+        }
       }, { status: 404 });
     }
 
@@ -111,7 +159,8 @@ export async function POST(request: NextRequest) {
           .from('attendance')
           .update({ 
             present: true,
-            notes: 'Checked in via QR code'
+            notes: 'Checked in via QR code',
+            recorded_by: null // Set to null to avoid foreign key issues
           })
           .eq('id', existingAttendance.id)
           .select()
@@ -141,13 +190,27 @@ export async function POST(request: NextRequest) {
           date: sessionData.date,
           present: true,
           notes: 'Checked in via QR code',
-          recorded_by: sessionData.created_by
+          recorded_by: null // Set to null to avoid foreign key issues
         }])
         .select()
         .single();
 
       if (createError) {
-        return NextResponse.json({ error: createError.message }, { status: 500 });
+        console.error('Error creating attendance record:', createError);
+        console.error('Attempted to insert:', {
+          member_id: member.id,
+          event_id: sessionData.event_id,
+          attendance_type: sessionData.attendance_type,
+          date: sessionData.date,
+          present: true,
+          notes: 'Checked in via QR code',
+          recorded_by: null
+        });
+        return NextResponse.json({ 
+          error: createError.message,
+          details: createError.details,
+          hint: createError.hint 
+        }, { status: 500 });
       }
 
       // Update session check-in count
