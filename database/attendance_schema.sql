@@ -51,6 +51,13 @@ CREATE TABLE IF NOT EXISTS attendance_sessions (
     present_count INTEGER DEFAULT 0,
     absent_count INTEGER DEFAULT 0,
     attendance_rate DECIMAL(5,2) DEFAULT 0,
+    -- QR Code related fields
+    qr_code_data_url TEXT,
+    qr_session_id VARCHAR(50),
+    qr_check_in_url TEXT,
+    qr_expires_at TIMESTAMP WITH TIME ZONE,
+    qr_is_active BOOLEAN DEFAULT FALSE,
+    qr_check_ins INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     

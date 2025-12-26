@@ -66,6 +66,7 @@ export default function RecordAttendancePage() {
     const eventIdParam = urlParams.get('event_id');
     const dateParam = urlParams.get('date');
     const typeParam = urlParams.get('type');
+    const sessionIdParam = urlParams.get('session_id');
     
     if (eventIdParam) setEventId(eventIdParam);
     if (dateParam) setSelectedDate(dateParam);
@@ -77,6 +78,35 @@ export default function RecordAttendancePage() {
       loadMembers();
     }
   }, [selectedDepartment]);
+
+  // Load existing attendance after members are loaded and date/type are set
+  useEffect(() => {
+    if (members.length > 0 && selectedDate && attendanceType && Object.keys(attendanceRecords).length > 0) {
+      // Check if this is from a QR session (URL params)
+      const urlParams = new URLSearchParams(window.location.search);
+      const dateParam = urlParams.get('date');
+      const typeParam = urlParams.get('type');
+      
+      if (dateParam && typeParam && dateParam === selectedDate && typeParam === attendanceType) {
+        console.log('Loading existing attendance from QR session');
+        loadExistingAttendance(selectedDate, attendanceType);
+      }
+    }
+  }, [members, selectedDate, attendanceType, attendanceRecords]);
+
+  // Auto-select "All Departments" when coming from QR session to ensure members load
+  useEffect(() => {
+    if (departments.length > 0 && !selectedDepartment) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const dateParam = urlParams.get('date');
+      const typeParam = urlParams.get('type');
+      
+      if (dateParam && typeParam) {
+        console.log('Auto-selecting All Departments for QR session');
+        setSelectedDepartment('all');
+      }
+    }
+  }, [departments, selectedDepartment]);
 
   const loadInitialData = async () => {
     try {
@@ -150,6 +180,46 @@ export default function RecordAttendancePage() {
       alert('Failed to load members. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadExistingAttendance = async (date: string, attendanceType: string) => {
+    try {
+      console.log('Loading existing attendance for:', { date, attendanceType });
+      
+      // Fetch existing attendance records for this date and type
+      const response = await fetch(`/api/attendance?date=${date}&type=${attendanceType}`);
+      if (!response.ok) {
+        console.log('No existing attendance found or API error');
+        return;
+      }
+      
+      const data = await response.json();
+      if (data.data && data.data.length > 0) {
+        console.log(`Found ${data.data.length} existing attendance records`);
+        
+        // Update attendance records to reflect existing check-ins
+        setAttendanceRecords(prev => {
+          const updated = { ...prev };
+          
+          data.data.forEach((record: any) => {
+            if (updated[record.member_id]) {
+              updated[record.member_id] = {
+                member_id: record.member_id,
+                present: record.present,
+                notes: record.notes || undefined
+              };
+            }
+          });
+          
+          return updated;
+        });
+        
+        const presentCount = data.data.filter((r: any) => r.present).length;
+        console.log(`Loaded ${presentCount} existing check-ins`);
+      }
+    } catch (error) {
+      console.error('Error loading existing attendance:', error);
     }
   };
 

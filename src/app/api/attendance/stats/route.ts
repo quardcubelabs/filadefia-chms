@@ -151,6 +151,13 @@ export async function GET(request: NextRequest) {
 
     // Calculate overall statistics - for weekly, show unique present members across all sessions
     let presentCount, absentCount, totalRecords, attendanceRate;
+    let qrCheckIns, manualCheckIns, totalCheckIns;
+    
+    // Calculate check-in breakdown
+    const presentRecords = attendanceRecords.filter(a => a.present);
+    totalCheckIns = presentRecords.length;
+    qrCheckIns = presentRecords.filter(a => a.notes && a.notes.includes('Checked in via QR code')).length;
+    manualCheckIns = totalCheckIns - qrCheckIns;
     
     if (period === 'weekly') {
       // For weekly stats, count unique members who attended any session
@@ -364,7 +371,13 @@ export async function GET(request: NextRequest) {
         attendanceRate: Math.round(attendanceRate * 100) / 100,
         totalSessions: dateStats.length,
         period: period,
-        weeklyTrend: Math.round(weeklyTrend * 100) / 100
+        weeklyTrend: Math.round(weeklyTrend * 100) / 100,
+        // Check-in breakdown
+        totalCheckIns,
+        qrCheckIns,
+        manualCheckIns,
+        qrCheckInPercentage: totalCheckIns > 0 ? Math.round((qrCheckIns / totalCheckIns) * 100 * 100) / 100 : 0,
+        manualCheckInPercentage: totalCheckIns > 0 ? Math.round((manualCheckIns / totalCheckIns) * 100 * 100) / 100 : 0
       },
       dateStats,
       trendData,

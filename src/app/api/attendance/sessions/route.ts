@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import QRCode from 'qrcode';
+import { getSiteUrl } from '@/lib/config';
 
 // GET - Get available attendance sessions (grouped by date and type)
 export async function GET(request: NextRequest) {
@@ -13,7 +15,25 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date');
     const attendanceType = searchParams.get('type');
 
-    // Build query for distinct sessions
+    // First check for existing attendance_sessions (with QR data)
+    let sessionQuery = supabase
+      .from('attendance_sessions')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (startDate) {
+      sessionQuery = sessionQuery.gte('date', startDate);
+    }
+    if (endDate) {
+      sessionQuery = sessionQuery.lte('date', endDate);
+    }
+    if (attendanceType) {
+      sessionQuery = sessionQuery.eq('attendance_type', attendanceType);
+    }
+
+    const { data: sessionData } = await sessionQuery;
+
+    // Also get attendance records for sessions without session records
     let query = supabase
       .from('attendance')
       .select('date, attendance_type, event_id, present')
@@ -40,17 +60,53 @@ export async function GET(request: NextRequest) {
     // Group by date and type for unique sessions
     const sessionsMap = new Map();
     
+    // Start with existing session records (these include QR data)
+    if (sessionData) {
+      for (const session of sessionData) {
+        const key = `${session.date}-${session.attendance_type}`;
+        sessionsMap.set(key, {
+          id: session.id,
+          date: session.date,
+          attendance_type: session.attendance_type,
+          event_id: session.event_id,
+          session_name: session.session_name,
+          total_records: 0,
+          present_count: 0,
+          absent_count: 0,
+          // QR related fields
+          qr_code_data_url: session.qr_code_data_url,
+          qr_session_id: session.qr_session_id,
+          qr_check_in_url: session.qr_check_in_url,
+          qr_expires_at: session.qr_expires_at,
+          qr_is_active: session.qr_is_active && session.qr_expires_at ? new Date(session.qr_expires_at) > new Date() : false,
+          qr_check_ins: session.qr_check_ins || 0,
+          hasQRCode: !!session.qr_code_data_url
+        });
+      }
+    }
+    
+    // Add sessions from attendance records that don't have session records
     if (data) {
       for (const record of data) {
         const key = `${record.date}-${record.attendance_type}`;
         if (!sessionsMap.has(key)) {
           sessionsMap.set(key, {
+            id: null,
             date: record.date,
             attendance_type: record.attendance_type,
             event_id: record.event_id,
+            session_name: null,
             total_records: 0,
             present_count: 0,
-            absent_count: 0
+            absent_count: 0,
+            // QR related fields (no QR code for old sessions)
+            qr_code_data_url: null,
+            qr_session_id: null,
+            qr_check_in_url: null,
+            qr_expires_at: null,
+            qr_is_active: false,
+            qr_check_ins: 0,
+            hasQRCode: false
           });
         }
       }
@@ -114,7 +170,9 @@ export async function POST(request: NextRequest) {
       event_id, 
       department_id,
       auto_create_members = false,
-      recorded_by
+      recorded_by,
+      session_name,
+      qr_duration_hours = 4
     } = body;
 
     if (!date || !attendance_type || !recorded_by) {
@@ -123,17 +181,33 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if session already exists
+    // Check if session already exists in attendance_sessions table
     const { data: existingSession } = await supabase
+      .from('attendance_sessions')
+      .select('id')
+      .eq('date', date)
+      .eq('attendance_type', attendance_type)
+      .eq('department_id', department_id || null)
+      .eq('event_id', event_id || null)
+      .limit(1);
+
+    if (existingSession && existingSession.length > 0) {
+      return NextResponse.json({ 
+        error: 'Attendance session already exists for this date and type' 
+      }, { status: 400 });
+    }
+
+    // Also check attendance table for legacy sessions
+    const { data: legacySession } = await supabase
       .from('attendance')
       .select('id')
       .eq('date', date)
       .eq('attendance_type', attendance_type)
       .limit(1);
 
-    if (existingSession && existingSession.length > 0) {
+    if (legacySession && legacySession.length > 0) {
       return NextResponse.json({ 
-        error: 'Attendance session already exists for this date and type' 
+        error: 'Attendance session already exists for this date and type (legacy)' 
       }, { status: 400 });
     }
 
@@ -174,6 +248,57 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Generate QR code for the session
+    const qrSessionId = `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const baseUrl = getSiteUrl(request);
+    const checkInUrl = `${baseUrl}/attendance/qr-checkin/${qrSessionId}`;
+    
+    // Calculate QR expiration time
+    const qrExpiresAt = new Date();
+    qrExpiresAt.setHours(qrExpiresAt.getHours() + qr_duration_hours);
+    
+    // Generate QR code
+    const qrCodeDataUrl = await QRCode.toDataURL(checkInUrl, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+
+    // Create session record in attendance_sessions table
+    const sessionData = {
+      date,
+      attendance_type,
+      session_name: session_name || `${attendance_type.replace('_', ' ')} - ${date}`,
+      department_id: department_id || null,
+      event_id: event_id || null,
+      created_by: recorded_by,
+      total_members: members.length,
+      present_count: 0,
+      absent_count: auto_create_members ? members.length : 0,
+      attendance_rate: 0,
+      // QR code fields
+      qr_code_data_url: qrCodeDataUrl,
+      qr_session_id: qrSessionId,
+      qr_check_in_url: checkInUrl,
+      qr_expires_at: qrExpiresAt.toISOString(),
+      qr_is_active: true,
+      qr_check_ins: 0
+    };
+
+    const { data: sessionRecord, error: sessionError } = await supabase
+      .from('attendance_sessions')
+      .insert([sessionData])
+      .select()
+      .single();
+
+    if (sessionError) {
+      console.error('Error creating attendance session:', sessionError);
+      return NextResponse.json({ error: sessionError.message }, { status: 500 });
+    }
+
     if (auto_create_members) {
       // Create attendance records for all members (marked as absent by default)
       const attendanceRecords = members.map(member => ({
@@ -197,21 +322,29 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ 
         data: {
-          session: { date, attendance_type, event_id, department_id },
+          session: sessionRecord,
           members_count: members.length,
-          records_created: createdRecords?.length || 0
+          records_created: createdRecords?.length || 0,
+          qr_code_data_url: qrCodeDataUrl,
+          qr_check_in_url: checkInUrl,
+          qr_session_id: qrSessionId,
+          qr_expires_at: qrExpiresAt.toISOString()
         },
-        message: `Attendance session created with ${members.length} member records`
+        message: `Attendance session created with ${members.length} member records and QR code`
       });
     } else {
       // Just return session info and available members
       return NextResponse.json({ 
         data: {
-          session: { date, attendance_type, event_id, department_id },
+          session: sessionRecord,
           available_members: members,
-          members_count: members.length
+          members_count: members.length,
+          qr_code_data_url: qrCodeDataUrl,
+          qr_check_in_url: checkInUrl,
+          qr_session_id: qrSessionId,
+          qr_expires_at: qrExpiresAt.toISOString()
         },
-        message: 'Attendance session ready for recording'
+        message: 'Attendance session ready for recording with QR code generated'
       });
     }
   } catch (error) {

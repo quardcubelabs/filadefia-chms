@@ -201,3 +201,66 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// GET - Fetch existing attendance records
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get('date');
+    const type = searchParams.get('type');
+    const eventId = searchParams.get('event_id');
+
+    if (!date || !type) {
+      return NextResponse.json({ error: 'Date and type are required' }, { status: 400 });
+    }
+
+    console.log('Fetching attendance records for:', { date, type, eventId });
+
+    // Build query
+    let query = supabase
+      .from('attendance')
+      .select(`
+        id,
+        member_id,
+        present,
+        notes,
+        created_at,
+        members!inner(
+          first_name,
+          last_name,
+          member_number
+        )
+      `)
+      .eq('date', date)
+      .eq('attendance_type', type);
+
+    // Add event_id filter if provided
+    if (eventId) {
+      query = query.eq('event_id', eventId);
+    }
+
+    const { data: attendanceRecords, error } = await query
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching attendance records:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    console.log(`Found ${attendanceRecords?.length || 0} attendance records`);
+
+    return NextResponse.json({
+      data: attendanceRecords || [],
+      message: `Found ${attendanceRecords?.length || 0} attendance records`
+    });
+
+  } catch (error) {
+    console.error('Error in GET attendance:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

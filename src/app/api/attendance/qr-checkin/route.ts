@@ -15,8 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
-    // Get session info
+    // Get session info - check both QR sessions table and attendance sessions table
     let sessionData = null;
+    
+    // First try QR sessions table (legacy)
     try {
       const { data, error } = await supabase
         .from('qr_attendance_sessions')
@@ -29,6 +31,35 @@ export async function POST(request: NextRequest) {
       }
     } catch (dbError) {
       console.log('QR sessions table access error');
+    }
+    
+    // If not found in QR sessions, try attendance sessions table
+    if (!sessionData) {
+      try {
+        const { data, error } = await supabase
+          .from('attendance_sessions')
+          .select('*')
+          .eq('qr_session_id', session_id)
+          .single();
+
+        if (!error && data) {
+          // Convert attendance session format to QR session format for compatibility
+          sessionData = {
+            id: data.qr_session_id,
+            date: data.date,
+            attendance_type: data.attendance_type,
+            event_id: data.event_id,
+            department_id: data.department_id,
+            session_name: data.session_name,
+            created_by: data.created_by,
+            expires_at: data.qr_expires_at,
+            is_active: data.qr_is_active,
+            check_ins: data.qr_check_ins || 0
+          };
+        }
+      } catch (dbError) {
+        console.log('Attendance sessions table access error');
+      }
     }
 
     if (!sessionData) {
@@ -287,12 +318,52 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
-    // Get session info
-    const { data: sessionData } = await supabase
-      .from('qr_attendance_sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single();
+    // Get session info - check both QR sessions table and attendance sessions table
+    let sessionData = null;
+    
+    // First try QR sessions table (legacy)
+    try {
+      const { data, error } = await supabase
+        .from('qr_attendance_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (!error && data) {
+        sessionData = data;
+      }
+    } catch (dbError) {
+      console.log('QR sessions table access error for stats');
+    }
+    
+    // If not found in QR sessions, try attendance sessions table
+    if (!sessionData) {
+      try {
+        const { data, error } = await supabase
+          .from('attendance_sessions')
+          .select('*')
+          .eq('qr_session_id', sessionId)
+          .single();
+
+        if (!error && data) {
+          // Convert attendance session format to QR session format for compatibility
+          sessionData = {
+            id: data.qr_session_id,
+            date: data.date,
+            attendance_type: data.attendance_type,
+            event_id: data.event_id,
+            department_id: data.department_id,
+            session_name: data.session_name,
+            created_by: data.created_by,
+            expires_at: data.qr_expires_at,
+            is_active: data.qr_is_active,
+            check_ins: data.qr_check_ins || 0
+          };
+        }
+      } catch (dbError) {
+        console.log('Attendance sessions table access error for stats');
+      }
+    }
 
     if (!sessionData) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });

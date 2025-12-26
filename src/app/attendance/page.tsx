@@ -27,6 +27,12 @@ interface AttendanceStats {
   attendanceRate: number;
   weeklyTrend: number;
   totalSessions: number;
+  // Check-in breakdown
+  totalCheckIns?: number;
+  qrCheckIns?: number;
+  manualCheckIns?: number;
+  qrCheckInPercentage?: number;
+  manualCheckInPercentage?: number;
   recentSessions: Array<{
     id: string;
     date: string;
@@ -34,6 +40,8 @@ interface AttendanceStats {
     present_count: number;
     total_count: number;
     percentage: number;
+    isQRSession?: boolean;
+    qrSessionId?: string | null;
   }>;
 }
 
@@ -58,6 +66,11 @@ export default function AttendancePage() {
     attendanceRate: 0,
     weeklyTrend: 0,
     totalSessions: 0,
+    totalCheckIns: 0,
+    qrCheckIns: 0,
+    manualCheckIns: 0,
+    qrCheckInPercentage: 0,
+    manualCheckInPercentage: 0,
     recentSessions: []
   });
   const [loading, setLoading] = useState(true);
@@ -111,7 +124,10 @@ export default function AttendancePage() {
     try {
       setLoading(true);
       
-      // Build query parameters
+      // Load attendance sessions directly (which now include QR data)
+      await loadQRSessions();
+      
+      // Also load overview stats
       const params = new URLSearchParams({
         period: 'weekly'
       });
@@ -122,42 +138,66 @@ export default function AttendancePage() {
 
       const response = await fetch(`/api/attendance/stats?${params}`);
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('API Error:', errorData);
-        throw new Error(`Failed to fetch attendance stats (${response.status}): ${errorData.error || 'Unknown error'}`);
-      }
-      
-      const data = await response.json();
-      console.log('API Response:', data);
-      
-      if (data.data && data.data.overview) {
-        const { overview, dateStats } = data.data;
-        setStats({
-          totalMembers: overview.totalMembers || 0,
-          presentToday: overview.presentCount || 0,
-          absentToday: overview.absentCount || 0,
-          attendanceRate: overview.attendanceRate || 0,
-          weeklyTrend: overview.weeklyTrend || 0,
-          totalSessions: overview.totalSessions || 0,
-          recentSessions: (dateStats || []).slice(-5).reverse().map((item: any, index: number) => ({
-            id: `${item.date}_${index}`,
-            date: item.date,
-            attendance_type: item.attendance_type || 'service',
-            present_count: item.present,
-            total_count: item.total,
-            percentage: item.percentage
-          }))
-        });
-      } else {
-        console.error('Failed to load attendance stats:', data.error);
-        alert('Failed to load attendance statistics.');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Stats API Response:', data);
+        
+        if (data.data && data.data.overview) {
+          const { overview } = data.data;
+          setStats(prevStats => ({
+            ...prevStats,
+            totalMembers: overview.totalMembers || 0,
+            presentToday: overview.presentCount || 0,
+            absentToday: overview.absentCount || 0,
+            attendanceRate: overview.attendanceRate || 0,
+            weeklyTrend: overview.weeklyTrend || 0,
+            totalSessions: overview.totalSessions || 0,
+            totalCheckIns: overview.totalCheckIns || 0,
+            qrCheckIns: overview.qrCheckIns || 0,
+            manualCheckIns: overview.manualCheckIns || 0,
+            qrCheckInPercentage: overview.qrCheckInPercentage || 0,
+            manualCheckInPercentage: overview.manualCheckInPercentage || 0
+          }));
+        }
       }
     } catch (error) {
       console.error('Error loading attendance stats:', error);
       alert('Failed to load attendance statistics. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQRSessions = async () => {
+    try {
+      // Get attendance sessions (which now include QR data)
+      const response = await fetch('/api/attendance/sessions');
+      if (response.ok) {
+        const sessionsData = await response.json();
+        const sessions = sessionsData.data || [];
+        
+        // Replace recent sessions with the full session data that includes QR info
+        setStats(prevStats => ({
+          ...prevStats,
+          recentSessions: sessions.slice(-5).reverse().map((session: any) => ({
+            id: session.id || session.qr_session_id || `${session.date}_${session.attendance_type}`,
+            date: session.date,
+            attendance_type: session.attendance_type,
+            present_count: session.present_count,
+            total_count: session.total_members || session.total_count || 0,
+            percentage: session.attendance_rate || session.percentage || 0,
+            hasQRCode: !!session.qr_code_data_url,
+            isQRSession: !!session.qr_code_data_url,
+            qr_session_id: session.qr_session_id,
+            qr_code_data_url: session.qr_code_data_url,
+            qr_check_in_url: session.qr_check_in_url,
+            qr_expires_at: session.qr_expires_at,
+            qr_is_active: session.qr_is_active
+          }))
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading QR sessions:', error);
     }
   };
 
@@ -191,6 +231,52 @@ export default function AttendancePage() {
     return types[type] || type;
   };
 
+  const handleSessionClick = (session: any) => {
+    // All sessions should now have QR codes, so always navigate to QR page
+    if (session.id) {
+      // Use session ID for new sessions with stored QR data
+      router.push(`/attendance/qr?session_id=${session.id}&date=${session.date}&type=${session.attendance_type}&existing=true`);
+    } else if (session.qr_session_id) {
+      // Use QR session ID for legacy format
+      router.push(`/attendance/qr?session_id=${session.qr_session_id}&date=${session.date}&type=${session.attendance_type}&existing=true`);
+    } else {
+      // Fallback for very old sessions - still go to QR page but it might not have QR data
+      router.push(`/attendance/qr?date=${session.date}&type=${session.attendance_type}&existing=true`);
+    }
+  };
+
+  const migrateLegacySessions = async () => {
+    if (!confirm('Migrate all legacy attendance sessions to include QR codes? This will create QR codes for all existing manual sessions.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/attendance/sessions/migrate-legacy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Migration successful! Created QR codes for ${result.data.migrated_sessions} sessions.`);
+        // Reload the page to show updated sessions
+        await loadAttendanceStats();
+      } else {
+        alert(`Migration failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+      alert('Migration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="p-6 space-y-6">
@@ -208,6 +294,14 @@ export default function AttendancePage() {
             </p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={migrateLegacySessions}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+              title="Add QR codes to existing manual sessions"
+            >
+              <QrCode className="w-4 h-4" />
+              Migrate Sessions
+            </button>
             <button
               onClick={() => router.push('/attendance/record')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -282,15 +376,37 @@ export default function AttendancePage() {
               </div>
             </div>
 
-            {/* Total Sessions */}
+            {/* Check-ins Breakdown */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Sessions This Week</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalSessions}</p>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="bg-orange-50 p-2 rounded-lg mr-3">
+                    <QrCode className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Check-ins This Week</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalCheckIns}</p>
+                  </div>
                 </div>
-                <div className="bg-orange-50 p-3 rounded-lg">
-                  <Calendar className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">QR Check-ins</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {stats.qrCheckIns} ({stats.qrCheckInPercentage?.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">Manual Check-ins</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {stats.manualCheckIns} ({stats.manualCheckInPercentage?.toFixed(1)}%)
+                  </span>
                 </div>
               </div>
             </div>
@@ -348,22 +464,79 @@ export default function AttendancePage() {
                 {stats.recentSessions.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSessionClick(session)}
+                    className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg transition-all duration-200 ${
+                      session.hasQRCode
+                        ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
+                          ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md' 
+                          : 'hover:bg-orange-50 cursor-pointer border-l-4 border-l-orange-400 hover:shadow-md'
+                        : session.isQRSession 
+                        ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md' 
+                        : 'hover:bg-gray-100 cursor-pointer hover:shadow-sm'
+                    }`}
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="bg-blue-100 p-2 rounded-lg">
-                        <Calendar className="w-5 h-5 text-blue-600" />
+                      <div className={`p-2 rounded-lg ${
+                        session.hasQRCode
+                          ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
+                            ? 'bg-green-100' 
+                            : 'bg-orange-100'
+                          : session.isQRSession 
+                          ? 'bg-green-100' 
+                          : 'bg-blue-100'
+                      }`}>
+                        {session.hasQRCode || session.isQRSession ? (
+                          <QrCode className={`w-5 h-5 ${
+                            session.hasQRCode
+                              ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
+                                ? 'text-green-600' 
+                                : 'text-orange-600'
+                              : 'text-green-600'
+                          }`} />
+                        ) : (
+                          <Calendar className="w-5 h-5 text-blue-600" />
+                        )}
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">
-                          {getAttendanceTypeLabel(session.attendance_type)}
-                        </h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-gray-900">
+                            {getAttendanceTypeLabel(session.attendance_type)}
+                          </h4>
+                          {(session.hasQRCode || session.isQRSession) && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              session.hasQRCode
+                                ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-orange-100 text-orange-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {session.hasQRCode 
+                                ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
+                                  ? 'QR Active'
+                                  : 'QR Inactive'
+                                : 'QR Session'
+                              }
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600">
                           {formatDate(session.date)} • {session.present_count} of {session.total_count} present
+                          <span className={`ml-1 ${
+                            session.hasQRCode
+                              ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
+                                ? 'text-green-600'
+                                : 'text-orange-600'
+                              : 'text-blue-600'
+                          }`}>
+                            • Click to view session details & QR code
+                            {session.hasQRCode && session.qr_expires_at && new Date(session.qr_expires_at) <= new Date() && (
+                              <span className="text-orange-600"> (QR Expired)</span>
+                            )}
+                          </span>
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-3">
                       <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         session.percentage >= 80
                           ? 'bg-green-100 text-green-800'
@@ -373,6 +546,7 @@ export default function AttendancePage() {
                       }`}>
                         {session.percentage.toFixed(1)}%
                       </div>
+                      <ArrowRight className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
                 ))}

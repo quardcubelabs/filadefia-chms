@@ -75,6 +75,17 @@ export default function QRAttendancePage() {
       return;
     }
     loadInitialData();
+    
+    // Check for existing session in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    const existing = urlParams.get('existing');
+    const date = urlParams.get('date');
+    const type = urlParams.get('type');
+    
+    if (existing && (sessionId || (date && type))) {
+      loadExistingSession(sessionId, date, type);
+    }
   }, [user, authLoading, router]);
 
   useEffect(() => {
@@ -107,6 +118,170 @@ export default function QRAttendancePage() {
     }
   };
 
+  const loadExistingSession = async (sessionId: string | null, date: string | null, type: string | null) => {
+    try {
+      setLoading(true);
+      
+      // If we have date and type, try to find session by date and type first
+      if (date && type) {
+        console.log('Loading session by date and type:', { date, type });
+        
+        // Try to find session in attendance_sessions table by date and type
+        const response = await fetch(`/api/attendance/sessions/by-date?date=${encodeURIComponent(date)}&type=${encodeURIComponent(type)}`);
+        
+        if (response.ok) {
+          const sessionData = await response.json();
+          const matchingSession = sessionData.data;
+          
+          if (matchingSession && matchingSession.qr_code_data_url) {
+            console.log('Found session with QR code:', matchingSession);
+            
+            // Convert attendance session data to QRSession format
+            const qrSession: QRSession = {
+              session_id: matchingSession.qr_session_id || matchingSession.id,
+              qr_code: matchingSession.qr_code_data_url,
+              check_in_url: matchingSession.qr_check_in_url || '',
+              session_info: {
+                date: matchingSession.date,
+                attendance_type: matchingSession.attendance_type,
+                session_name: matchingSession.session_name || `${matchingSession.attendance_type.replace('_', ' ')} - ${matchingSession.date}`,
+                department_id: matchingSession.department_id,
+                event_id: matchingSession.event_id,
+                expires_at: matchingSession.qr_expires_at || new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()
+              }
+            };
+            
+            setCurrentSession(qrSession);
+            return;
+          } else if (matchingSession) {
+            console.log('Session found but no QR code, generating one automatically');
+            
+            // Session exists but no QR code - generate one automatically
+            await generateQRForExistingSession(matchingSession);
+            return;
+          }
+        } else {
+          console.log('Session not found in attendance_sessions table');
+        }
+        
+        // Fallback: try legacy QR sessions table
+        try {
+          const legacyResponse = await fetch(`/api/attendance/qr-session?date=${date}&type=${type}`);
+          if (legacyResponse.ok) {
+            const data = await legacyResponse.json();
+            if (data.data) {
+              setCurrentSession(data.data);
+              return;
+            }
+          }
+        } catch (legacyError) {
+          console.log('Legacy QR session not found');
+        }
+        
+        // If no session found, try to create one from legacy attendance data
+        console.log('No session found, trying to create from legacy data for:', { date, type });
+        
+        try {
+          const legacyResponse = await fetch('/api/attendance/sessions/create-from-legacy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              date,
+              attendance_type: type,
+              qr_duration_hours: 4
+            }),
+          });
+
+          if (legacyResponse.ok) {
+            const result = await legacyResponse.json();
+            const createdSession = result.data;
+            
+            console.log('Created session from legacy data:', createdSession);
+            
+            // Convert to QRSession format and display
+            const qrSession: QRSession = {
+              session_id: createdSession.qr_session_id,
+              qr_code: createdSession.qr_code_data_url,
+              check_in_url: createdSession.qr_check_in_url,
+              session_info: {
+                date: createdSession.date,
+                attendance_type: createdSession.attendance_type,
+                session_name: createdSession.session_name,
+                department_id: createdSession.department_id,
+                event_id: createdSession.event_id,
+                expires_at: createdSession.qr_expires_at
+              }
+            };
+            
+            setCurrentSession(qrSession);
+            return;
+          } else {
+            console.log('Could not create session from legacy data, using form');
+          }
+        } catch (legacyError) {
+          console.log('Error creating session from legacy data:', legacyError);
+        }
+        
+        // Fallback: pre-fill form for new session
+        setSelectedDate(date);
+        
+        // Map common URL type values to form values
+        const typeMapping: Record<string, string> = {
+          'sunday_service': 'sunday_service',
+          'midweek_fellowship': 'midweek_fellowship', 
+          'special_event': 'special_event',
+          'department_meeting': 'department_meeting'
+        };
+        
+        setAttendanceType(typeMapping[type] || 'sunday_service');
+      }
+      
+      // If sessionId is provided and looks like a UUID, try to load by ID
+      if (sessionId && sessionId.includes('-') && sessionId.length > 20) {
+        const response = await fetch(`/api/attendance/sessions/${sessionId}`);
+        
+        if (response.ok) {
+          const sessionData = await response.json();
+          const existingSession = sessionData.data;
+          
+          if (existingSession && existingSession.qr_code_data_url) {
+            // Convert attendance session data to QRSession format
+            const qrSession: QRSession = {
+              session_id: existingSession.qr_session_id || sessionId,
+              qr_code: existingSession.qr_code_data_url,
+              check_in_url: existingSession.qr_check_in_url || '',
+              session_info: {
+                date: existingSession.date,
+                attendance_type: existingSession.attendance_type,
+                session_name: existingSession.session_name || `${existingSession.attendance_type.replace('_', ' ')} - ${existingSession.date}`,
+                department_id: existingSession.department_id,
+                event_id: existingSession.event_id,
+                expires_at: existingSession.qr_expires_at || new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()
+              }
+            };
+            
+            setCurrentSession(qrSession);
+          } else if (existingSession) {
+            // Session exists but no QR code
+            setSelectedDate(existingSession.date);
+            setAttendanceType(existingSession.attendance_type);
+            setSessionName(existingSession.session_name || '');
+            setSelectedDepartment(existingSession.department_id || '');
+            
+            alert('This session does not have a QR code yet. You can generate one using the form below.');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading existing session:', error);
+      alert('Failed to load session. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadSessionStats = async () => {
     if (!currentSession) return;
     
@@ -119,6 +294,65 @@ export default function QRAttendancePage() {
       }
     } catch (error) {
       console.error('Error loading session stats:', error);
+    }
+  };
+
+  const generateQRForExistingSession = async (session: any) => {
+    try {
+      setLoading(true);
+      
+      // Generate QR code for existing session by updating it
+      const updatePayload = {
+        session_id: session.id,
+        qr_duration_hours: 4, // Default 4 hours
+        generate_qr: true
+      };
+
+      const response = await fetch(`/api/attendance/sessions/${session.id}/generate-qr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatePayload),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const updatedSession = result.data;
+        
+        // Convert to QRSession format and display
+        const qrSession: QRSession = {
+          session_id: updatedSession.qr_session_id || updatedSession.id,
+          qr_code: updatedSession.qr_code_data_url,
+          check_in_url: updatedSession.qr_check_in_url,
+          session_info: {
+            date: updatedSession.date,
+            attendance_type: updatedSession.attendance_type,
+            session_name: updatedSession.session_name || `${updatedSession.attendance_type.replace('_', ' ')} - ${updatedSession.date}`,
+            department_id: updatedSession.department_id,
+            event_id: updatedSession.event_id,
+            expires_at: updatedSession.qr_expires_at
+          }
+        };
+        
+        setCurrentSession(qrSession);
+      } else {
+        console.error('Failed to generate QR code for existing session');
+        // Fallback to form
+        setSelectedDate(session.date);
+        setAttendanceType(session.attendance_type);
+        setSessionName(session.session_name || '');
+        setSelectedDepartment(session.department_id || '');
+      }
+    } catch (error) {
+      console.error('Error generating QR for existing session:', error);
+      // Fallback to form
+      setSelectedDate(session.date);
+      setAttendanceType(session.attendance_type);
+      setSessionName(session.session_name || '');
+      setSelectedDepartment(session.department_id || '');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,11 +374,12 @@ export default function QRAttendancePage() {
         event_id: eventId || null,
         department_id: selectedDepartment === 'all' ? null : selectedDepartment,
         session_name: sessionName || `${attendanceType.replace('_', ' ')} - ${selectedDate}`,
-        expires_at: expiresAt.toISOString(),
-        recorded_by: user?.id
+        recorded_by: user?.id,
+        auto_create_members: false,
+        qr_duration_hours: expirationHours
       };
 
-      const response = await fetch('/api/attendance/qr-session', {
+      const response = await fetch('/api/attendance/sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +390,23 @@ export default function QRAttendancePage() {
       const result = await response.json();
 
       if (response.ok) {
-        setCurrentSession(result.data);
+        // Convert the session response to QRSession format
+        const sessionData = result.data.session;
+        const qrSession: QRSession = {
+          session_id: sessionData.qr_session_id || sessionData.id,
+          qr_code: result.data.qr_code_data_url || sessionData.qr_code_data_url,
+          check_in_url: result.data.qr_check_in_url || sessionData.qr_check_in_url,
+          session_info: {
+            date: sessionData.date,
+            attendance_type: sessionData.attendance_type,
+            session_name: sessionData.session_name,
+            department_id: sessionData.department_id,
+            event_id: sessionData.event_id,
+            expires_at: result.data.qr_expires_at || sessionData.qr_expires_at
+          }
+        };
+        
+        setCurrentSession(qrSession);
       } else {
         throw new Error(result.error || 'Failed to create QR session');
       }
@@ -366,7 +617,7 @@ export default function QRAttendancePage() {
                       ? 'bg-red-100 text-red-700'
                       : 'bg-green-100 text-green-700'
                   }`}>
-                    {isSessionExpired(currentSession.session_info.expires_at) ? 'Expired' : 'Active'}
+                    {isSessionExpired(currentSession.session_info.expires_at) ? 'Inactive (Expired)' : 'Active'}
                   </span>
                   <button
                     onClick={closeSession}
@@ -399,12 +650,28 @@ export default function QRAttendancePage() {
 
               {/* QR Code */}
               <div className="text-center">
-                <div className="inline-block p-6 bg-white border-2 border-gray-200 rounded-lg">
+                {isSessionExpired(currentSession.session_info.expires_at) && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm font-medium">
+                      ⚠️ QR Code is inactive - Members cannot check in using this QR code
+                    </p>
+                  </div>
+                )}
+                <div className={`inline-block p-6 bg-white border-2 rounded-lg relative ${
+                  isSessionExpired(currentSession.session_info.expires_at)
+                    ? 'border-red-200 opacity-60'
+                    : 'border-gray-200'
+                }`}>
                   <img 
                     src={currentSession.qr_code} 
                     alt="QR Code for attendance" 
                     className="w-64 h-64 mx-auto"
                   />
+                  {isSessionExpired(currentSession.session_info.expires_at) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-20 rounded-lg">
+                      <span className="text-red-700 font-bold text-lg">INACTIVE</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-4 space-y-2">
@@ -520,12 +787,30 @@ export default function QRAttendancePage() {
                   </button>
                   
                   <button
-                    onClick={() => router.push('/attendance/record')}
-                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2"
+                    onClick={() => router.push(`/attendance/record?date=${currentSession.session_info.date}&type=${currentSession.session_info.attendance_type}&session_id=${currentSession.session_id}`)}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
                   >
                     <Users className="w-4 h-4" />
                     <span>Manual Recording</span>
                   </button>
+                  
+                  {!isSessionExpired(currentSession.session_info.expires_at) && (
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-sm text-green-600 mb-2">✓ QR check-ins are active</p>
+                      <p className="text-xs text-gray-500">
+                        Members can scan QR code or use manual recording above
+                      </p>
+                    </div>
+                  )}
+                  
+                  {isSessionExpired(currentSession.session_info.expires_at) && (
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-sm text-orange-600 mb-2">⚠️ QR check-ins are disabled</p>
+                      <p className="text-xs text-gray-500">
+                        Use manual recording above or extend QR session
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
