@@ -52,6 +52,8 @@ interface MeetingMinutes {
   minutes: string;
   attendees: string[];
   next_meeting_date?: string;
+  attachment_url?: string;
+  attachment_name?: string;
   recorded_by: string;
   approved_by?: string;
   approved_at?: string;
@@ -143,6 +145,10 @@ export default function DocumentsPage() {
     attendees: [] as string[],
     next_meeting_date: ''
   });
+  
+  // Attachment state
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   // Form data for reports
   const [reportForm, setReportForm] = useState({
@@ -162,11 +168,39 @@ export default function DocumentsPage() {
     }
   }, [user, authLoading, activeTab]);
 
+  // Helper to check if error is JWT expired
+  const isJWTExpiredError = (error: any): boolean => {
+    if (!error) return false;
+    const message = error?.message || error?.error_description || String(error);
+    return message.toLowerCase().includes('jwt') && 
+           (message.toLowerCase().includes('expired') || message.toLowerCase().includes('invalid'));
+  };
+
+  // Wrapper to handle JWT errors and retry
+  const withJWTRetry = async <T,>(operation: () => Promise<T>, retryCount = 0): Promise<T> => {
+    try {
+      return await operation();
+    } catch (err: any) {
+      if (isJWTExpiredError(err) && retryCount < 2 && supabase) {
+        console.log('JWT expired, refreshing token and retrying...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError) {
+          return withJWTRetry(operation, retryCount + 1);
+        }
+      }
+      throw err;
+    }
+  };
+
   const loadData = async () => {
     if (!supabase) return;
     
     try {
       setLoading(true);
+      setError(null);
+      
+      // Ensure we have a fresh session before loading data
+      await supabase.auth.refreshSession();
       
       if (activeTab === 'minutes') {
         await loadMeetingMinutes();
@@ -178,7 +212,32 @@ export default function DocumentsPage() {
       await loadMembers();
     } catch (err: any) {
       console.error('Error loading data:', err);
-      setError(err.message);
+      // Handle JWT expired errors gracefully
+      if (isJWTExpiredError(err)) {
+        // Try one more refresh
+        try {
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError) {
+            // Retry loading data
+            setError(null);
+            if (activeTab === 'minutes') {
+              await loadMeetingMinutes();
+            } else {
+              await loadReports();
+            }
+            await loadDepartments();
+            await loadMembers();
+            return;
+          }
+        } catch {
+          // Refresh failed, redirect to login
+          window.location.href = '/login';
+          return;
+        }
+        setError('Session expired. Please refresh the page or log in again.');
+      } else {
+        setError(err?.message || 'Failed to load data. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -369,6 +428,53 @@ export default function DocumentsPage() {
         }
       }
 
+      // Handle attachment upload if file is selected
+      let attachmentUrl: string | null = null;
+      let attachmentName: string | null = null;
+      
+      if (attachmentFile) {
+        setUploadingAttachment(true);
+        try {
+          const fileExt = attachmentFile.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `meeting-minutes/${fileName}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('documents')
+            .upload(filePath, attachmentFile);
+          
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            // Try alternate bucket name
+            const { data: uploadData2, error: uploadError2 } = await supabase.storage
+              .from('attachments')
+              .upload(filePath, attachmentFile);
+            
+            if (uploadError2) {
+              throw new Error('Failed to upload attachment. Please check storage configuration.');
+            }
+            
+            const { data: { publicUrl } } = supabase.storage
+              .from('attachments')
+              .getPublicUrl(filePath);
+            attachmentUrl = publicUrl;
+          } else {
+            const { data: { publicUrl } } = supabase.storage
+              .from('documents')
+              .getPublicUrl(filePath);
+            attachmentUrl = publicUrl;
+          }
+          
+          attachmentName = attachmentFile.name;
+        } catch (uploadErr: any) {
+          console.error('Attachment upload failed:', uploadErr);
+          setError(uploadErr.message || 'Failed to upload attachment');
+          setUploadingAttachment(false);
+          return;
+        }
+        setUploadingAttachment(false);
+      }
+
       const minutesData = {
         department_id: isDepartmentLeader ? departmentId : minutesForm.department_id,
         meeting_date: minutesForm.meeting_date,
@@ -376,6 +482,8 @@ export default function DocumentsPage() {
         minutes: minutesForm.minutes,
         attendees: Array.isArray(minutesForm.attendees) ? minutesForm.attendees : [],
         next_meeting_date: minutesForm.next_meeting_date || null,
+        attachment_url: attachmentUrl,
+        attachment_name: attachmentName,
         recorded_by: user.profile.id
       };
 
@@ -416,6 +524,7 @@ export default function DocumentsPage() {
         attendees: [],
         next_meeting_date: ''
       });
+      setAttachmentFile(null);
       loadMeetingMinutes();
     } catch (err: any) {
       console.error('Error creating meeting minutes:', err);
@@ -757,6 +866,16 @@ export default function DocumentsPage() {
             {/* Meeting Minutes Tab */}
             {activeTab === 'minutes' && (
               <>
+                {/* Add Meeting Minutes Button */}
+                <div className="flex justify-end mb-4">
+                  <Button
+                    onClick={() => setIsMinutesModalOpen(true)}
+                    icon={<Plus className="h-4 w-4" />}
+                  >
+                    Add Meeting Minutes
+                  </Button>
+                </div>
+                
                 {filteredMinutes.length === 0 ? (
                   <EmptyState
                     icon={<FileText className="h-16 w-16 text-gray-400" />}
@@ -825,6 +944,17 @@ export default function DocumentsPage() {
                                       <span>Next: {formatDate(minute.next_meeting_date)}</span>
                                     </div>
                                   )}
+                                  {minute.attachment_url && (
+                                    <a 
+                                      href={minute.attachment_url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                                    >
+                                      <File className="h-4 w-4" />
+                                      <span>{minute.attachment_name || 'Attachment'}</span>
+                                    </a>
+                                  )}
                                 </div>
                                 <div className="flex space-x-1">
                                   {!minute.approved_by && (
@@ -871,6 +1001,16 @@ export default function DocumentsPage() {
             {/* Reports Tab */}
             {activeTab === 'reports' && (
               <>
+                {/* Add Report Button */}
+                <div className="flex justify-end mb-4">
+                  <Button
+                    onClick={() => setIsReportModalOpen(true)}
+                    icon={<Plus className="h-4 w-4" />}
+                  >
+                    Create Report
+                  </Button>
+                </div>
+                
                 {filteredReports.length === 0 ? (
                   <EmptyState
                     icon={<Folder className="h-16 w-16 text-gray-400" />}
@@ -1044,14 +1184,75 @@ export default function DocumentsPage() {
               onChange={(e) => setMinutesForm({ ...minutesForm, next_meeting_date: e.target.value })}
             />
           </div>
+
+          {/* Attachment Upload */}
+          <div className="border-t pt-4 mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="flex items-center space-x-2">
+                <Upload className="h-4 w-4" />
+                <span>Attachment (Optional)</span>
+              </div>
+            </label>
+            <div className="flex items-center space-x-4">
+              <label className="flex-1">
+                <div className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+                  attachmentFile 
+                    ? 'border-green-300 bg-green-50' 
+                    : 'border-gray-300 hover:border-red-400 hover:bg-red-50'
+                }`}>
+                  {attachmentFile ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <File className="h-5 w-5 text-green-600" />
+                      <span className="text-green-700 font-medium">{attachmentFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAttachmentFile(null);
+                        }}
+                        className="ml-2 text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-600 text-sm">Click to upload or drag and drop</p>
+                      <p className="text-gray-400 text-xs mt-1">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (Max 10MB)</p>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 10 * 1024 * 1024) {
+                        setError('File size must be less than 10MB');
+                        return;
+                      }
+                      setAttachmentFile(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsMinutesModalOpen(false)}>
+          <Button variant="outline" onClick={() => {
+            setIsMinutesModalOpen(false);
+            setAttachmentFile(null);
+          }}>
             Cancel
           </Button>
-          <Button onClick={handleCreateMinutes}>
-            Save Minutes
+          <Button onClick={handleCreateMinutes} disabled={uploadingAttachment}>
+            {uploadingAttachment ? 'Uploading...' : 'Save Minutes'}
           </Button>
         </div>
       </Modal>

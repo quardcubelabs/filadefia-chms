@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Profile, UserRole } from '@/types';
 import type { User, Session, SupabaseClient, AuthChangeEvent } from '@supabase/supabase-js';
@@ -31,7 +31,7 @@ interface AuthContextType {
   loading: boolean;
   supabase: SupabaseClient | null;
   signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
   hasRole: (requiredRoles: UserRole[]) => boolean;
   isAdmin: () => boolean;
   isPastor: () => boolean;
@@ -46,11 +46,21 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper to check if error is JWT expired
+const isJWTExpiredError = (error: any): boolean => {
+  if (!error) return false;
+  const message = error.message || error.error_description || String(error);
+  return message.toLowerCase().includes('jwt') && 
+         (message.toLowerCase().includes('expired') || message.toLowerCase().includes('invalid'));
+};
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.LOADING);
   const [isInitialized, setIsInitialized] = useState(false);
+  const refreshingRef = useRef(false);
+  const lastRefreshRef = useRef<number>(0);
 
   // Create supabase client once with memoization
   const supabase = useMemo(() => {
@@ -62,8 +72,52 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // Load user profile from database
-  const loadUserProfile = useCallback(async (authUser: User): Promise<Profile | null> => {
+  // Refresh session - returns true if successful
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    if (!supabase) return false;
+    
+    // Prevent concurrent refresh calls
+    if (refreshingRef.current) {
+      // Wait for ongoing refresh
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return session !== null;
+    }
+
+    // Rate limit refreshes (min 5 seconds between refreshes)
+    const now = Date.now();
+    if (now - lastRefreshRef.current < 5000) {
+      return session !== null;
+    }
+
+    refreshingRef.current = true;
+    lastRefreshRef.current = now;
+
+    try {
+      const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.warn('Session refresh failed:', error.message);
+        refreshingRef.current = false;
+        return false;
+      }
+
+      if (refreshedSession?.user) {
+        setSession(refreshedSession);
+        refreshingRef.current = false;
+        return true;
+      }
+      
+      refreshingRef.current = false;
+      return false;
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      refreshingRef.current = false;
+      return false;
+    }
+  }, [supabase, session]);
+
+  // Load user profile from database with JWT retry
+  const loadUserProfile = useCallback(async (authUser: User, retryCount = 0): Promise<Profile | null> => {
     if (!supabase) return null;
 
     try {
@@ -74,6 +128,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .single();
 
       if (error) {
+        // Handle JWT expired - try to refresh and retry
+        if (isJWTExpiredError(error) && retryCount < 2) {
+          console.log('JWT expired while loading profile, refreshing token...');
+          const refreshed = await refreshSession();
+          if (refreshed) {
+            // Retry with new token
+            return loadUserProfile(authUser, retryCount + 1);
+          } else {
+            // Refresh failed - user needs to re-login
+            return null;
+          }
+        }
+
         // Profile doesn't exist - create one
         if (error.code === 'PGRST116') {
           const fullName = authUser.user_metadata?.full_name || '';
@@ -104,6 +171,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             .single();
 
           if (createError) {
+            // Handle JWT expired on insert
+            if (isJWTExpiredError(createError) && retryCount < 2) {
+              const refreshed = await refreshSession();
+              if (refreshed) {
+                return loadUserProfile(authUser, retryCount + 1);
+              }
+            }
             console.error('Error creating profile:', createError.message);
             return null;
           }
@@ -111,19 +185,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return newProfile;
         }
         
-        console.error('Error loading profile:', error.message);
+        // Don't log JWT expired errors as they're handled
+        if (!isJWTExpiredError(error)) {
+          console.error('Error loading profile:', error.message);
+        }
         return null;
       }
 
       return profile;
-    } catch (error) {
+    } catch (error: any) {
+      if (isJWTExpiredError(error) && retryCount < 2) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          return loadUserProfile(authUser, retryCount + 1);
+        }
+      }
       console.error('Exception loading profile:', error);
       return null;
     }
-  }, [supabase]);
+  }, [supabase, refreshSession]);
 
   // Set authenticated user state
   const setAuthenticatedUser = useCallback(async (authUser: User, currentSession: Session) => {
+    setSession(currentSession);
+    
     const profile = await loadUserProfile(authUser);
     
     setUser({
@@ -132,7 +217,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user_metadata: authUser.user_metadata,
       profile,
     });
-    setSession(currentSession);
     setStatus(AuthStatus.AUTHENTICATED);
   }, [loadUserProfile]);
 
@@ -142,27 +226,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setSession(null);
     setStatus(AuthStatus.UNAUTHENTICATED);
   }, []);
-
-  // Refresh session manually
-  const refreshSession = useCallback(async () => {
-    if (!supabase) return;
-
-    try {
-      const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
-      
-      if (error || !refreshedSession) {
-        console.warn('Session refresh failed:', error?.message);
-        clearAuthState();
-        return;
-      }
-
-      if (refreshedSession.user) {
-        await setAuthenticatedUser(refreshedSession.user, refreshedSession);
-      }
-    } catch (error) {
-      console.error('Error refreshing session:', error);
-    }
-  }, [supabase, setAuthenticatedUser, clearAuthState]);
 
   // Sign out
   const signOut = useCallback(async () => {
@@ -194,6 +257,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!mounted) return;
 
         if (error) {
+          // If JWT expired, try to refresh
+          if (isJWTExpiredError(error)) {
+            console.log('Initial session JWT expired, attempting refresh...');
+            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+            if (refreshedSession?.user) {
+              await setAuthenticatedUser(refreshedSession.user, refreshedSession);
+              setIsInitialized(true);
+              return;
+            }
+          }
           console.error('Error getting initial session:', error);
           clearAuthState();
           setIsInitialized(true);
@@ -207,9 +280,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         
         setIsInitialized(true);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Exception initializing auth:', error);
         if (mounted) {
+          // Try refresh on any error
+          if (isJWTExpiredError(error)) {
+            try {
+              const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+              if (refreshedSession?.user) {
+                await setAuthenticatedUser(refreshedSession.user, refreshedSession);
+                setIsInitialized(true);
+                return;
+              }
+            } catch {
+              // Refresh failed
+            }
+          }
           clearAuthState();
           setIsInitialized(true);
         }
@@ -257,7 +343,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     );
 
-    // Proactive token refresh - check every 4 minutes
+    // Aggressive proactive token refresh - check every 30 seconds
+    // This ensures token is always fresh and prevents JWT expiration
     const refreshInterval = setInterval(async () => {
       if (!mounted) return;
 
@@ -266,43 +353,70 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (currentSession?.expires_at) {
           const timeUntilExpiry = (currentSession.expires_at * 1000) - Date.now();
-          // Refresh if expiring within 5 minutes
-          if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
+          
+          // Refresh if expiring within 10 minutes (aggressive refresh)
+          if (timeUntilExpiry < 10 * 60 * 1000 && timeUntilExpiry > 0) {
+            console.log('Proactively refreshing token, expires in:', Math.round(timeUntilExpiry / 1000), 'seconds');
             await supabase.auth.refreshSession();
           }
+        } else if (currentSession) {
+          // No expiry info but session exists - refresh anyway to be safe
+          await supabase.auth.refreshSession();
         }
       } catch (error) {
         // Silent fail - don't disrupt user experience
       }
-    }, 4 * 60 * 1000); // 4 minutes
+    }, 30 * 1000); // Every 30 seconds
 
     // Handle visibility change - refresh on tab focus
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && mounted) {
         try {
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (currentSession?.user) {
-            // Session exists, ensure state is synced
-            if (!user || user.id !== currentSession.user.id) {
-              await setAuthenticatedUser(currentSession.user, currentSession);
+          // Always refresh on tab focus to ensure fresh token
+          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+          
+          if (refreshedSession?.user) {
+            // Session refreshed successfully
+            if (!user || user.id !== refreshedSession.user.id) {
+              await setAuthenticatedUser(refreshedSession.user, refreshedSession);
+            } else {
+              // Just update the session
+              setSession(refreshedSession);
             }
           } else if (user) {
-            // No session but we have user state - clear it
-            clearAuthState();
+            // No session but we have user state - try getSession first
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession) {
+              clearAuthState();
+            }
           }
         } catch (error) {
-          // Silent fail
+          // Silent fail on visibility change
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Also refresh on window focus (backup for visibility change)
+    const handleWindowFocus = async () => {
+      if (mounted && user) {
+        try {
+          await supabase.auth.refreshSession();
+        } catch {
+          // Silent fail
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
       clearInterval(refreshInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
     };
   }, [supabase, isInitialized, setAuthenticatedUser, clearAuthState, user]);
 
