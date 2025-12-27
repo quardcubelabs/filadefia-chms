@@ -1,323 +1,57 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
-import { Profile, UserRole } from '@/types';
-import { User } from '@supabase/supabase-js';
-import { useEffect, useState, useMemo } from 'react';
+// Re-export everything from the AuthContext for backward compatibility
+// This allows existing imports from '@/hooks/useAuth' to continue working
 
-export interface AuthUser {
-  id: string;
-  email: string | undefined;
-  user_metadata?: {
-    avatar_url?: string;
-    full_name?: string;
-    name?: string;
-    [key: string]: any;
-  };
-  profile: Profile | null;
-}
+export {
+  useAuthContext as useAuth,
+  useAuthContext,
+  AuthProvider,
+  AuthStatus,
+  type AuthUser,
+} from '@/contexts/AuthContext';
 
-export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Create supabase client once and memoize it
-  const supabase = useMemo(() => {
-    try {
-      return createClient();
-    } catch (error) {
-      console.warn('Failed to create Supabase client:', error);
-      return null;
-    }
-  }, []);
+import { useAuthContext, AuthStatus } from '@/contexts/AuthContext';
+import { UserRole } from '@/types';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-  useEffect(() => {
-    if (!supabase) {
-      console.warn('Supabase client not available');
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
-    const loadUserProfile = async (authUser: User) => {
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .single();
-
-        if (error) {
-          // Handle JWT expired error specifically
-          if (error.message === 'JWT expired') {
-            console.log('JWT expired, attempting to refresh token...');
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            
-            if (refreshError || !refreshData.session) {
-              console.error('Token refresh failed:', refreshError?.message);
-              // Force logout and redirect to login
-              await supabase.auth.signOut();
-              window.location.href = '/login';
-              return;
-            }
-            
-            console.log('Token refreshed successfully, retrying profile load...');
-            // Retry loading profile with refreshed token
-            const { data: retryProfile, error: retryError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', authUser.id)
-              .single();
-              
-            if (!retryError && retryProfile) {
-              setUser({
-                id: authUser.id,
-                email: authUser.email,
-                profile: retryProfile,
-              });
-              return;
-            }
-          }
-          // Check if profile doesn't exist (PGRST116 is "not found" error)
-          if (error.code === 'PGRST116') {
-            console.log('Profile not found for user, creating basic profile...');
-            console.log('User metadata:', authUser.user_metadata);
-            
-            // Extract Google profile data from user metadata
-            const fullName = authUser.user_metadata?.full_name || '';
-            const avatarUrl = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '';
-            
-            // Parse first and last name
-            let firstName = '';
-            let lastName = '';
-            
-            if (fullName) {
-              const nameParts = fullName.trim().split(' ');
-              firstName = nameParts[0] || '';
-              lastName = nameParts.slice(1).join(' ') || '';
-            } else {
-              firstName = authUser.email?.split('@')[0] || 'User';
-            }
-            
-            // Create a basic profile for the user
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert({
-                user_id: authUser.id,
-                email: authUser.email || '',
-                role: 'member',
-                first_name: firstName,
-                last_name: lastName,
-                avatar_url: avatarUrl || null,
-              })
-              .select()
-              .single();
-
-            if (createError) {
-              console.error('Error creating profile:', createError.message);
-              setUser({
-                id: authUser.id,
-                email: authUser.email,
-                profile: null,
-              });
-            } else {
-              console.log('Profile created successfully');
-              setUser({
-                id: authUser.id,
-                email: authUser.email,
-                profile: newProfile,
-              });
-            }
-          } else {
-            console.error('Error loading profile:', error.message, error.details);
-            setUser({
-              id: authUser.id,
-              email: authUser.email,
-              profile: null,
-            });
-          }
-        } else {
-          setUser({
-            id: authUser.id,
-            email: authUser.email,
-            profile,
-          });
-        }
-      } catch (error: any) {
-        console.error('Exception loading profile:', error?.message || error);
-        setUser({
-          id: authUser.id,
-          email: authUser.email,
-          profile: null,
-        });
-      }
-    };
-
-    // Get initial session
-    const getInitialSession = async () => {
-      console.log('Getting initial session...');
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Session check:', session ? 'User logged in' : 'No session');
-        
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Exception getting session:', error);
-        setUser(null);
-      } finally {
-        console.log('Auth check complete');
-        setLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: string, session: any) => {
-        console.log('Auth state changed:', event);
-        
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Token was refreshed automatically');
-        }
-        
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        } else {
-          setUser(null);
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    // Set up proactive token refresh
-    const tokenRefreshInterval = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.expires_at) {
-          const timeUntilExpiry = (session.expires_at * 1000) - Date.now();
-          // Refresh token if it expires in the next 5 minutes
-          if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
-            console.log('Proactively refreshing token (expires soon)...');
-            await supabase.auth.refreshSession();
-          }
-        }
-      } catch (error) {
-        console.log('Token refresh check failed:', error);
-      }
-    }, 60000); // Check every minute
-
-    return () => {
-      subscription.unsubscribe();
-      clearInterval(tokenRefreshInterval);
-    };
-  }, [supabase]);
-
-  const signOut = async () => {
-    if (!supabase) {
-      console.warn('Supabase client not available for sign out');
-      setUser(null);
-      return;
-    }
-    
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const hasRole = (requiredRoles: UserRole[]): boolean => {
-    if (!user?.profile) return false;
-    return requiredRoles.includes(user.profile.role);
-  };
-
-  const isAdmin = (): boolean => {
-    return user?.profile?.role === 'administrator';
-  };
-
-  const isPastor = (): boolean => {
-    return user?.profile?.role === 'pastor';
-  };
-
-  const isStaff = (): boolean => {
-    return hasRole(['administrator', 'pastor', 'secretary', 'treasurer']);
-  };
-
-  const isDepartmentLeader = (): boolean => {
-    return user?.profile?.role === 'department_leader';
-  };
-
-  const canAccess = (minimumRole: UserRole): boolean => {
-    if (!user?.profile) return false;
-    
-    const roleHierarchy: Record<UserRole, number> = {
-      member: 1,
-      department_leader: 2,
-      secretary: 3,
-      treasurer: 3,
-      pastor: 4,
-      administrator: 5,
-    };
-
-    const userLevel = roleHierarchy[user.profile.role] || 0;
-    const requiredLevel = roleHierarchy[minimumRole] || 0;
-    
-    return userLevel >= requiredLevel;
-  };
-
-  return {
-    user,
-    loading,
-    signOut,
-    hasRole,
-    isAdmin,
-    isPastor,
-    isStaff,
-    isDepartmentLeader,
-    canAccess,
-    supabase,
-  };
-}
-
-// Hook for protecting routes
+// Hook for protecting routes - enhanced with better state handling
 export function useRequireAuth(requiredRole?: UserRole) {
-  const { user, loading, canAccess } = useAuth();
+  const router = useRouter();
+  const { user, status, canAccess } = useAuthContext();
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        window.location.href = '/login';
-        return;
-      }
+    // Don't redirect while still loading
+    if (status === AuthStatus.LOADING) return;
 
-      if (requiredRole && !canAccess(requiredRole)) {
-        window.location.href = '/unauthorized';
-        return;
-      }
+    // Not authenticated - redirect to login
+    if (status === AuthStatus.UNAUTHENTICATED || !user) {
+      router.replace('/login');
+      return;
     }
-  }, [user, loading, requiredRole, canAccess]);
 
-  return { user, loading };
+    // Check role if required
+    if (requiredRole && !canAccess(requiredRole)) {
+      router.replace('/unauthorized');
+      return;
+    }
+
+    // User is authorized
+    setIsAuthorized(true);
+  }, [user, status, requiredRole, canAccess, router]);
+
+  return { 
+    user, 
+    loading: status === AuthStatus.LOADING,
+    isAuthorized,
+  };
 }
 
 // Hook for department leaders to check their department access
 export function useDepartmentAccess() {
-  const { user, supabase } = useAuth();
+  const { user, supabase } = useAuthContext();
   const [departments, setDepartments] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -329,31 +63,37 @@ export function useDepartmentAccess() {
         return;
       }
 
-      // Admins and pastors can access all departments
-      if (user.profile.role === 'administrator' || user.profile.role === 'pastor') {
-        const { data: allDepts } = await supabase
-          .from('departments')
-          .select('id');
-        
-        setDepartments(allDepts?.map((d: any) => d.id) || []);
-        setLoading(false);
-        return;
-      }
+      try {
+        // Admins and pastors can access all departments
+        if (user.profile.role === 'administrator' || user.profile.role === 'pastor') {
+          const { data: allDepts } = await supabase
+            .from('departments')
+            .select('id');
+          
+          setDepartments(allDepts?.map((d: { id: string }) => d.id) || []);
+          setLoading(false);
+          return;
+        }
 
-      // Get departments where user is a leader
-      if (user.profile.role === 'department_leader') {
-        const { data: userDepts } = await supabase
-          .from('departments')
-          .select('id')
-          .eq('leader_id', user.profile.id);
-        
-        setDepartments(userDepts?.map((d: any) => d.id) || []);
-        setLoading(false);
-        return;
-      }
+        // Get departments where user is a leader
+        if (user.profile.role === 'department_leader') {
+          const { data: userDepts } = await supabase
+            .from('departments')
+            .select('id')
+            .eq('leader_id', user.profile.id);
+          
+          setDepartments(userDepts?.map((d: { id: string }) => d.id) || []);
+          setLoading(false);
+          return;
+        }
 
-      setDepartments([]);
-      setLoading(false);
+        setDepartments([]);
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        setDepartments([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadDepartments();

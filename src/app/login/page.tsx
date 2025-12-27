@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth, AuthStatus } from '@/hooks/useAuth';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Users, DollarSign, BarChart3, Church, Chrome } from 'lucide-react';
 
 export default function LoginPage() {
@@ -13,7 +14,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, status } = useAuth();
   const supabase = createClient();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === AuthStatus.AUTHENTICATED && user) {
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      router.replace(redirect);
+    }
+  }, [status, user, router, searchParams]);
+
+  // Handle OAuth error from callback
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +40,11 @@ export default function LoginPage() {
     setError('');
 
     try {
-      if (!supabase) return;
+      if (!supabase) {
+        setError('System not available. Please try again later.');
+        return;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -33,11 +56,7 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // IMMEDIATE REDIRECT LOGIC - Check user role and redirect accordingly
-        console.log('🔍 LOGIN: User authenticated, checking role...', data.user.email);
-        
         // Get user profile to determine role and department
-        if (!supabase) return;
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role, department_id, first_name, last_name')
@@ -45,12 +64,10 @@ export default function LoginPage() {
           .single();
 
         if (profileError) {
-          console.log('⚠️ LOGIN: Profile error, defaulting to dashboard:', profileError);
-          router.push('/dashboard');
+          // Profile will be created by AuthContext, redirect to dashboard
+          router.replace('/dashboard');
           return;
         }
-
-        console.log('👤 LOGIN: User profile loaded:', profile);
 
         // REDIRECT BASED ON ROLE
         if (profile.role === 'department_leader') {
@@ -68,22 +85,17 @@ export default function LoginPage() {
 
             if (deptData && !deptError) {
               departmentId = deptData.id;
-              console.log('🏢 LOGIN: Found department for leader:', deptData.name);
             }
           }
 
           if (departmentId) {
-            console.log('🚀 LOGIN: Redirecting department leader to department dashboard');
             router.replace(`/departments/${departmentId}`);
             return;
-          } else {
-            console.log('⚠️ LOGIN: Department leader has no department, going to main dashboard');
           }
         }
 
         // Default redirect for admins, pastors, or leaders without departments
-        console.log('🏠 LOGIN: Redirecting to main dashboard');
-        router.push('/dashboard');
+        router.replace('/dashboard');
       }
     } catch (error) {
       setError('An unexpected error occurred');
@@ -97,7 +109,12 @@ export default function LoginPage() {
       setLoading(true);
       setError('');
 
-      if (!supabase) return;
+      if (!supabase) {
+        setError('System not available. Please try again later.');
+        setLoading(false);
+        return;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

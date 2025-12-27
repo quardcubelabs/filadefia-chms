@@ -1,10 +1,11 @@
 import { updateSession } from '@/lib/supabase/middleware'
 import { isSupabaseConfigured } from '@/lib/config'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(request: any) {
+export async function middleware(request: NextRequest) {
   // Skip middleware if Supabase is not configured
   if (!isSupabaseConfigured()) {
-    return;
+    return NextResponse.next()
   }
   
   return await updateSession(request)
@@ -17,8 +18,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - Static assets (images, fonts, etc.)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)$).*)',
   ],
 }

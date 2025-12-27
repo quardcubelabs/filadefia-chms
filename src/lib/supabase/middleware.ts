@@ -2,13 +2,23 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { config, isSupabaseConfigured } from '@/lib/config'
 
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = ['/login', '/signup', '/auth', '/unauthorized']
+// Routes that should not trigger redirects (API routes, static assets)
+const SKIP_ROUTES = ['/api', '/_next', '/favicon.ico']
+
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const { pathname } = request.nextUrl
+
+  // Skip middleware for certain routes
+  if (SKIP_ROUTES.some(route => pathname.startsWith(route))) {
+    return NextResponse.next({ request })
+  }
+
+  let supabaseResponse = NextResponse.next({ request })
 
   if (!isSupabaseConfigured()) {
-    return supabaseResponse;
+    return supabaseResponse
   }
 
   const supabase = createServerClient(
@@ -20,20 +30,53 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
+          // Update request cookies
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value)
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          // Create new response with updated request
+          supabaseResponse = NextResponse.next({ request })
+          // Set cookies on response
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production',
+            })
+          })
         },
       },
     }
   )
 
-  // This will refresh session if expired - required for Server Components
-  await supabase.auth.getUser()
+  // IMPORTANT: Use getUser() instead of getSession() for security
+  // This validates the JWT with Supabase Auth server and refreshes if needed
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  // Check if user is authenticated
+  const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
+  const isAuthenticated = !!user && !error
+
+  // Redirect unauthenticated users away from protected routes
+  if (!isAuthenticated && !isPublicRoute) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (isAuthenticated && (pathname === '/login' || pathname === '/signup')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // For root path, redirect based on auth status
+  if (pathname === '/') {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    } else {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
 
   return supabaseResponse
 }

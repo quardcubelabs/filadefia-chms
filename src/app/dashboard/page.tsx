@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, AuthStatus } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
@@ -14,9 +14,21 @@ import {
   ChevronDown
 } from 'lucide-react';
 
+// Loading component to prevent blank pages
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
+        <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut, supabase } = useAuth();
+  const { user, loading: authLoading, status, signOut, supabase } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [showTimeout, setShowTimeout] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -39,30 +51,29 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // SIMPLIFIED DASHBOARD LOADING
+  // Handle auth state changes - only redirect after confirmed auth state
   useEffect(() => {
-    console.log('🏠 DASHBOARD: Loading dashboard for authenticated user');
-    
-    // If auth is still loading, wait
-    if (authLoading) return;
+    // Don't do anything while loading - prevents premature redirects
+    if (authLoading || status === AuthStatus.LOADING) return;
 
-    // If no user, redirect to login
-    if (!user) {
-      console.log('No user found, redirecting to login...');
-      router.push('/login');
+    // Only redirect if definitively unauthenticated
+    if (status === AuthStatus.UNAUTHENTICATED && !user) {
+      router.replace('/login');
       return;
     }
 
-    // Load dashboard data - user should already be properly routed here
-    console.log('✅ Loading admin dashboard for user:', user.email);
-    fetchDashboardData();
-    fetchFinancialData();
-    fetchDepartmentLeaders();
-    fetchNotifications();
-    fetchUserProfile();
-    
-  }, [user, authLoading]);
+    // User is authenticated - load data if not already loaded
+    if (user && !isDataLoaded) {
+      setIsDataLoaded(true);
+      fetchDashboardData();
+      fetchFinancialData();
+      fetchDepartmentLeaders();
+      fetchNotifications();
+      fetchUserProfile();
+    }
+  }, [user, authLoading, status, isDataLoaded]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -93,13 +104,6 @@ export default function DashboardPage() {
         .eq('status', 'active');
 
       if (membersError) {
-        // Handle JWT expired errors
-        if (membersError.message && membersError.message.includes('JWT expired')) {
-          console.log('JWT token expired during dashboard data fetch');
-          await signOut();
-          window.location.href = '/login';
-          return;
-        }
         console.error('Error fetching members:', membersError);
         return;
       }
@@ -523,16 +527,14 @@ export default function DashboardPage() {
   const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const buttonBg = darkMode ? 'bg-gray-800' : 'bg-gray-100';
 
-  // Show loading screen while authenticating
-  if (authLoading) {
-    return (
-      <div className={`min-h-screen ${bgColor} flex items-center justify-center`}>
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className={`text-lg font-medium ${textPrimary}`}>Loading dashboard...</p>
-        </div>
-      </div>
-    );
+  // Show loading screen while authenticating - prevents blank pages
+  if (authLoading || status === AuthStatus.LOADING) {
+    return <DashboardLoading />;
+  }
+
+  // Show loading while waiting for redirect (user is null but status might not be updated yet)
+  if (!user) {
+    return <DashboardLoading />;
   }
 
   return (

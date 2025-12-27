@@ -1,15 +1,50 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { config, isSupabaseConfigured } from '@/lib/config'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-export function createClient() {
+// Singleton pattern for browser client to prevent multiple instances
+let browserClient: SupabaseClient | null = null;
+
+export function createClient(): SupabaseClient | null {
+  // Return cached client if exists (browser only)
+  if (typeof window !== 'undefined' && browserClient) {
+    return browserClient;
+  }
+
   if (!isSupabaseConfigured()) {
-    console.warn('Supabase environment variables not configured!');
-    console.warn('NEXT_PUBLIC_SUPABASE_URL:', config.supabase.url ? 'Set' : 'Missing');
-    console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY:', config.supabase.anonKey ? 'Set' : 'Missing');
-    // Return null during build-time when env vars are missing
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Supabase environment variables not configured!');
+    }
     return null;
   }
   
-  console.log('Creating Supabase client...');
-  return createBrowserClient(config.supabase.url, config.supabase.anonKey);
+  const client = createBrowserClient(
+    config.supabase.url,
+    config.supabase.anonKey,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        // Storage key for consistent session across tabs
+        storageKey: 'fcc-chms-auth',
+      },
+      global: {
+        headers: {
+          'x-client-info': 'fcc-chms',
+        },
+      },
+    }
+  );
+
+  // Cache in browser environment
+  if (typeof window !== 'undefined') {
+    browserClient = client;
+  }
+
+  return client;
 }
+
+// Export type for use in other files
+export type { SupabaseClient }
