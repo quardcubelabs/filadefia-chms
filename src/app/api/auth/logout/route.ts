@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   const supabase = await createClient();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
+  }
 
   try {
     const { error } = await supabase.auth.signOut();

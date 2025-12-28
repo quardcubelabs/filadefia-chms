@@ -5,6 +5,10 @@ export async function POST(request: Request) {
   const { email, password } = await request.json();
   
   const supabase = await createClient();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
+  }
 
   try {
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
