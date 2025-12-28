@@ -42,6 +42,12 @@ interface AttendanceStats {
     percentage: number;
     isQRSession?: boolean;
     qrSessionId?: string | null;
+    hasQRCode?: boolean;
+    qr_session_id?: string | null;
+    qr_code_data_url?: string | null;
+    qr_check_in_url?: string | null;
+    qr_expires_at?: string | null;
+    qr_is_active?: boolean;
   }>;
 }
 
