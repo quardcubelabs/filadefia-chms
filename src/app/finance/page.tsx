@@ -804,22 +804,63 @@ export default function FinancePage() {
               </Card>
             </div>
 
+            {/* Main Admin Quick Actions */}
+            {!isDepartmentLeader && (
+              <div className="mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center">
+                    <DollarSign className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-medium text-blue-900">Financial Management</h3>
+                      <p className="text-blue-700 text-sm mt-1">
+                        Manage church financial transactions and records
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <Button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="!bg-blue-700 !hover:bg-blue-800 !text-white !border-blue-700 px-4 py-2 text-sm font-medium flex items-center justify-center"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Transaction
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsAddModalOpen(true);
+                        setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
+                      }}
+                      className="!bg-red-600 !hover:bg-red-700 !text-white !border-red-600 px-4 py-2 text-sm font-medium flex items-center justify-center"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Expense
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Search and Filters */}
             <Card className="mb-4 sm:mb-6" padding="sm" rounded="xl">
               <CardBody>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-                  <div className="sm:col-span-2 lg:col-span-1">
+                {/* Search and Primary Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 mb-4">
+                  <div className="md:col-span-1">
                     <Input
                       placeholder="Search transactions..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       icon={<Search className="h-4 w-4" />}
+                      className="w-full"
                     />
                   </div>
                   <Select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                     placeholder="Transaction Type"
+                    className="w-full"
                     options={[
                       { value: "all", label: "All Types" },
                       { value: "tithe", label: "Tithe" },
@@ -837,6 +878,7 @@ export default function FinancePage() {
                       value={filterDepartment}
                       onChange={(e) => setFilterDepartment(e.target.value)}
                       placeholder="Department"
+                      className="w-full"
                       options={[
                         { value: "all", label: "All Departments" },
                         ...departments.map(dept => ({ value: dept.id, label: dept.name }))
@@ -844,11 +886,14 @@ export default function FinancePage() {
                     />
                   )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                
+                {/* Secondary Filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4 mb-4">
                   <Select
                     value={filterPaymentMethod}
                     onChange={(e) => setFilterPaymentMethod(e.target.value)}
                     placeholder="Payment Method"
+                    className="w-full"
                     options={[
                       { value: "all", label: "All Methods" },
                       ...paymentMethods.map(method => ({ value: method, label: method }))
@@ -858,25 +903,26 @@ export default function FinancePage() {
                     value={filterVerified}
                     onChange={(e) => setFilterVerified(e.target.value)}
                     placeholder="Verification"
+                    className="w-full"
                     options={[
                       { value: "all", label: "All Status" },
                       { value: "verified", label: "Verified" },
                       { value: "unverified", label: "Unverified" }
                     ]}
                   />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="From Date"
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full"
                   />
                   <Input
                     label="To Date"
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full"
                   />
                 </div>
               </CardBody>

@@ -65,7 +65,7 @@ export function useZoneAccess(): ZoneAccess {
         }
 
         // Check if this member is a zone leader
-        const { data: zoneLeaderData, error: zoneLeaderError } = await supabase
+        const { data: zoneLeaderData } = await supabase
           .from('zone_members')
           .select(`
             id,
@@ -95,7 +95,7 @@ export function useZoneAccess(): ZoneAccess {
           });
         } else {
           // Also check if user is set as leader_id on the zone
-          const { data: zoneData, error: zoneError } = await supabase
+          const { data: zoneData } = await supabase
             .from('zones')
             .select('id, name')
             .eq('leader_id', memberData.id)

@@ -8,8 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
 import { 
-  Users, MapPin, UserCheck, TrendingUp, ArrowRight, 
-  Plus, Edit, Trash2, X, Search
+  Users, MapPin, UserCheck, TrendingUp, 
+  Plus, Edit, Trash2, X
 } from 'lucide-react';
 
 interface Zone {

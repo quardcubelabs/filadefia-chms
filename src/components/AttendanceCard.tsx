@@ -35,12 +35,14 @@ interface AttendanceCardProps {
   departmentId?: string;
   period?: 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   className?: string;
+  noWrapper?: boolean;
 }
 
 export default function AttendanceCard({ 
   departmentId, 
   period = 'monthly',
-  className = '' 
+  className = '',
+  noWrapper = false
 }: AttendanceCardProps) {
   const [stats, setStats] = useState<AttendanceStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ export default function AttendanceCard({
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+      <div className={`${noWrapper ? '' : 'bg-white rounded-lg shadow-sm border border-gray-200 p-6'} ${className}`}>
         <div className="animate-pulse">
           <div className="flex items-center justify-between mb-4">
             <div className="h-5 bg-gray-200 rounded w-32"></div>
@@ -133,7 +135,7 @@ export default function AttendanceCard({
 
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-red-200 p-6 ${className}`}>
+      <div className={`${noWrapper ? '' : 'bg-white rounded-lg shadow-sm border border-red-200 p-6'} ${className}`}>
         <div className="flex items-center space-x-3">
           <UserX className="w-8 h-8 text-red-600" />
           <div>
@@ -153,18 +155,28 @@ export default function AttendanceCard({
 
   if (!stats) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+      <div className={`${noWrapper ? '' : 'bg-white rounded-lg shadow-sm border border-gray-200 p-6'} ${className}`}>
         <div className="text-center py-8">
           <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Attendance Data</h3>
           <p className="text-gray-500 mb-4">Start recording attendance to see statistics.</p>
-          <Link
-            href="/attendance/record"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <UserCheck className="w-4 h-4 mr-2" />
-            Record Attendance
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/attendance/record"
+              className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <UserCheck className="w-4 h-4 mr-2" />
+              Record Attendance
+            </Link>
+
+            <Link
+              href="/attendance"
+              className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              View Attendance
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -174,9 +186,9 @@ export default function AttendanceCard({
   const attendanceRate = stats.overview.attendanceRate ?? 0;
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    <div className={`${noWrapper ? '' : 'bg-white rounded-lg shadow-sm border border-gray-200'} ${className}`}>
       {/* Header */}
-      <div className="p-3 sm:p-6 border-b border-gray-200">
+      <div className={`${noWrapper ? 'p-0' : 'p-3 sm:p-6'} border-b border-gray-200`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div className={`p-1.5 sm:p-2 rounded-lg ${getAttendanceBackground(attendanceRate)}`}>
@@ -197,7 +209,7 @@ export default function AttendanceCard({
       </div>
 
       {/* Main Stats */}
-      <div className="p-3 sm:p-6">
+      <div className={`${noWrapper ? 'p-0' : 'p-3 sm:p-6'}`}>
         <div className="mb-4 sm:mb-6">
           <div className="flex items-baseline space-x-2">
             <span className={`text-xl sm:text-3xl font-bold ${getAttendanceColor(attendanceRate)}`}>

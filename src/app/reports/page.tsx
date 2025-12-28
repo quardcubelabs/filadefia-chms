@@ -231,16 +231,24 @@ export default function ReportsPage() {
 
     switch (reportPeriod) {
       case 'weekly':
-        start = new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+        const weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() - 7);
+        start = weekStart.toISOString().split('T')[0];
         break;
       case 'monthly':
-        start = new Date(today.setMonth(today.getMonth() - 1)).toISOString().split('T')[0];
+        const monthStart = new Date(today);
+        monthStart.setMonth(monthStart.getMonth() - 1);
+        start = monthStart.toISOString().split('T')[0];
         break;
       case 'quarterly':
-        start = new Date(today.setMonth(today.getMonth() - 3)).toISOString().split('T')[0];
+        const quarterStart = new Date(today);
+        quarterStart.setMonth(quarterStart.getMonth() - 3);
+        start = quarterStart.toISOString().split('T')[0];
         break;
       case 'yearly':
-        start = new Date(today.setFullYear(today.getFullYear() - 1)).toISOString().split('T')[0];
+        const yearStart = new Date(today);
+        yearStart.setFullYear(yearStart.getFullYear() - 1);
+        start = yearStart.toISOString().split('T')[0];
         break;
     }
 
@@ -310,13 +318,15 @@ export default function ReportsPage() {
       if (reportType === 'comprehensive') {
         console.log('📅 Fetching events data...');
         eventsData = await fetchEventsData();
-        // eventStats = await fetchEventStats();
+        eventStats = await fetchEventStats();
       }
 
       if (reportType === 'attendance' || reportType === 'comprehensive') {
         console.log('📅 Fetching attendance data...');
         // attendanceData = await fetchAttendanceData();
-        // eventStats = await fetchEventStats();
+        if (!eventStats) {
+          eventStats = await fetchEventStats();
+        }
       }
 
       if (reportType === 'jumuiya' || reportType === 'comprehensive') {
@@ -908,14 +918,18 @@ export default function ReportsPage() {
   const fetchEventStats = async () => {
     try {
       console.log('Fetching event statistics...');
+      console.log('Date range for events:', { startDate, endDate });
       
       if (!supabase) return null;
       let query = supabase
         .from('events')
-        .select('id, event_type, start_date, department_id, event_registrations(id)');
+        .select('id, event_type, start_date, department_id, event_registrations(id)')
+        .gte('start_date', startDate)
+        .lte('start_date', endDate);
 
       // Apply department filtering for department leaders
       if (isDepartmentLeader && departmentId) {
+        console.log(`🔒 Applying department filter for event stats: ${departmentId}`);
         query = query.eq('department_id', departmentId);
       }
 
@@ -923,6 +937,7 @@ export default function ReportsPage() {
 
       if (error) {
         console.error('Error fetching event stats:', error);
+        console.error('Query details:', { startDate, endDate, isDepartmentLeader, departmentId });
         return {
           totalEvents: 0,
           upcomingEvents: 0,
@@ -931,6 +946,13 @@ export default function ReportsPage() {
           eventsByType: []
         };
       }
+
+      console.log('📊 Events fetched for stats:', {
+        totalFound: events?.length || 0,
+        dateRange: { startDate, endDate },
+        departmentFilter: isDepartmentLeader ? departmentId : 'none',
+        events: events?.map(e => ({ id: e.id, date: e.start_date, type: e.event_type }))
+      });
 
       const totalEvents = events?.length || 0;
       const now = new Date();

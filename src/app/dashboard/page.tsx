@@ -7,7 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
 import AttendanceCard from '@/components/AttendanceCard';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import { Member } from '@/types';
+
 import { 
   Building2,
   Crown,
@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const { departmentId, isDepartmentLeader, loading: deptAccessLoading } = useDepartmentAccess();
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showTimeout, setShowTimeout] = useState(false);
+
   const [dashboardData, setDashboardData] = useState({
     totalMembers: 0,
     totalDepartments: 0,
@@ -47,13 +47,10 @@ export default function DashboardPage() {
   });
   const [departmentLeaders, setDepartmentLeaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [showProfile, setShowProfile] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Handle auth state changes and department leader redirect
@@ -79,23 +76,12 @@ export default function DashboardPage() {
       fetchDashboardData();
       fetchFinancialData();
       fetchDepartmentLeaders();
-      fetchNotifications();
       fetchUserProfile();
     }
   }, [user, authLoading, status, isDataLoaded, isDepartmentLeader, departmentId, deptAccessLoading]);
 
   // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.dropdown-container')) {
-        setShowProfile(false);
-      }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -317,41 +303,7 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchNotifications = async () => {
-    try {
-      // Mock notifications - replace with real Supabase query later
-      const mockNotifications = [
-        {
-          id: 1,
-          title: 'New Member Registration',
-          message: 'John Doe has registered as a new member',
-          time: '5 minutes ago',
-          type: 'member',
-          read: false
-        },
-        {
-          id: 2,
-          title: 'Payment Received',
-          message: 'Monthly tithe payment of TZS 500,000 received',
-          time: '1 hour ago',
-          type: 'payment',
-          read: false
-        },
-        {
-          id: 3,
-          title: 'Event Reminder',
-          message: 'Youth Conference starts tomorrow at 9:00 AM',
-          time: '3 hours ago',
-          type: 'event',
-          read: true
-        }
-      ];
 
-      setNotifications(mockNotifications);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
 
 
 
@@ -499,7 +451,6 @@ export default function DashboardPage() {
       alert(`Error uploading photo: ${errorMessage}\n\nPlease check browser console for details.`);
     } finally {
       setIsUpdatingProfile(false);
-      setPhotoFile(null);
     }
   };
 
@@ -541,9 +492,9 @@ export default function DashboardPage() {
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
+  const borderClass = darkMode ? '' : 'border border-gray-200';
   const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
   const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
-  const buttonBg = darkMode ? 'bg-gray-800' : 'bg-gray-100';
 
   // Show loading screen while authenticating or checking department access - prevents blank pages and flickering
   if (authLoading || status === AuthStatus.LOADING || deptAccessLoading) {
@@ -640,10 +591,10 @@ export default function DashboardPage() {
             </div>
 
             {/* Mobile Members Summary Card */}
-            <div className={`${cardBg} rounded-xl p-3 border ${borderColor} shadow-sm`}>
+            <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-bold ${textPrimary}`}>Members Distribution</h3>
-                <select className={`px-2 py-1 ${inputBg} ${textSecondary} border ${borderColor} rounded text-xs`}>
+                <select className={`px-2 py-1 ${inputBg} ${textSecondary} ${borderClass} rounded text-xs`}>
                   <option>Monthly</option>
                   <option>Yearly</option>
                 </select>
@@ -676,7 +627,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Mobile Weekly Offerings Card */}
-            <div className={`${cardBg} rounded-xl p-3 border ${borderColor} shadow-sm`}>
+            <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-bold ${textPrimary}`}>Weekly Offerings</h3>
                 <div className="flex items-center gap-2">
@@ -686,23 +637,27 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex-1">
-                  <p className={`text-[10px] ${textSecondary}`}>Total Revenue</p>
-                  <p className={`text-base font-bold ${textPrimary}`}>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[10px] ${textSecondary} mb-1`}>Total Revenue</p>
+                  <p className={`text-sm md:text-base font-bold ${textPrimary} truncate`}>
                     {loading ? '...' : `TZS ${(financialData.totalIncome / 1000).toFixed(0)}k`}
                   </p>
                 </div>
-                <div className="flex-1">
-                  <p className={`text-[10px] ${textSecondary}`}>Monthly</p>
-                  <p className={`text-base font-bold ${textPrimary}`}>
+
+                <div className="flex-shrink-0 text-right ml-2">
+                  <p className={`text-[10px] ${textSecondary} mb-1`}>Monthly</p>
+                  <p className={`text-sm md:text-base font-semibold ${textPrimary} truncate`}>
                     {loading ? '...' : `TZS ${(financialData.monthlyIncome / 1000).toFixed(0)}k`}
                   </p>
                 </div>
-                <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-3 py-1.5 rounded-lg`}>
-                  <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-blue-600'}`}>
-                    {loading ? '...' : `${Math.max(...(financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)) || [0]))}K`}
-                  </p>
+
+                <div className="flex-shrink-0 ml-3">
+                  <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-3 py-1 rounded-lg`}>
+                    <p className={`text-sm md:text-base font-bold ${darkMode ? 'text-white' : 'text-blue-600'}`}>
+                      {loading ? '...' : `${Math.max(...(financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)) || [0]))}K`}
+                    </p>
+                  </div>
                 </div>
               </div>
               {/* Mini Bar Chart */}
@@ -733,16 +688,16 @@ export default function DashboardPage() {
             </div>
 
             {/* Mobile Attendance Card */}
-            <div className={`${cardBg} rounded-xl p-3 border ${borderColor} shadow-sm`}>
-              <h3 className={`text-sm font-bold ${textPrimary} mb-3`}>Attendance Overview</h3>
-              <AttendanceCard 
-                period="monthly"
-                className="rounded-xl"
-              />
-            </div>
+              <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
+                <h3 className={`text-sm font-bold ${textPrimary} mb-3`}>Attendance Overview</h3>
+                <AttendanceCard 
+                  period="monthly"
+                  noWrapper
+                />
+              </div>
 
             {/* Mobile Department Leaders */}
-            <div className={`${cardBg} rounded-xl p-3 border ${borderColor} shadow-sm`}>
+            <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-bold ${textPrimary}`}>Best Leaders</h3>
                 <span className={`text-[10px] ${textSecondary}`}>{departmentLeaders.length} leaders</span>
@@ -877,10 +832,6 @@ export default function DashboardPage() {
                             </div>
                           );
                         }
-
-                        const youthPercentage = (dashboardData.membersByAge.youth / totalMembers) * 100;
-                        const adultsPercentage = (dashboardData.membersByAge.adults / totalMembers) * 100;
-                        const seniorsPercentage = (dashboardData.membersByAge.seniors / totalMembers) * 100;
 
                         const youthRatio = dashboardData.membersByAge.youth / totalMembers;
                         const adultsRatio = dashboardData.membersByAge.adults / totalMembers;
@@ -1047,10 +998,10 @@ export default function DashboardPage() {
 
                 {/* Bar Chart */}
                 <div className="relative" style={{ height: '140px' }}>
-                  {/* Floating label above highest bar - hidden on very small screens */}
+                  {/* Floating label above highest bar - visible only on small screens */}
                   {financialData.weeklyOfferings.length > 0 && (
-                    <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-lg z-10 hidden sm:block">
-                      <p className="text-white text-xs sm:text-sm font-bold">
+                    <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-lg z-10 block sm:hidden">
+                      <p className="text-white text-xs font-bold">
                         {Math.max(...financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)), 0)}K
                       </p>
                     </div>
@@ -1190,7 +1141,7 @@ export default function DashboardPage() {
 
                 <div className="space-y-4">
                   {departmentLeaders.length > 0 ? (
-                    departmentLeaders.map((leader: any, idx: number) => (
+                    departmentLeaders.map((leader: any) => (
                       <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-tag-gray-900' : 'hover:bg-tag-gray-50'} transition-colors cursor-pointer`}>
                         <div className="flex items-center space-x-3">
                           <div className="relative">
@@ -1279,7 +1230,6 @@ export default function DashboardPage() {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setPhotoFile(file);
                                 handlePhotoUpload(file);
                               }
                             }}
