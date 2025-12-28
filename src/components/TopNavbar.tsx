@@ -122,7 +122,7 @@ export default function TopNavbar({
                 variant="ghost"
                 size="sm"
                 onClick={onToggleDarkMode}
-                className="hidden sm:flex"
+                className="p-2"
               >
                 {darkMode ? (
                   <Sun className="h-4 w-4" />
@@ -137,7 +137,7 @@ export default function TopNavbar({
               variant="ghost"
               size="sm"
               onClick={() => router.push('/notifications')}
-              className="relative hidden sm:flex"
+              className="relative p-2"
             >
               <Bell className="h-4 w-4" />
               <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
@@ -145,76 +145,8 @@ export default function TopNavbar({
 
             {/* User Dropdown */}
             <UserDropdown darkMode={darkMode} />
-
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="sm:hidden"
-            >
-              {showMobileMenu ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Menu className="h-4 w-4" />
-              )}
-            </Button>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {showMobileMenu && (
-          <div className={`mt-4 pt-4 border-t ${borderColor} sm:hidden`}>
-            {/* Mobile Search */}
-            {showSearch && (
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${textSecondary}`} />
-                  <Input
-                    placeholder={searchPlaceholder}
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10 w-full"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Mobile Actions */}
-            <div className="flex items-center space-x-4">
-              {onToggleDarkMode && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleDarkMode}
-                >
-                  {darkMode ? (
-                    <>
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light Mode
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark Mode
-                    </>
-                  )}
-                </Button>
-              )}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/notifications')}
-                className="relative"
-              >
-                <Bell className="h-4 w-4 mr-2" />
-                Notifications
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

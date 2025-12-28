@@ -826,17 +826,17 @@ export default function DocumentsPage() {
             )}
 
             {/* Tabs - Same design as image */}
-            <div className="mb-6">
-              <nav className="flex space-x-0">
+            <div className="mb-4 md:mb-6">
+              <nav className="flex space-x-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('minutes')}
-                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                  className={`relative flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'minutes'
                       ? 'bg-red-100 text-red-600 rounded-tl-lg'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <FileText className="h-4 w-4" />
+                  <FileText className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   <span>Meeting Minutes</span>
                   {activeTab === 'minutes' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
@@ -844,13 +844,13 @@ export default function DocumentsPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab('reports')}
-                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                  className={`relative flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'reports'
                       ? 'bg-red-100 text-red-600 rounded-tl-lg'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <Folder className="h-4 w-4" />
+                  <Folder className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   <span>Reports</span>
                   {activeTab === 'reports' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
@@ -860,15 +860,16 @@ export default function DocumentsPage() {
             </div>
 
             {/* Search and Filters */}
-            <Card className="mb-6">
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="mb-4 md:mb-6">
+              <CardBody className="p-3 md:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
                   <div className="md:col-span-1">
                     <Input
                       placeholder={`Search ${activeTab}...`}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       icon={<Search className="h-4 w-4" />}
+                      className="text-xs md:text-sm"
                     />
                   </div>
                   {!isDepartmentLeader && !isZoneLeader && (
@@ -876,6 +877,7 @@ export default function DocumentsPage() {
                       value={filterDepartment}
                       onChange={(e) => setFilterDepartment(e.target.value)}
                       placeholder="Filter by Entity"
+                      className="text-xs md:text-sm"
                       options={[
                         { value: "all", label: "All Sources" },
                         ...(activeTab === 'reports' ? [
@@ -891,6 +893,7 @@ export default function DocumentsPage() {
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
                       placeholder="Status"
+                      className="text-xs md:text-sm"
                       options={[
                         { value: "all", label: "All Status" },
                         { value: "approved", label: "Approved" },
@@ -902,6 +905,7 @@ export default function DocumentsPage() {
                       value={filterType}
                       onChange={(e) => setFilterType(e.target.value)}
                       placeholder="Report Type"
+                      className="text-xs md:text-sm"
                       options={[
                         { value: "all", label: "All Types" },
                         { value: "monthly", label: "Monthly" },
@@ -919,12 +923,14 @@ export default function DocumentsPage() {
             {activeTab === 'minutes' && (
               <>
                 {/* Add Meeting Minutes Button */}
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end mb-3 md:mb-4">
                   <Button
                     onClick={() => setIsMinutesModalOpen(true)}
-                    icon={<Plus className="h-4 w-4" />}
+                    icon={<Plus className="h-3 w-3 md:h-4 md:w-4" />}
+                    className="text-xs md:text-sm px-3 md:px-4 py-2"
                   >
-                    Add Meeting Minutes
+                    <span className="hidden md:inline">Add Meeting Minutes</span>
+                    <span className="md:hidden">Add Minutes</span>
                   </Button>
                 </div>
                 
@@ -939,61 +945,64 @@ export default function DocumentsPage() {
                     }}
                   />
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {filteredMinutes.map((minute) => (
                       <Card key={minute.id} className="hover:shadow-md transition-shadow">
-                        <CardBody>
-                          <div className="flex justify-between items-start">
+                        <CardBody className="p-3 md:p-6">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
                             <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <h3 className="font-semibold text-lg text-gray-900">
+                              <div className="flex flex-col md:flex-row md:items-center space-y-1.5 md:space-y-0 md:space-x-3 mb-2 md:mb-2">
+                                <h3 className="font-semibold text-sm md:text-lg text-gray-900">
                                   {minute.department?.name} Meeting
                                 </h3>
-                                <Badge variant="default">
-                                  {formatDate(minute.meeting_date)}
-                                </Badge>
-                                {minute.approved_by ? (
-                                  <Badge variant="success">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Approved
+                                <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+                                  <Badge variant="default" className="text-[10px] md:text-xs">
+                                    {formatDate(minute.meeting_date)}
                                   </Badge>
-                                ) : (
-                                  <Badge variant="warning">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    Pending
-                                  </Badge>
-                                )}
+                                  {minute.approved_by ? (
+                                    <Badge variant="success" className="text-[10px] md:text-xs">
+                                      <CheckCircle className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                                      Approved
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="warning" className="text-[10px] md:text-xs">
+                                      <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                                      Pending
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                               
-                              <div className="mb-4">
-                                <h4 className="font-medium text-gray-900 mb-1">Agenda:</h4>
-                                <p className="text-gray-600 text-sm line-clamp-2">
+                              <div className="mb-3 md:mb-4">
+                                <h4 className="font-medium text-xs md:text-sm text-gray-900 mb-1">Agenda:</h4>
+                                <p className="text-gray-600 text-xs md:text-sm line-clamp-2">
                                   {minute.agenda}
                                 </p>
                               </div>
                               
-                              <div className="mb-4">
-                                <h4 className="font-medium text-gray-900 mb-1">Minutes:</h4>
-                                <p className="text-gray-600 text-sm line-clamp-3">
+                              <div className="mb-3 md:mb-4">
+                                <h4 className="font-medium text-xs md:text-sm text-gray-900 mb-1">Minutes:</h4>
+                                <p className="text-gray-600 text-xs md:text-sm line-clamp-3">
                                   {minute.minutes}
                                 </p>
                               </div>
                               
-                              <div className="flex items-center justify-between text-sm text-gray-500">
-                                <div className="flex items-center space-x-4">
-                                  <span>
-                                    Recorded by {minute.recorder?.first_name} {minute.recorder?.last_name}
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0 text-[10px] md:text-sm text-gray-500">
+                                <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                                  <span className="text-[10px] md:text-sm">
+                                    By {minute.recorder?.first_name} {minute.recorder?.last_name}
                                   </span>
                                   {minute.attendee_details && (
                                     <div className="flex items-center space-x-1">
-                                      <Users className="h-4 w-4" />
-                                      <span>{minute.attendee_details.length} attendees</span>
+                                      <Users className="h-3 w-3 md:h-4 md:w-4" />
+                                      <span>{minute.attendee_details.length}</span>
                                     </div>
                                   )}
                                   {minute.next_meeting_date && (
                                     <div className="flex items-center space-x-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>Next: {formatDate(minute.next_meeting_date)}</span>
+                                      <Calendar className="h-3 w-3 md:h-4 md:w-4" />
+                                      <span className="hidden md:inline">Next: {formatDate(minute.next_meeting_date)}</span>
+                                      <span className="md:hidden">{formatDate(minute.next_meeting_date)}</span>
                                     </div>
                                   )}
                                   {minute.attachment_url && (
@@ -1003,30 +1012,32 @@ export default function DocumentsPage() {
                                       rel="noopener noreferrer"
                                       className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
                                     >
-                                      <File className="h-4 w-4" />
-                                      <span>{minute.attachment_name || 'Attachment'}</span>
+                                      <File className="h-3 w-3 md:h-4 md:w-4" />
+                                      <span className="hidden md:inline">{minute.attachment_name || 'Attachment'}</span>
                                     </a>
                                   )}
                                 </div>
-                                <div className="flex space-x-1">
+                                <div className="flex space-x-0.5 md:space-x-1">
                                   {!minute.approved_by && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleApproveMinutes(minute.id)}
-                                      icon={<CheckCircle className="h-4 w-4" />}
-                                      className="text-green-600 hover:text-green-700"
+                                      icon={<CheckCircle className="h-3 w-3 md:h-4 md:w-4" />}
+                                      className="text-green-600 hover:text-green-700 p-1 md:p-2"
                                     />
                                   )}
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    icon={<Eye className="h-4 w-4" />}
+                                    icon={<Eye className="h-3 w-3 md:h-4 md:w-4" />}
+                                    className="p-1 md:p-2"
                                   />
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    icon={<Download className="h-4 w-4" />}
+                                    icon={<Download className="h-3 w-3 md:h-4 md:w-4" />}
+                                    className="p-1 md:p-2"
                                   />
                                   <Button
                                     variant="ghost"
@@ -1035,8 +1046,8 @@ export default function DocumentsPage() {
                                       setSelectedItem(minute);
                                       setIsDeleteModalOpen(true);
                                     }}
-                                    icon={<Trash2 className="h-4 w-4" />}
-                                    className="text-red-600 hover:text-red-700"
+                                    icon={<Trash2 className="h-3 w-3 md:h-4 md:w-4" />}
+                                    className="text-red-600 hover:text-red-700 p-1 md:p-2"
                                   />
                                 </div>
                               </div>
@@ -1054,25 +1065,27 @@ export default function DocumentsPage() {
             {activeTab === 'reports' && (
               <>
                 {/* Add Report Button */}
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end mb-3 md:mb-4">
                   <Button
                     onClick={() => setIsReportModalOpen(true)}
-                    icon={<Plus className="h-4 w-4" />}
+                    icon={<Plus className="h-3 w-3 md:h-4 md:w-4" />}
+                    className="text-xs md:text-sm px-3 md:px-4 py-2"
                   >
-                    Create Report
+                    <span className="hidden md:inline">Create Report</span>
+                    <span className="md:hidden">Create</span>
                   </Button>
                 </div>
                 
                 {/* Filter by Source */}
-                <div className="flex gap-4 mb-4">
+                <div className="flex gap-2 md:gap-4 mb-3 md:mb-4">
                   <Select
                     value={filterSource}
                     onChange={(e) => setFilterSource(e.target.value)}
-                    className="w-48"
+                    className="w-full md:w-48 text-xs md:text-sm"
                     options={[
                       { value: "all", label: "All Sources" },
-                      { value: "generated", label: "Auto-generated (from Reports Page)" },
-                      { value: "manual", label: "Manually Created" }
+                      { value: "generated", label: "Auto-generated" },
+                      { value: "manual", label: "Manual" }
                     ]}
                   />
                 </div>
@@ -1088,12 +1101,12 @@ export default function DocumentsPage() {
                     }}
                   />
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
                     {filteredReports.map((report) => (
                       <Card key={report.id} className="hover:shadow-lg transition-shadow">
-                        <CardBody>
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-2">
+                        <CardBody className="p-3 md:p-6">
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="flex items-center space-x-1.5 md:space-x-2">
                               {getFileIcon(report.file_url || 'report.pdf')}
                               <Badge 
                                 variant={
@@ -1101,23 +1114,25 @@ export default function DocumentsPage() {
                                   report.type === 'quarterly' ? 'info' :
                                   'success'
                                 }
+                                className="text-[10px] md:text-xs"
                               >
                                 {report.type.toUpperCase()}
                               </Badge>
                               {report.source === 'generated' && (
-                                <Badge variant="warning" className="text-xs">
+                                <Badge variant="warning" className="text-[10px] md:text-xs">
                                   Auto
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex space-x-1">
+                            <div className="flex space-x-0.5 md:space-x-1">
                               {report.file_url && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => window.open(report.file_url, '_blank')}
-                                  icon={<Eye className="h-4 w-4" />}
+                                  icon={<Eye className="h-3 w-3 md:h-4 md:w-4" />}
                                   title="View PDF"
+                                  className="p-1 md:p-2"
                                 />
                               )}
                               {report.file_url && (
@@ -1130,8 +1145,9 @@ export default function DocumentsPage() {
                                     link.download = report.data?.filename || `report-${report.id}.pdf`;
                                     link.click();
                                   }}
-                                  icon={<Download className="h-4 w-4" />}
+                                  icon={<Download className="h-3 w-3 md:h-4 md:w-4" />}
                                   title="Download PDF"
+                                  className="p-1 md:p-2"
                                 />
                               )}
                               <Button
@@ -1141,67 +1157,68 @@ export default function DocumentsPage() {
                                   setSelectedItem(report);
                                   setIsDeleteModalOpen(true);
                                 }}
-                                icon={<Trash2 className="h-4 w-4" />}
-                                className="text-red-600 hover:text-red-700"
+                                icon={<Trash2 className="h-3 w-3 md:h-4 md:w-4" />}
+                                className="text-red-600 hover:text-red-700 p-1 md:p-2"
                                 title="Delete Report"
                               />
                             </div>
                           </div>
 
-                          <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                          <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-2">
                             {report.title}
                           </h3>
 
                           {/* Show department or zone badge */}
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-3">
                             {report.department ? (
-                              <Badge variant="default">
-                                <Building2 className="h-3 w-3 mr-1" />
+                              <Badge variant="default" className="text-[10px] md:text-xs">
+                                <Building2 className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
                                 {report.department.name}
                               </Badge>
                             ) : report.zone ? (
-                              <Badge variant="info">
-                                <Users className="h-3 w-3 mr-1" />
+                              <Badge variant="info" className="text-[10px] md:text-xs">
+                                <Users className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
                                 {report.zone.name} Zone
                               </Badge>
                             ) : (
-                              <Badge variant="success">
+                              <Badge variant="success" className="text-[10px] md:text-xs">
                                 Church-wide
                               </Badge>
                             )}
                             
                             {/* Show period if available */}
                             {report.period_start && report.period_end && (
-                              <Badge variant="default" className="text-xs">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {new Date(report.period_start).toLocaleDateString()} - {new Date(report.period_end).toLocaleDateString()}
+                              <Badge variant="default" className="text-[10px] md:text-xs">
+                                <Calendar className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                                <span className="hidden md:inline">{new Date(report.period_start).toLocaleDateString()} - {new Date(report.period_end).toLocaleDateString()}</span>
+                                <span className="md:hidden">{new Date(report.period_start).toLocaleDateString('en-US', {month: 'short', year: '2-digit'})}</span>
                               </Badge>
                             )}
                           </div>
 
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                          <p className="text-gray-600 text-xs md:text-sm mb-3 md:mb-4 line-clamp-3">
                             {report.description || report.data?.content || 'No description available'}
                           </p>
 
                           {/* Show report stats if available */}
                           {report.data && (report.data.totalMembers || report.data.totalIncome) && (
-                            <div className="flex gap-4 text-xs text-gray-500 mb-3 bg-gray-50 p-2 rounded">
+                            <div className="flex gap-2 md:gap-4 text-[10px] md:text-xs text-gray-500 mb-2 md:mb-3 bg-gray-50 p-1.5 md:p-2 rounded">
                               {report.data.totalMembers !== undefined && (
                                 <span>
-                                  <Users className="h-3 w-3 inline mr-1" />
-                                  {report.data.totalMembers} members
+                                  <Users className="h-2.5 w-2.5 md:h-3 md:w-3 inline mr-0.5 md:mr-1" />
+                                  {report.data.totalMembers}
                                 </span>
                               )}
                               {report.data.totalIncome !== undefined && (
                                 <span>
-                                  <TrendingUp className="h-3 w-3 inline mr-1" />
+                                  <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 inline mr-0.5 md:mr-1" />
                                   TZS {(report.data.totalIncome / 1000).toFixed(0)}K
                                 </span>
                               )}
                             </div>
                           )}
 
-                          <div className="text-sm text-gray-500">
+                          <div className="text-[10px] md:text-sm text-gray-500">
                             <div className="flex justify-between items-center">
                               <span>
                                 By {report.generator?.first_name} {report.generator?.last_name}

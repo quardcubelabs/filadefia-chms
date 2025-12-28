@@ -1475,13 +1475,13 @@ export default function ReportsPage() {
         )}
           <Card className="mb-8">
             <CardBody>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Report Type</label>
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value as ReportType)}
-                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                   >
                     <option value="membership">
                       {isDepartmentLeader ? `${departmentName} - Membership` : 'Membership'}
@@ -1502,11 +1502,11 @@ export default function ReportsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Period</label>
                   <select
                     value={reportPeriod}
                     onChange={(e) => setReportPeriod(e.target.value as ReportPeriod)}
-                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -1517,37 +1517,46 @@ export default function ReportsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Start Date</label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">End Date</label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
                   />
                 </div>
               </div>
 
-              <div className="mt-6 flex space-x-4">
-                <Button
+              <div className="mt-4 md:mt-6 flex flex-col md:flex-row gap-2 md:gap-4">
+                <button
                   onClick={generateReport}
                   disabled={loading}
-                  className="flex items-center space-x-2"
+                  className="flex justify-center items-center space-x-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {loading ? <Loading /> : <FileText className="h-4 w-4" />}
-                  <span>Generate Report</span>
-                </Button>
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      <span>Generate Report</span>
+                    </>
+                  )}
+                </button>
 
                 <Button
                   variant="outline"
@@ -1577,9 +1586,10 @@ export default function ReportsPage() {
                       setError('Database connectivity test failed. Check console for details.');
                     }
                   }}
-                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100 text-xs md:text-sm px-3 md:px-4"
                 >
-                  Test DB Connection
+                  <span className="hidden md:inline">Test DB Connection</span>
+                  <span className="md:hidden">Test DB</span>
                 </Button>
 
                 {reportData && (
@@ -1587,35 +1597,39 @@ export default function ReportsPage() {
                     <Button
                       variant="outline"
                       onClick={() => exportReport('pdf')}
-                      className="flex items-center space-x-2"
+                      className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm px-3 md:px-4"
                       disabled={savingReport}
                     >
-                      <Download className="h-4 w-4" />
-                      <span>Export PDF</span>
+                      <Download className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="hidden md:inline">Export PDF</span>
+                      <span className="md:hidden">PDF</span>
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => exportReport('csv')}
-                      className="flex items-center space-x-2"
+                      className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm px-3 md:px-4"
                     >
-                      <Download className="h-4 w-4" />
-                      <span>Export CSV</span>
+                      <Download className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="hidden md:inline">Export CSV</span>
+                      <span className="md:hidden">CSV</span>
                     </Button>
                     <Button
                       variant="primary"
                       onClick={() => saveReportToDatabase()}
-                      className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+                      className="flex items-center space-x-1 md:space-x-2 bg-green-600 hover:bg-green-700 text-xs md:text-sm px-3 md:px-4"
                       disabled={savingReport}
                     >
                       {savingReport ? (
                         <>
                           <Loading size="sm" />
-                          <span>Saving...</span>
+                          <span className="hidden md:inline">Saving...</span>
+                          <span className="md:hidden">Save...</span>
                         </>
                       ) : (
                         <>
-                          <FileText className="h-4 w-4" />
-                          <span>Save Report</span>
+                          <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                          <span className="hidden md:inline">Save Report</span>
+                          <span className="md:hidden">Save</span>
                         </>
                       )}
                     </Button>
@@ -1629,8 +1643,8 @@ export default function ReportsPage() {
           {reportData && (
             <div className="space-y-8">
               {/* Tab Navigation - Exact design from image */}
-              <div className="mb-6">
-                <nav className="flex space-x-0">
+              <div className="mb-4 md:mb-6">
+                <nav className="flex space-x-0 overflow-x-auto">
                   {[
                     { id: 'membership', label: 'Membership', icon: Users },
                     { id: 'finance', label: 'Finance', icon: DollarSign },
@@ -1642,13 +1656,13 @@ export default function ReportsPage() {
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                        className={`relative flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm transition-all duration-200 whitespace-nowrap ${
                           activeTab === tab.id
                             ? 'bg-red-100 text-red-600 rounded-tl-lg'
                             : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                         }`}
                       >
-                        <IconComponent className="h-4 w-4" />
+                        <IconComponent className="h-3.5 w-3.5 md:h-4 md:w-4" />
                         <span>{tab.label}</span>
                         {activeTab === tab.id && (
                           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
@@ -1661,65 +1675,65 @@ export default function ReportsPage() {
 
               {/* Membership Tab */}
               {activeTab === 'membership' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="space-y-4 md:space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-green-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
                             {reportData?.membershipStats?.activeMembers || 0}
                           </p>
-                          <p className="text-sm text-gray-600">Active Members</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Active Members</p>
                         </div>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <TrendingUp className="h-5 w-5 md:h-8 md:w-8 text-purple-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
                             {reportData?.membershipStats?.newMembersThisMonth || 0}
                           </p>
-                          <p className="text-sm text-gray-600">New This Month</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">New This Month</p>
                         </div>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <Building2 className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <Building2 className="h-5 w-5 md:h-8 md:w-8 text-orange-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
                             {reportData?.membershipStats?.membersByDepartment?.length || 0}
                           </p>
-                          <p className="text-sm text-gray-600">Departments</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Departments</p>
                         </div>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <Users className="h-5 w-5 md:h-8 md:w-8 text-blue-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
                             {reportData?.membershipStats?.totalMembers || 0}
                           </p>
-                          <p className="text-sm text-gray-600">Total Members</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Members</p>
                         </div>
                       </CardBody>
                     </Card>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
                     <Card>
                       <CardBody>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Members by Status</h3>
-                        <div className="space-y-3">
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Members by Status</h3>
+                        <div className="space-y-2 md:space-y-3">
                           {Object.entries(reportData?.membershipStats?.membersByStatus || {}).map(([status, count]) => (
                             <div key={status} className="flex justify-between items-center">
-                              <span className="capitalize text-gray-600">{status}</span>
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium">{count}</span>
-                                <div className="w-16 h-2 bg-gray-200 rounded-full">
+                              <span className="capitalize text-xs md:text-sm text-gray-600">{status}</span>
+                              <div className="flex items-center space-x-1.5 md:space-x-2">
+                                <span className="text-xs md:text-sm font-medium">{count}</span>
+                                <div className="w-12 md:w-16 h-2 bg-gray-200 rounded-full">
                                   <div
                                     className="h-2 bg-blue-600 rounded-full"
                                     style={{
@@ -1736,14 +1750,14 @@ export default function ReportsPage() {
 
                     <Card>
                       <CardBody>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Members by Department</h3>
-                        <div className="space-y-3">
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Members by Department</h3>
+                        <div className="space-y-2 md:space-y-3">
                           {(reportData?.membershipStats?.membersByDepartment || []).slice(0, 5).map((dept) => (
                             <div key={dept.name} className="flex justify-between items-center">
-                              <span className="text-gray-600">{dept.name}</span>
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium">{dept.count}</span>
-                                <div className="w-16 h-2 bg-gray-200 rounded-full">
+                              <span className="text-xs md:text-sm text-gray-600">{dept.name}</span>
+                              <div className="flex items-center space-x-1.5 md:space-x-2">
+                                <span className="text-xs md:text-sm font-medium">{dept.count}</span>
+                                <div className="w-12 md:w-16 h-2 bg-gray-200 rounded-full">
                                   <div
                                     className="h-2 bg-green-600 rounded-full"
                                     style={{
@@ -1763,61 +1777,61 @@ export default function ReportsPage() {
 
               {/* Finance Tab */}
               {activeTab === 'finance' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="space-y-4 md:space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <TrendingUp className="h-5 w-5 md:h-8 md:w-8 text-green-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-sm md:text-2xl font-bold text-gray-900">
                             {formatCurrency(reportData?.financialStats?.totalIncome || 0)}
                           </p>
-                          <p className="text-sm text-gray-600">Total Income</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Income</p>
                         </div>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <TrendingDown className="h-8 w-8 text-red-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <TrendingDown className="h-5 w-5 md:h-8 md:w-8 text-red-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-sm md:text-2xl font-bold text-gray-900">
                             {formatCurrency(reportData?.financialStats?.totalExpenses || 0)}
                           </p>
-                          <p className="text-sm text-gray-600">Total Expenses</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Expenses</p>
                         </div>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <DollarSign className={`h-8 w-8 mx-auto mb-2 ${
+                          <DollarSign className={`h-5 w-5 md:h-8 md:w-8 mx-auto mb-1 md:mb-2 ${
                             (reportData?.financialStats?.totalIncome || 0) - (reportData?.financialStats?.totalExpenses || 0) >= 0
                               ? 'text-green-600' : 'text-red-600'
                           }`} />
-                          <p className={`text-2xl font-bold ${
+                          <p className={`text-sm md:text-2xl font-bold ${
                             (reportData?.financialStats?.totalIncome || 0) - (reportData?.financialStats?.totalExpenses || 0) >= 0
                               ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {formatCurrency((reportData?.financialStats?.totalIncome || 0) - (reportData?.financialStats?.totalExpenses || 0))}
                           </p>
-                          <p className="text-sm text-gray-600">Net Amount</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Net Amount</p>
                         </div>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody>
                         <div className="text-center">
-                          <CreditCard className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">
+                          <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-blue-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-sm md:text-2xl font-bold text-gray-900">
                             {formatCurrency(reportData?.financialStats?.monthlyIncome || 0)}
                           </p>
-                          <p className="text-sm text-gray-600">Monthly Income</p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Monthly Income</p>
                         </div>
                       </CardBody>
                     </Card>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
                     <Card>
                       <CardBody>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Income by Type</h3>

@@ -107,6 +107,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   
   // Active tab
   const [activeTab, setActiveTab] = useState<'announcements' | 'communications'>('announcements');
@@ -143,6 +144,10 @@ export default function MessagesPage() {
     selected_members: [] as string[],
     scheduled_at: ''
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -541,7 +546,15 @@ export default function MessagesPage() {
     return matchesSearch && matchesPriority && matchesDepartment && matchesStatus;
   });
 
-  if (authLoading || loading) {
+  if (!mounted || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loading />
@@ -591,17 +604,17 @@ export default function MessagesPage() {
             )}
 
             {/* Tabs - Same design as image */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <nav className="flex space-x-0">
                 <button
                   onClick={() => setActiveTab('announcements')}
-                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                  className={`relative flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm transition-all duration-200 ${
                     activeTab === 'announcements'
                       ? 'bg-red-100 text-red-600 rounded-tl-lg'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <Megaphone className="h-4 w-4" />
+                  <Megaphone className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   <span>Announcements</span>
                   {activeTab === 'announcements' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
@@ -609,13 +622,13 @@ export default function MessagesPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab('communications')}
-                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                  className={`relative flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm transition-all duration-200 ${
                     activeTab === 'communications'
                       ? 'bg-red-100 text-red-600 rounded-tl-lg'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   <span>Sent Messages</span>
                   {activeTab === 'communications' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
@@ -628,9 +641,9 @@ export default function MessagesPage() {
             {activeTab === 'announcements' && (
               <>
                 {/* Search and Filters */}
-                <Card className="mb-6">
-                  <CardBody>
-                    <div className={`grid grid-cols-1 ${isDepartmentLeader ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
+                <Card className="mb-4 md:mb-6">
+                  <CardBody className="p-3 md:p-6">
+                    <div className={`grid grid-cols-1 ${isDepartmentLeader ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-3 md:gap-4`}>
                       <div className="md:col-span-1">
                         <Input
                           placeholder="Search announcements..."
@@ -677,7 +690,7 @@ export default function MessagesPage() {
                   </CardBody>
                 </Card>
 
-                {/* Announcements List */}
+                {/* Announcements List - Desktop */}
                 {filteredAnnouncements.length === 0 ? (
                   <EmptyState
                     icon={<Megaphone className="h-16 w-16 text-gray-400" />}
@@ -689,98 +702,190 @@ export default function MessagesPage() {
                     }}
                   />
                 ) : (
-                  <div className="space-y-4">
-                    {filteredAnnouncements.map((announcement) => (
-                      <Card key={announcement.id} className="hover:shadow-md transition-shadow">
-                        <CardBody>
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <h3 className="font-semibold text-lg text-gray-900">
-                                  {announcement.title}
-                                </h3>
-                                <Badge 
-                                  variant={
-                                    announcement.priority === 'high' ? 'danger' :
-                                    announcement.priority === 'medium' ? 'warning' : 'info'
-                                  }
-                                >
-                                  <div className="flex items-center space-x-1">
-                                    {getPriorityIcon(announcement.priority)}
-                                    <span>{announcement.priority.toUpperCase()}</span>
-                                  </div>
-                                </Badge>
-                                {announcement.department && (
-                                  <Badge variant="default">
-                                    {announcement.department.name}
+                  <>
+                    {/* Desktop View */}
+                    <div className="hidden md:block space-y-4">
+                      {filteredAnnouncements.map((announcement) => (
+                        <Card key={announcement.id} className="hover:shadow-md transition-shadow">
+                          <CardBody>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <h3 className="font-semibold text-lg text-gray-900">
+                                    {announcement.title}
+                                  </h3>
+                                  <Badge 
+                                    variant={
+                                      announcement.priority === 'high' ? 'danger' :
+                                      announcement.priority === 'medium' ? 'warning' : 'info'
+                                    }
+                                  >
+                                    <div className="flex items-center space-x-1">
+                                      {getPriorityIcon(announcement.priority)}
+                                      <span>{announcement.priority.toUpperCase()}</span>
+                                    </div>
                                   </Badge>
-                                )}
-                                {!announcement.department_id && (
-                                  <Badge variant="success">
-                                    Church-wide
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <p className="text-gray-600 mb-4 line-clamp-3">
-                                {announcement.content}
-                              </p>
-                              
-                              <div className="flex items-center justify-between text-sm text-gray-500">
-                                <div className="flex items-center space-x-4">
-                                  <span>
-                                    By {announcement.author?.first_name} {announcement.author?.last_name}
-                                  </span>
-                                  <span>
-                                    {formatDate(announcement.created_at)}
-                                  </span>
-                                  {announcement.expires_at && (
-                                    <span className={`flex items-center space-x-1 ${
-                                      new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-yellow-600'
-                                    }`}>
-                                      <Calendar className="h-4 w-4" />
-                                      <span>
-                                        Expires: {formatDate(announcement.expires_at)}
-                                      </span>
-                                    </span>
+                                  {announcement.department && (
+                                    <Badge variant="default">
+                                      {announcement.department.name}
+                                    </Badge>
+                                  )}
+                                  {!announcement.department_id && (
+                                    <Badge variant="success">
+                                      Church-wide
+                                    </Badge>
                                   )}
                                 </div>
-                                <div className="flex space-x-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedItem(announcement);
-                                      setAnnouncementForm({
-                                        title: announcement.title,
-                                        content: announcement.content,
-                                        department_id: announcement.department_id || '',
-                                        priority: announcement.priority,
-                                        expires_at: announcement.expires_at ? 
-                                          new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
-                                      });
-                                      setIsEditModalOpen(true);
-                                    }}
-                                    icon={<Edit className="h-4 w-4" />}
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedItem(announcement);
-                                      setIsDeleteModalOpen(true);
-                                    }}
-                                    icon={<Trash2 className="h-4 w-4" />}
-                                    className="text-red-600 hover:text-red-700"
-                                  />
+                                
+                                <p className="text-gray-600 mb-4 line-clamp-3">
+                                  {announcement.content}
+                                </p>
+                                
+                                <div className="flex items-center justify-between text-sm text-gray-500">
+                                  <div className="flex items-center space-x-4">
+                                    <span>
+                                      By {announcement.author?.first_name} {announcement.author?.last_name}
+                                    </span>
+                                    <span>
+                                      {formatDate(announcement.created_at)}
+                                    </span>
+                                    {announcement.expires_at && (
+                                      <span className={`flex items-center space-x-1 ${
+                                        new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-yellow-600'
+                                      }`}>
+                                        <Calendar className="h-4 w-4" />
+                                        <span>
+                                          Expires: {formatDate(announcement.expires_at)}
+                                        </span>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedItem(announcement);
+                                        setAnnouncementForm({
+                                          title: announcement.title,
+                                          content: announcement.content,
+                                          department_id: announcement.department_id || '',
+                                          priority: announcement.priority,
+                                          expires_at: announcement.expires_at ? 
+                                            new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
+                                        });
+                                        setIsEditModalOpen(true);
+                                      }}
+                                      icon={<Edit className="h-4 w-4" />}
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedItem(announcement);
+                                        setIsDeleteModalOpen(true);
+                                      }}
+                                      icon={<Trash2 className="h-4 w-4" />}
+                                      className="text-red-600 hover:text-red-700"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          </CardBody>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Mobile View */}
+                    <div className="md:hidden space-y-3">
+                      {filteredAnnouncements.map((announcement) => (
+                        <div key={announcement.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-sm text-gray-900 flex-1">
+                              {announcement.title}
+                            </h3>
+                            <Badge 
+                              variant={
+                                announcement.priority === 'high' ? 'danger' :
+                                announcement.priority === 'medium' ? 'warning' : 'info'
+                              }
+                            >
+                              <div className="flex items-center space-x-1">
+                                {getPriorityIcon(announcement.priority)}
+                              </div>
+                            </Badge>
                           </div>
-                        </CardBody>
-                      </Card>
-                    ))}
-                  </div>
+                          
+                          {(announcement.department || !announcement.department_id) && (
+                            <div className="flex gap-2 mb-2">
+                              {announcement.department && (
+                                <Badge variant="default">
+                                  <span className="text-xs">{announcement.department.name}</span>
+                                </Badge>
+                              )}
+                              {!announcement.department_id && (
+                                <Badge variant="success">
+                                  <span className="text-xs">Church-wide</span>
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                            {announcement.content}
+                          </p>
+                          
+                          <div className="flex items-center justify-between text-[10px] text-gray-500 mb-2">
+                            <span>
+                              {announcement.author?.first_name} {announcement.author?.last_name}
+                            </span>
+                            <span>
+                              {formatDate(announcement.created_at)}
+                            </span>
+                          </div>
+                          
+                          {announcement.expires_at && (
+                            <div className={`text-[10px] mb-2 flex items-center space-x-1 ${
+                              new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-yellow-600'
+                            }`}>
+                              <Calendar className="h-3 w-3" />
+                              <span>Expires: {formatDate(announcement.expires_at)}</span>
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedItem(announcement);
+                                setAnnouncementForm({
+                                  title: announcement.title,
+                                  content: announcement.content,
+                                  department_id: announcement.department_id || '',
+                                  priority: announcement.priority,
+                                  expires_at: announcement.expires_at ? 
+                                    new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
+                                });
+                                setIsEditModalOpen(true);
+                              }}
+                              className="text-gray-500 hover:text-blue-600 p-1"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedItem(announcement);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="text-gray-500 hover:text-red-600 p-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </>
             )}

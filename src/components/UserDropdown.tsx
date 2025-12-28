@@ -58,9 +58,6 @@ export default function UserDropdown({ darkMode = false }: UserDropdownProps) {
         <div className="w-9 h-9 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
           {initials}
         </div>
-        
-        {/* Chevron */}
-        <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown Menu */}

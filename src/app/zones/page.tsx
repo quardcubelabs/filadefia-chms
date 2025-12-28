@@ -255,28 +255,26 @@ export default function ZonesPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <MapPin className="w-6 h-6 mr-2 text-blue-600" />
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
+              <MapPin className="w-5 h-5 md:w-6 md:h-6 mr-2 text-blue-600" />
               Church Zones
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm md:text-base text-gray-600 mt-1">
               Manage and view all church geographical zones
             </p>
           </div>
-          <div className="flex gap-3 mt-4 md:mt-0">
-            <button
-              onClick={() => {
-                setFormData({ name: '', swahili_name: '', description: '' });
-                setShowAddModal(true);
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Zone
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setFormData({ name: '', swahili_name: '', description: '' });
+              setShowAddModal(true);
+            }}
+            className="bg-blue-800 hover:bg-blue-900 text-white p-2 md:px-4 md:py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden md:inline">Add Zone</span>
+          </button>
         </div>
 
         {/* Error Alert */}
@@ -393,7 +391,7 @@ export default function ZonesPage() {
             </div>
 
             {/* Zones Grid */}
-            <div className="bg-white rounded-lg shadow-sm border">
+            <div className="hidden md:block bg-white rounded-lg shadow-sm border">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">All Zones</h3>
                 <p className="text-sm text-gray-600 mt-1">Click on any zone to view details and manage members</p>
@@ -441,44 +439,101 @@ export default function ZonesPage() {
                       </p>
 
                       {/* Actions */}
-                      <div className="flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <button
-                            className="text-gray-500 hover:text-blue-600 p-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(zone);
-                            }}
-                            title="Edit Zone"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="text-gray-500 hover:text-red-600 p-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteZone(zone.id);
-                            }}
-                            title="Delete Zone"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
+                      <div className="flex gap-2">
                         <button
-                          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 group-hover:gap-2 transition-all"
+                          className="text-gray-500 hover:text-blue-600 p-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/zones/${zone.id}`);
+                            openEditModal(zone);
                           }}
+                          title="Edit Zone"
                         >
-                          View Details
-                          <ArrowRight className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="text-gray-500 hover:text-red-600 p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteZone(zone.id);
+                          }}
+                          title="Delete Zone"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Zones Grid - Individual Cards */}
+            <div className="md:hidden space-y-3">
+              {zones.map((zone) => (
+                <div 
+                  key={zone.id} 
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+                  onClick={() => router.push(`/zones/${zone.id}`)}
+                >
+                  {/* Icon and Badge */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`h-10 w-10 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {zone.member_count} {zone.member_count === 1 ? 'Member' : 'Members'}
+                    </span>
+                  </div>
+
+                  {/* Zone Name */}
+                  <h4 className="text-base font-semibold text-gray-900 mb-1">
+                    {zone.name}
+                  </h4>
+
+                  {/* Swahili Name */}
+                  {zone.swahili_name && (
+                    <p className="text-xs font-medium text-gray-500 mb-2">
+                      {zone.swahili_name}
+                    </p>
+                  )}
+
+                  {/* Leader */}
+                  {zone.leader_name && (
+                    <p className="text-xs text-gray-600 mb-2">
+                      <span className="font-medium">Leader:</span> {zone.leader_name}
+                    </p>
+                  )}
+
+                  {/* Description */}
+                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                    {zone.description || 'No description available'}
+                  </p>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      className="text-gray-500 hover:text-blue-600 p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(zone);
+                      }}
+                      title="Edit Zone"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      className="text-gray-500 hover:text-red-600 p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteZone(zone.id);
+                      }}
+                      title="Delete Zone"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}

@@ -62,6 +62,7 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   // Financial data
   const [financialData, setFinancialData] = useState({
@@ -85,6 +86,10 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
     { value: 'treasurer', label: 'Treasurer' },
     { value: 'member', label: 'Member' },
   ];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -480,73 +485,231 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
           </Card>
         ) : (
           <>
-            {/* Header Actions */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
-              <button
-                onClick={() => router.push('/zones')}
-                className={`flex items-center gap-2 ${textSecondary} hover:${textPrimary} transition-colors`}
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Zones</span>
-              </button>
-              <Button
-                onClick={() => {
-                  fetchAvailableMembers();
-                  setShowAddMemberModal(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Member
-              </Button>
+            {!mounted ? (
+              <Card variant="default">
+                <CardBody className="p-8 sm:p-12">
+                  <Loading text="Loading zone dashboard..." />
+                </CardBody>
+              </Card>
+            ) : (
+              <>
+            {/* MOBILE VIEW - Separate optimized layout for mobile */}
+            <div className="block lg:hidden space-y-3">
+              {/* Mobile Header with Back Button and Add Button */}
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={() => router.push('/zones')}
+                  className={`flex items-center gap-2 ${textSecondary} hover:${textPrimary} transition-colors`}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Back to Zones</span>
+                </button>
+                <button
+                  onClick={() => {
+                    fetchAvailableMembers();
+                    setShowAddMemberModal(true);
+                  }}
+                  className="flex items-center justify-center bg-blue-800 hover:bg-blue-900 text-white p-2 rounded-lg transition-colors"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Mobile Stats Grid - 2x2 */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Total Members Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <Users className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+                  </div>
+                  <p className={`text-[10px] ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-1`}>Total Members</p>
+                  <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {members.length}
+                  </h3>
+                </div>
+
+                {/* Leadership Team Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <Crown className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
+                  </div>
+                  <p className={`text-[10px] ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-1`}>Leadership</p>
+                  <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {leadershipMembers.length}
+                  </h3>
+                </div>
+
+                {/* Active Members Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <UserCheck className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-green-600'}`} />
+                  </div>
+                  <p className={`text-[10px] ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-1`}>Active Members</p>
+                  <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {members.filter(m => m.member && m.member.status === 'active').length}
+                  </h3>
+                </div>
+
+                {/* Zone Income Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <DollarSign className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
+                  </div>
+                  <p className={`text-[10px] ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-1`}>Total Income</p>
+                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {financialData.totalZoneIncome >= 1000000 
+                      ? `TZS ${(financialData.totalZoneIncome / 1000000).toFixed(1)}M`
+                      : `TZS ${(financialData.totalZoneIncome / 1000).toFixed(0)}K`}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Mobile Members by Age Distribution - Simplified */}
+              <Card variant="default">
+                <CardBody className="p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className={`text-sm font-bold ${textPrimary}`}>Members by Age</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 bg-cyan-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                        <span className="text-xs text-gray-700">Youth (0-25)</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {membersByAge.youth} ({members.length > 0 ? Math.round((membersByAge.youth / members.length) * 100) : 0}%)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <span className="text-xs text-gray-700">Adults (26-59)</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {membersByAge.adults} ({members.length > 0 ? Math.round((membersByAge.adults / members.length) * 100) : 0}%)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <span className="text-xs text-gray-700">Seniors (60+)</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {membersByAge.seniors} ({members.length > 0 ? Math.round((membersByAge.seniors / members.length) * 100) : 0}%)
+                      </span>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Mobile Zone Members List */}
+              <Card variant="default">
+                <CardBody className="p-3">
+                  <h2 className={`text-sm font-bold ${textPrimary} mb-3`}>Zone Members</h2>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {members.slice(0, 5).map((zm) => (
+                      <div 
+                        key={zm.id}
+                        className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                        onClick={() => zm.member && router.push(`/members/${zm.member.id}`)}
+                      >
+                        <Avatar
+                          src={zm.member?.photo_url}
+                          alt={`${zm.member?.first_name} ${zm.member?.last_name}`}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-medium ${textPrimary} truncate`}>
+                            {zm.member?.first_name} {zm.member?.last_name}
+                          </p>
+                          <p className={`text-[10px] ${textSecondary} truncate`}>
+                            {zm.member?.phone}
+                          </p>
+                        </div>
+                        <Badge variant={zm.member?.status === 'active' ? 'success' : 'default'} dot>
+                          {zm.member?.status}
+                        </Badge>
+                      </div>
+                    ))}
+                    {members.length === 0 && (
+                      <div className="text-center py-6">
+                        <Users className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-xs text-gray-500">No members yet</p>
+                      </div>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
             </div>
 
-            {/* Dashboard Grid - Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+            {/* DESKTOP VIEW - Original layout for desktop */}
+            <div className="hidden lg:block">
+              {/* Desktop Header with Back Button and Add Button */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={() => router.push('/zones')}
+                  className={`flex items-center gap-2 ${textSecondary} hover:${textPrimary} transition-colors`}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Back to Zones</span>
+                </button>
+                <button
+                  onClick={() => {
+                    fetchAvailableMembers();
+                    setShowAddMemberModal(true);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <span>Add Member</span>
+                  <UserPlus className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
               {/* Left Column - Stats and Charts */}
               <div className="col-span-1 lg:col-span-7 space-y-4 sm:space-y-6">
-                {/* Stats Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Stats Cards Grid - 2x2 on mobile */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-4 md:gap-6">
                   {/* Total Members Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <Users className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-xl sm:rounded-3xl p-3 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2 sm:p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-lg sm:rounded-2xl mb-2 sm:mb-4`}>
+                      <Users className={`h-4 w-4 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-2`}>Total Members</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-[10px] sm:text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Total Members</p>
+                    <h3 className={`text-xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {members.length}
                     </h3>
                   </div>
 
                   {/* Leadership Team Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <Crown className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-xl sm:rounded-3xl p-3 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2 sm:p-4 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-lg sm:rounded-2xl mb-2 sm:mb-4`}>
+                      <Crown className={`h-4 w-4 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-2`}>Leadership</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-[10px] sm:text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Leadership</p>
+                    <h3 className={`text-xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {leadershipMembers.length}
                     </h3>
                   </div>
 
                   {/* Active Members Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <UserCheck className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-green-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-xl sm:rounded-3xl p-3 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2 sm:p-4 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-lg sm:rounded-2xl mb-2 sm:mb-4`}>
+                      <UserCheck className={`h-4 w-4 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-green-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-2`}>Active Members</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-[10px] sm:text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Active Members</p>
+                    <h3 className={`text-xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {members.filter(m => m.member && m.member.status === 'active').length}
                     </h3>
                   </div>
 
                   {/* Zone Income Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <DollarSign className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-xl sm:rounded-3xl p-3 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2 sm:p-4 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-lg sm:rounded-2xl mb-2 sm:mb-4`}>
+                      <DollarSign className={`h-4 w-4 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-2`}>Total Income</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-[10px] sm:text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Total Income</p>
+                    <h3 className={`text-lg sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {financialData.totalZoneIncome >= 1000000 
                         ? `TZS ${(financialData.totalZoneIncome / 1000000).toFixed(1)}M`
                         : `TZS ${(financialData.totalZoneIncome / 1000).toFixed(0)}K`}
@@ -555,33 +718,33 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 {/* Members by Age Distribution Chart */}
-                <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>Members by Age</h3>
-                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
+                <div className={`${cardBg} rounded-xl sm:rounded-3xl p-3 sm:p-6 md:p-8 border ${borderColor} shadow-sm`}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-8">
+                    <h3 className={`text-base sm:text-xl md:text-2xl font-bold ${textPrimary}`}>Members by Age</h3>
+                    <select className={`px-3 sm:px-6 py-1.5 sm:py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto`}>
                       <option>All Time</option>
                       <option>This Year</option>
                     </select>
                   </div>
 
-                  <div className="flex items-center justify-between gap-8">
+                  <div className="flex flex-col lg:flex-row items-center lg:items-center justify-between gap-6 lg:gap-8">
                     {/* Left side - Total Members */}
-                    <div className="flex-shrink-0">
-                      <p className={`text-sm ${textSecondary} mb-3`}>Total Members</p>
-                      <p className={`text-4xl font-bold ${textPrimary}`}>
+                    <div className="flex-shrink-0 text-center lg:text-left w-full lg:w-auto">
+                      <p className={`text-xs sm:text-sm ${textSecondary} mb-2 sm:mb-3`}>Total Members</p>
+                      <p className={`text-2xl sm:text-3xl md:text-4xl font-bold ${textPrimary}`}>
                         {`${members.length.toLocaleString()} People`}
                       </p>
                     </div>
 
                     {/* Right side - Donut Chart and Legend */}
-                    <div className="flex items-center gap-12">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8 lg:gap-12 w-full lg:w-auto">
                       {/* Donut Chart */}
                       <div className="relative flex items-center justify-center flex-shrink-0">
                         {(() => {
                           const totalMembers = members.length;
                           if (totalMembers === 0) {
                             return (
-                              <div className="w-[200px] h-[200px] flex items-center justify-center">
+                              <div className="w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px] flex items-center justify-center">
                                 <p className={textSecondary}>No data</p>
                               </div>
                             );
@@ -592,7 +755,7 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                           const seniorsRatio = membersByAge.seniors / totalMembers;
 
                           return (
-                            <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
+                            <svg className="transform -rotate-90 w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px]" viewBox="0 0 200 200">
                               <defs>
                                 <linearGradient id="zoneMemberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
@@ -667,37 +830,37 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                         
                         {/* Center text */}
                         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                          <p className={`text-xs ${textSecondary} mb-1`}>Active</p>
-                          <p className="text-3xl font-bold text-blue-600">100%</p>
+                          <p className={`text-[10px] sm:text-xs ${textSecondary} mb-0.5 sm:mb-1`}>Active</p>
+                          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600">100%</p>
                         </div>
                       </div>
 
                       {/* Legend */}
-                      <div className="flex flex-col space-y-4">
-                        <div className="flex items-center justify-between space-x-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 rounded-sm bg-cyan-400 flex-shrink-0"></div>
-                            <span className={`text-sm ${textSecondary}`}>Youth (15-35)</span>
+                      <div className="flex flex-col space-y-3 sm:space-y-4 w-full sm:w-auto">
+                        <div className="flex items-center justify-between space-x-4 sm:space-x-6">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-cyan-400 flex-shrink-0"></div>
+                            <span className={`text-xs sm:text-sm ${textSecondary}`}>Youth (15-35)</span>
                           </div>
-                          <span className={`text-sm font-semibold ${textPrimary}`}>
+                          <span className={`text-xs sm:text-sm font-semibold ${textPrimary}`}>
                             {`${membersByAge.youth} (${members.length > 0 ? Math.round((membersByAge.youth / members.length) * 100) : 0}%)`}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between space-x-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                            <span className={`text-sm ${textSecondary}`}>Adults (36-60)</span>
+                        <div className="flex items-center justify-between space-x-4 sm:space-x-6">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-blue-600 flex-shrink-0"></div>
+                            <span className={`text-xs sm:text-sm ${textSecondary}`}>Adults (36-60)</span>
                           </div>
-                          <span className={`text-sm font-semibold ${textPrimary}`}>
+                          <span className={`text-xs sm:text-sm font-semibold ${textPrimary}`}>
                             {`${membersByAge.adults} (${members.length > 0 ? Math.round((membersByAge.adults / members.length) * 100) : 0}%)`}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between space-x-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 rounded-sm bg-red-500 flex-shrink-0"></div>
-                            <span className={`text-sm ${textSecondary}`}>Seniors (61+)</span>
+                        <div className="flex items-center justify-between space-x-4 sm:space-x-6">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-red-500 flex-shrink-0"></div>
+                            <span className={`text-xs sm:text-sm ${textSecondary}`}>Seniors (61+)</span>
                           </div>
-                          <span className={`text-sm font-semibold ${textPrimary}`}>
+                          <span className={`text-xs sm:text-sm font-semibold ${textPrimary}`}>
                             {`${membersByAge.seniors} (${members.length > 0 ? Math.round((membersByAge.seniors / members.length) * 100) : 0}%)`}
                           </span>
                         </div>
@@ -707,56 +870,56 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 {/* Weekly Offerings Chart */}
-                <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
+                <div className={`${cardBg} rounded-3xl p-3 sm:p-6 border ${borderColor} shadow-sm`}>
                   {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className={`text-xl font-bold ${textPrimary}`}>Weekly Offerings</h3>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-gray-300"></div>
-                        <span className={`text-xs ${textSecondary}`}>Target</span>
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h3 className={`text-sm sm:text-xl font-bold ${textPrimary}`}>Weekly Offerings</h3>
+                    <div className="flex items-center space-x-2 sm:space-x-4">
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-sm bg-gray-300"></div>
+                        <span className={`text-[10px] sm:text-xs ${textSecondary}`}>Target</span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-blue-600"></div>
-                        <span className={`text-xs ${textSecondary}`}>Actual</span>
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-sm bg-blue-600"></div>
+                        <span className={`text-[10px] sm:text-xs ${textSecondary}`}>Actual</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Stats Row */}
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-8">
                     <div>
-                      <p className={`text-xs ${textSecondary} mb-1`}>Total Income</p>
-                      <p className={`text-2xl font-bold ${textPrimary}`}>
+                      <p className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>Total Income</p>
+                      <p className={`text-base sm:text-2xl font-bold ${textPrimary}`}>
                         {`TZS ${(financialData.totalZoneIncome / 1000).toFixed(0)}k`}
                       </p>
                     </div>
                     <div>
-                      <p className={`text-xs ${textSecondary} mb-1`}>Monthly Income</p>
-                      <p className={`text-2xl font-bold ${textPrimary}`}>
+                      <p className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>Monthly Income</p>
+                      <p className={`text-base sm:text-2xl font-bold ${textPrimary}`}>
                         {`TZS ${(financialData.monthlyZoneIncome / 1000).toFixed(0)}k`}
                       </p>
                     </div>
-                    <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-6 py-3 rounded-xl`}>
-                      <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-blue-600'}`}>
+                    <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-4 sm:px-6 py-2 sm:py-3 rounded-xl`}>
+                      <p className={`text-base sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-blue-600'}`}>
                         {`${Math.max(...(financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)) || [0]))}K`}
                       </p>
                     </div>
                   </div>
 
                   {/* Bar Chart */}
-                  <div className="relative" style={{ height: '180px' }}>
+                  <div className="relative" style={{ height: '140px' }}>
                     {/* Floating label above highest bar */}
                     {financialData.weeklyOfferings.length > 0 && (
-                      <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
-                        <p className="text-white text-sm font-bold">
+                      <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-lg z-10">
+                        <p className="text-white text-[10px] sm:text-sm font-bold">
                           {Math.max(...financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)), 0)}K
                         </p>
                       </div>
                     )}
 
                     {/* Bar Chart Container */}
-                    <div className="h-full flex items-end justify-between gap-4 pt-10">
+                    <div className="h-full flex items-end justify-between gap-2 sm:gap-4 pt-8 sm:pt-10">
                       {(financialData.weeklyOfferings.length > 0 ? financialData.weeklyOfferings : [
                         { week: 'W1', amount: 0, label: '01' },
                         { week: 'W2', amount: 0, label: '02' },
@@ -787,7 +950,7 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                               ></div>
                             </div>
                             {/* Label */}
-                            <span className={`text-xs mt-2 ${textSecondary}`}>{bar.label}</span>
+                            <span className={`text-[10px] sm:text-xs mt-1 sm:mt-2 ${textSecondary}`}>{bar.label}</span>
                           </div>
                         );
                       })}
@@ -801,19 +964,19 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                 {/* Leadership Team */}
                 {leadershipMembers.length > 0 && (
                   <Card variant="default">
-                    <CardBody className="p-6">
-                      <h2 className={`text-xl font-bold ${textPrimary} mb-6 flex items-center`}>
-                        <Crown className="h-6 w-6 mr-2 text-yellow-600" />
+                    <CardBody className="p-3 sm:p-6">
+                      <h2 className={`text-sm sm:text-xl font-bold ${textPrimary} mb-4 sm:mb-6 flex items-center`}>
+                        <Crown className="h-4 w-4 sm:h-6 sm:w-6 mr-2 text-yellow-600" />
                         Zone Leadership
                       </h2>
 
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 gap-2 sm:gap-4">
                         {leadershipMembers.map((zm) => (
                           <div
                             key={zm.id}
-                            className={`bg-gradient-to-br from-gray-50 to-white border ${borderColor} rounded-lg p-4 hover:shadow-md transition-shadow`}
+                            className={`bg-gradient-to-br from-gray-50 to-white border ${borderColor} rounded-lg p-2 sm:p-4 hover:shadow-md transition-shadow`}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3">
                               <Avatar
                                 src={zm.member?.photo_url}
                                 alt={`${zm.member?.first_name} ${zm.member?.last_name}`}
@@ -857,33 +1020,33 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
 
                 {/* Members Statistics */}
                 <Card variant="default">
-                  <CardBody className="p-6">
-                    <h2 className={`text-xl font-bold ${textPrimary} mb-4 flex items-center`}>
-                      <Users className="h-6 w-6 mr-2 text-blue-600" />
+                  <CardBody className="p-3 sm:p-6">
+                    <h2 className={`text-sm sm:text-xl font-bold ${textPrimary} mb-3 sm:mb-4 flex items-center`}>
+                      <Users className="h-4 w-4 sm:h-6 sm:w-6 mr-2 text-blue-600" />
                       Members Overview
                     </h2>
                     
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-gray-700 font-medium">Total Members</span>
-                        <span className="text-2xl font-bold text-blue-600">{members.length}</span>
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                        <span className="text-xs sm:text-base text-gray-700 font-medium">Total Members</span>
+                        <span className="text-base sm:text-2xl font-bold text-blue-600">{members.length}</span>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="text-gray-700 font-medium">Active Members</span>
-                        <span className="text-2xl font-bold text-green-600">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-green-50 rounded-lg">
+                        <span className="text-xs sm:text-base text-gray-700 font-medium">Active Members</span>
+                        <span className="text-base sm:text-2xl font-bold text-green-600">
                           {members.filter(m => m.member && m.member.status === 'active').length}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <span className="text-gray-700 font-medium">Leadership</span>
-                        <span className="text-2xl font-bold text-purple-600">{leadershipMembers.length}</span>
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-purple-50 rounded-lg">
+                        <span className="text-xs sm:text-base text-gray-700 font-medium">Leadership</span>
+                        <span className="text-base sm:text-2xl font-bold text-purple-600">{leadershipMembers.length}</span>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                        <span className="text-gray-700 font-medium">Regular Members</span>
-                        <span className="text-2xl font-bold text-orange-600">{regularMembers.length}</span>
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-orange-50 rounded-lg">
+                        <span className="text-xs sm:text-base text-gray-700 font-medium">Regular Members</span>
+                        <span className="text-base sm:text-2xl font-bold text-orange-600">{regularMembers.length}</span>
                       </div>
                     </div>
                   </CardBody>
@@ -891,14 +1054,14 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
 
                 {/* Recent Members */}
                 <Card variant="default">
-                  <CardBody className="p-6">
-                    <h2 className={`text-xl font-bold ${textPrimary} mb-4`}>Zone Members</h2>
+                  <CardBody className="p-3 sm:p-6">
+                    <h2 className={`text-sm sm:text-xl font-bold ${textPrimary} mb-3 sm:mb-4`}>Zone Members</h2>
                     
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
                       {members.slice(0, 10).map((zm) => (
                         <div 
                           key={zm.id}
-                          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
                           onClick={() => zm.member && router.push(`/members/${zm.member.id}`)}
                         >
                           <Avatar
@@ -940,6 +1103,9 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                 </Card>
               </div>
             </div>
+            </div>
+            </>
+            )}
           </>
         )}
 

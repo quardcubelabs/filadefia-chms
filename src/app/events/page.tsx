@@ -87,6 +87,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,6 +115,10 @@ export default function EventsPage() {
     registration_deadline: '',
     cost: '0'
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     console.log('Events page auth state:', { 
@@ -535,7 +540,7 @@ export default function EventsPage() {
     });
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || !mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loading />
@@ -566,7 +571,7 @@ export default function EventsPage() {
           </div>
         )}
         
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-8">
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
           <div>
             {events.length > 0 && (
               <span className="text-xs sm:text-sm font-normal text-gray-500">
@@ -574,28 +579,27 @@ export default function EventsPage() {
               </span>
             )}
           </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button 
-                  variant="outline"
-                  size="sm"
+          <div className="flex gap-2">
+                <button 
                   onClick={async () => {
                     console.log('Manual refresh clicked');
                     await loadEvents();
                   }}
                   disabled={loading}
-                  className="flex-1 sm:flex-none"
+                  className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh"
                 >
-                  {loading ? 'Loading...' : 'Refresh'}
-                </Button>
-                <Button 
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+                <button 
                   onClick={() => setIsAddModalOpen(true)}
-                  icon={<Plus className="h-4 w-4" />}
-                  size="sm"
-                  className="flex-1 sm:flex-none"
+                  className="bg-red-700 hover:bg-red-800 text-white p-2 md:px-4 md:py-2 rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <span className="hidden sm:inline">Add Event</span>
-                  <span className="sm:hidden">Add</span>
-                </Button>
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden md:inline">Add Event</span>
+                </button>
               </div>
             </div>
 

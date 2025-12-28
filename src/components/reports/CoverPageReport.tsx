@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Svg, Path, G, Defs, ClipPath } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Svg, Path, G, Image } from '@react-pdf/renderer';
 
 interface ReportProps {
   year?: string;
@@ -36,17 +36,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  // Logo circle with lotus/church symbol
+  // Logo circle with TAG logo
   logoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+  },
+  
+  logoImage: {
+    width: 80,
+    height: 80,
+    objectFit: 'contain',
   },
   
   // Company name in red section
@@ -295,7 +297,7 @@ const CoverPage: React.FC<ReportProps> = ({
         {/* Logo and company name */}
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
-            <LotusSymbol />
+            <Image src="/tag-logo.png" style={styles.logoImage} />
           </View>
           <View style={styles.companyNameContainer}>
             {companyName.split('\n').map((line, index) => (
