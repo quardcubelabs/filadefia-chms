@@ -40,88 +40,53 @@ function LoginForm() {
     setError('');
 
     try {
-      if (!supabase) {
-        setError('System not available. Please try again later.');
-        setLoading(false);
-        return;
-      }
-
       console.log('Attempting login for:', email);
 
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      // Use the API route for login to ensure proper server-side session handling
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
       });
 
-      if (authError) {
-        console.error('Auth error:', authError);
+      const data = await response.json();
+
+      if (!response.ok) {
         // More user-friendly error messages
-        if (authError.message.includes('Invalid login credentials')) {
+        const errorMessage = data.error || 'Login failed';
+        if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('Invalid email or password')) {
           setError('Invalid email or password. Please check your credentials and try again.');
-        } else if (authError.message.includes('Email not confirmed')) {
+        } else if (errorMessage.includes('Email not confirmed')) {
           setError('Please confirm your email address before logging in.');
         } else {
-          setError(authError.message);
+          setError(errorMessage);
         }
         setLoading(false);
         return;
       }
 
-      if (!data.user || !data.session) {
-        setError('Login failed. Please try again.');
-        setLoading(false);
-        return;
-      }
+      console.log('Login successful');
 
-      console.log('Login successful, user:', data.user.id);
+      // Determine redirect destination
+      let redirectPath = searchParams.get('redirect') || '/dashboard';
+      
+      const profile = data.user?.profile;
+      if (profile) {
+        console.log('User profile:', profile);
 
-      // Wait a moment for session to be established
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Get user profile to determine role and department
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, department_id, first_name, last_name')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (profileError) {
-        console.log('Profile not found, will be created. Redirecting to dashboard...');
-        // Profile will be created by AuthContext, redirect to dashboard
-        window.location.href = '/dashboard';
-        return;
-      }
-
-      console.log('User profile:', profile);
-
-      // REDIRECT BASED ON ROLE
-      if (profile.role === 'department_leader') {
-        // Check if they have a department assigned
-        let departmentId = profile.department_id;
-        
-        // If no department_id in profile, check departments table
-        if (!departmentId && supabase) {
-          const { data: deptData, error: deptError } = await supabase
-            .from('departments')
-            .select('id, name')
-            .eq('leader_user_id', data.user.id)
-            .eq('is_active', true)
-            .single();
-
-          if (deptData && !deptError) {
-            departmentId = deptData.id;
-          }
-        }
-
-        if (departmentId) {
-          window.location.href = `/departments/${departmentId}`;
-          return;
+        // REDIRECT BASED ON ROLE
+        if (profile.role === 'department_leader' && profile.department_id) {
+          redirectPath = `/departments/${profile.department_id}`;
         }
       }
 
-      // Default redirect for admins, pastors, or leaders without departments
-      const redirect = searchParams.get('redirect') || '/dashboard';
-      window.location.href = redirect;
+      // Force a full page reload to ensure middleware picks up the new session
+      window.location.href = redirectPath;
     } catch (error: any) {
       console.error('Login exception:', error);
       if (error?.message?.includes('Failed to fetch')) {
