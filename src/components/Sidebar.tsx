@@ -41,7 +41,7 @@ interface NavItem {
 export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = false, onMobileClose }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
-  const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const { departmentId, isDepartmentLeader, loading: deptAccessLoading } = useDepartmentAccess();
   const { user, supabase } = useAuth();
   const [eventCount, setEventCount] = useState<number>(0);
   const [messageCount, setMessageCount] = useState<number>(0);
@@ -84,19 +84,18 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
   }, [user, supabase, isDepartmentLeader, departmentId]);
 
   const navItems: NavItem[] = useMemo(() => {
+    // Don't calculate nav items until department access is loaded
+    // This prevents flickering when the isDepartmentLeader status changes
+    if (deptAccessLoading) {
+      // Return minimal nav items while loading
+      return [
+        { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
+      ];
+    }
+
     const dashboardHref = isDepartmentLeader && departmentId 
       ? `/departments/${departmentId}` 
       : '/dashboard';
-
-    // Debug logging for sidebar navigation
-    if (isDepartmentLeader) {
-      console.log('🔍 Sidebar Debug - Department Leader Navigation:', {
-        isDepartmentLeader,
-        departmentId,
-        dashboardHref,
-        currentPath: pathname
-      });
-    }
 
     const dashboardLabel = isDepartmentLeader && departmentId ? 'Department Dashboard' : 'Dashboard';
 
@@ -119,7 +118,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
     }
 
     return baseNavItems;
-  }, [isDepartmentLeader, departmentId, eventCount, messageCount]);
+  }, [isDepartmentLeader, departmentId, eventCount, messageCount, deptAccessLoading]);
 
   const isActive = (href: string) => pathname === href;
 

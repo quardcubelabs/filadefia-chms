@@ -176,31 +176,31 @@ export default function AttendanceCard({
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-3 sm:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${getAttendanceBackground(attendanceRate)}`}>
-              <UserCheck className={`w-6 h-6 ${getAttendanceColor(attendanceRate)}`} />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className={`p-1.5 sm:p-2 rounded-lg ${getAttendanceBackground(attendanceRate)}`}>
+              <UserCheck className={`w-4 h-4 sm:w-6 sm:h-6 ${getAttendanceColor(attendanceRate)}`} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Attendance</h3>
-              <p className="text-sm text-gray-600">{formatPeriod(period)} Overview</p>
+              <h3 className="text-sm sm:text-lg font-semibold text-gray-900">Attendance</h3>
+              <p className="text-[10px] sm:text-sm text-gray-600">{formatPeriod(period)} Overview</p>
             </div>
           </div>
           <Link
             href="/attendance"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <ArrowUpRight className="w-4 h-4 text-gray-600" />
+            <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
           </Link>
         </div>
       </div>
 
       {/* Main Stats */}
-      <div className="p-6">
-        <div className="mb-6">
+      <div className="p-3 sm:p-6">
+        <div className="mb-4 sm:mb-6">
           <div className="flex items-baseline space-x-2">
-            <span className={`text-3xl font-bold ${getAttendanceColor(attendanceRate)}`}>
+            <span className={`text-xl sm:text-3xl font-bold ${getAttendanceColor(attendanceRate)}`}>
               {attendanceRate.toFixed(1)}%
             </span>
             {trend > 0 && (
@@ -208,71 +208,71 @@ export default function AttendanceCard({
                 isPositive ? 'text-green-600' : 'text-red-600'
               }`}>
                 {isPositive ? (
-                  <TrendingUp className="w-4 h-4" />
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 ) : (
-                  <TrendingDown className="w-4 h-4" />
+                  <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 )}
-                <span className="text-sm font-medium">
+                <span className="text-[10px] sm:text-sm font-medium">
                   {trend.toFixed(1)}%
                 </span>
               </div>
             )}
           </div>
-          <p className="text-sm text-gray-600 mt-1">Overall attendance rate</p>
+          <p className="text-[10px] sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Overall attendance rate</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-center justify-center space-x-2 mb-1">
-              <UserCheck className="w-4 h-4 text-green-600" />
-              <span className="text-lg font-bold text-green-600">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-center justify-center space-x-1 sm:space-x-2 mb-0.5 sm:mb-1">
+              <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+              <span className="text-sm sm:text-lg font-bold text-green-600">
                 {stats.overview.presentCount}
               </span>
             </div>
-            <p className="text-xs text-green-700">Present</p>
+            <p className="text-[9px] sm:text-xs text-green-700">Present</p>
           </div>
 
-          <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
-            <div className="flex items-center justify-center space-x-2 mb-1">
-              <UserX className="w-4 h-4 text-red-600" />
-              <span className="text-lg font-bold text-red-600">
+          <div className="text-center p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200">
+            <div className="flex items-center justify-center space-x-1 sm:space-x-2 mb-0.5 sm:mb-1">
+              <UserX className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
+              <span className="text-sm sm:text-lg font-bold text-red-600">
                 {stats.overview.absentCount}
               </span>
             </div>
-            <p className="text-xs text-red-700">Absent</p>
+            <p className="text-[9px] sm:text-xs text-red-700">Absent</p>
           </div>
         </div>
 
         {/* Additional Stats */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="w-4 h-4 text-gray-600" />
-              <span className="text-sm text-gray-700">Total Members</span>
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+              <span className="text-[10px] sm:text-sm text-gray-700">Total Members</span>
             </div>
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-[10px] sm:text-sm font-semibold text-gray-900">
               {stats.overview.totalMembers}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-600" />
-              <span className="text-sm text-gray-700">Sessions</span>
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+              <span className="text-[10px] sm:text-sm text-gray-700">Sessions</span>
             </div>
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-[10px] sm:text-sm font-semibold text-gray-900">
               {stats.overview.totalSessions}
             </span>
           </div>
 
           {stats.dateStats.length > 0 && (
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-700">Latest Session</span>
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                <span className="text-[10px] sm:text-sm text-gray-700">Latest Session</span>
               </div>
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="text-[10px] sm:text-sm font-semibold text-gray-900">
                 {new Date(stats.dateStats[stats.dateStats.length - 1].date).toLocaleDateString()}
               </span>
             </div>
@@ -280,14 +280,14 @@ export default function AttendanceCard({
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+        <div className="mt-4 sm:mt-6">
+          <div className="flex items-center justify-between text-[9px] sm:text-xs text-gray-600 mb-1.5 sm:mb-2">
             <span>Attendance Progress</span>
             <span>{attendanceRate.toFixed(1)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
             <div 
-              className={`h-2 rounded-full transition-all duration-300 ${
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
                 attendanceRate >= 80 
                   ? 'bg-green-500' 
                   : attendanceRate >= 60 
@@ -300,16 +300,16 @@ export default function AttendanceCard({
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-6 flex space-x-2">
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:space-x-2">
           <Link
             href="/attendance/record"
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium text-center"
+            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-[10px] sm:text-sm font-medium text-center"
           >
             Record Attendance
           </Link>
           <Link
             href="/attendance/reports"
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-center"
+            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-red-300 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors text-[10px] sm:text-sm font-medium text-center"
           >
             View Reports
           </Link>

@@ -6,16 +6,15 @@ import { getSiteUrl } from '@/lib/config';
 // POST - Generate QR code for existing attendance session
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: sessionId } = await params;
-    
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    const sessionId = params.id;
     const body = await request.json();
     const { qr_duration_hours = 4 } = body;
 

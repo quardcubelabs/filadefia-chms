@@ -573,58 +573,58 @@ export default function MembersPage() {
       )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card variant="default">
-            <CardBody className="p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+          <Card variant="default" padding="sm" rounded="xl">
+            <CardBody>
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Members</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Members</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.total}</p>
                 </div>
-                <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card variant="default">
-            <CardBody className="p-6">
+          <Card variant="default" padding="sm" rounded="xl">
+            <CardBody>
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Members</p>
-                  <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Active Members</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-green-600 mt-0.5 sm:mt-1">{stats.active}</p>
                 </div>
-                <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card variant="default">
-            <CardBody className="p-6">
+          <Card variant="default" padding="sm" rounded="xl">
+            <CardBody>
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Visitors</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-1">{stats.visitors}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Visitors</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600 mt-0.5 sm:mt-1">{stats.visitors}</p>
                 </div>
-                <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <Eye className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                  <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card variant="default">
-            <CardBody className="p-6">
+          <Card variant="default" padding="sm" rounded="xl">
+            <CardBody>
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">New This Month</p>
-                  <p className="text-3xl font-bold text-purple-600 mt-1">{stats.newThisMonth}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">New This Month</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-600 mt-0.5 sm:mt-1">{stats.newThisMonth}</p>
                 </div>
-                <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Plus className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                  <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardBody>
@@ -632,16 +632,17 @@ export default function MembersPage() {
         </div>
 
         {/* Actions & Filters */}
-        <Card variant="default" className="mb-6">
-          <CardBody className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <div className="flex flex-col md:flex-row gap-4 flex-1">
-                <div className="w-full md:w-96">
+        <Card variant="default" className="mb-4 sm:mb-6" padding="sm" rounded="xl">
+          <CardBody>
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* Search and Filter Row */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="w-full sm:flex-1">
                   <Input
-                    placeholder="Search members by name, number, or phone..."
+                    placeholder="Search members..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    icon={<Search className="h-5 w-5" />}
+                    icon={<Search className="h-4 w-4 sm:h-5 sm:w-5" />}
                     fullWidth
                   />
                 </div>
@@ -659,33 +660,40 @@ export default function MembersPage() {
                 />
               </div>
 
-              <div className="flex gap-2">
+              {/* Action Buttons - Scrollable on mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-wrap">
                 <Button
                   variant="outline"
                   onClick={() => setShowImportModal(true)}
+                  size="sm"
+                  className="flex-shrink-0"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Import
+                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Import</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleExport}
                   disabled={filteredMembers.length === 0}
+                  size="sm"
+                  className="flex-shrink-0"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowBulkCardModal(true)}
                   disabled={filteredMembers.length === 0}
+                  size="sm"
+                  className="flex-shrink-0"
                 >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Print Cards
+                  <CreditCard className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Print Cards</span>
                 </Button>
-                <Button onClick={() => setShowAddModal(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Member
+                <Button onClick={() => setShowAddModal(true)} size="sm" className="flex-shrink-0 ml-auto sm:ml-0">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Member</span>
                 </Button>
               </div>
             </div>

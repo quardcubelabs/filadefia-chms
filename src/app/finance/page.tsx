@@ -720,84 +720,84 @@ export default function FinancePage() {
             )}
 
             {/* Financial Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+              <Card padding="sm" rounded="xl">
                 <CardBody>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Income</p>
-                      <p className="text-2xl font-bold text-green-600">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Income</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 truncate">
                         {formatCurrency(summary.totalIncome)}
                       </p>
                     </div>
-                    <div className="p-3 bg-green-100 rounded-full">
-                      <TrendingUp className="h-6 w-6 text-green-600" />
+                    <div className="p-2 sm:p-3 bg-green-100 rounded-full flex-shrink-0 ml-2">
+                      <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 truncate">
                     This month: {formatCurrency(summary.monthlyIncome)}
                   </p>
                 </CardBody>
               </Card>
 
-              <Card>
+              <Card padding="sm" rounded="xl">
                 <CardBody>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                      <p className="text-2xl font-bold text-red-600">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Expenses</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 truncate">
                         {formatCurrency(summary.totalExpenses)}
                       </p>
                     </div>
-                    <div className="p-3 bg-red-100 rounded-full">
-                      <TrendingDown className="h-6 w-6 text-red-600" />
+                    <div className="p-2 sm:p-3 bg-red-100 rounded-full flex-shrink-0 ml-2">
+                      <TrendingDown className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 truncate">
                     This month: {formatCurrency(summary.monthlyExpenses)}
                   </p>
                 </CardBody>
               </Card>
 
-              <Card>
+              <Card padding="sm" rounded="xl">
                 <CardBody>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Net Amount</p>
-                      <p className={`text-2xl font-bold ${
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Net Amount</p>
+                      <p className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${
                         summary.netAmount >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {formatCurrency(summary.netAmount)}
                       </p>
                     </div>
-                    <div className={`p-3 rounded-full ${
+                    <div className={`p-2 sm:p-3 rounded-full flex-shrink-0 ml-2 ${
                       summary.netAmount >= 0 ? 'bg-green-100' : 'bg-red-100'
                     }`}>
-                      <DollarSign className={`h-6 w-6 ${
+                      <DollarSign className={`h-4 w-4 sm:h-6 sm:w-6 ${
                         summary.netAmount >= 0 ? 'text-green-600' : 'text-red-600'
                       }`} />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Monthly net: {formatCurrency(summary.monthlyIncome - summary.monthlyExpenses)}
+                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 truncate">
+                    Monthly: {formatCurrency(summary.monthlyIncome - summary.monthlyExpenses)}
                   </p>
                 </CardBody>
               </Card>
 
-              <Card>
+              <Card padding="sm" rounded="xl">
                 <CardBody>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Recent Activity</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Recent Activity</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
                         {summary.recentTransactions}
                       </p>
                     </div>
-                    <div className="p-3 bg-blue-100 rounded-full">
-                      <Receipt className="h-6 w-6 text-blue-600" />
+                    <div className="p-2 sm:p-3 bg-blue-100 rounded-full flex-shrink-0 ml-2">
+                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">
                     {summary.unverifiedCount} unverified
                   </p>
                 </CardBody>
@@ -805,10 +805,10 @@ export default function FinancePage() {
             </div>
 
             {/* Search and Filters */}
-            <Card className="mb-6">
+            <Card className="mb-4 sm:mb-6" padding="sm" rounded="xl">
               <CardBody>
-                <div className={`grid grid-cols-1 md:grid-cols-3 ${isDepartmentLeader ? 'lg:grid-cols-5' : 'lg:grid-cols-6'} gap-4 mb-4`}>
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                  <div className="sm:col-span-2 lg:col-span-1">
                     <Input
                       placeholder="Search transactions..."
                       value={searchTerm}
@@ -843,6 +843,8 @@ export default function FinancePage() {
                       ]}
                     />
                   )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   <Select
                     value={filterPaymentMethod}
                     onChange={(e) => setFilterPaymentMethod(e.target.value)}

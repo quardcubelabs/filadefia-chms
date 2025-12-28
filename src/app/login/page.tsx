@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth, AuthStatus } from '@/hooks/useAuth';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Users, DollarSign, BarChart3, Church, Chrome } from 'lucide-react';
 
-function LoginForm() {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,53 +40,88 @@ function LoginForm() {
     setError('');
 
     try {
+      if (!supabase) {
+        setError('System not available. Please try again later.');
+        setLoading(false);
+        return;
+      }
+
       console.log('Attempting login for:', email);
 
-      // Use the API route for login to ensure proper server-side session handling
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password,
-        }),
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (authError) {
+        console.error('Auth error:', authError);
         // More user-friendly error messages
-        const errorMessage = data.error || 'Login failed';
-        if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('Invalid email or password')) {
+        if (authError.message.includes('Invalid login credentials')) {
           setError('Invalid email or password. Please check your credentials and try again.');
-        } else if (errorMessage.includes('Email not confirmed')) {
+        } else if (authError.message.includes('Email not confirmed')) {
           setError('Please confirm your email address before logging in.');
         } else {
-          setError(errorMessage);
+          setError(authError.message);
         }
         setLoading(false);
         return;
       }
 
-      console.log('Login successful');
+      if (!data.user || !data.session) {
+        setError('Login failed. Please try again.');
+        setLoading(false);
+        return;
+      }
 
-      // Determine redirect destination
-      let redirectPath = searchParams.get('redirect') || '/dashboard';
-      
-      const profile = data.user?.profile;
-      if (profile) {
-        console.log('User profile:', profile);
+      console.log('Login successful, user:', data.user.id);
 
-        // REDIRECT BASED ON ROLE
-        if (profile.role === 'department_leader' && profile.department_id) {
-          redirectPath = `/departments/${profile.department_id}`;
+      // Wait a moment for session to be established
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Get user profile to determine role and department
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, department_id, first_name, last_name')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.log('Profile not found, will be created. Redirecting to dashboard...');
+        // Profile will be created by AuthContext, redirect to dashboard
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      console.log('User profile:', profile);
+
+      // REDIRECT BASED ON ROLE
+      if (profile.role === 'department_leader') {
+        // Check if they have a department assigned
+        let departmentId = profile.department_id;
+        
+        // If no department_id in profile, check departments table
+        if (!departmentId && supabase) {
+          const { data: deptData, error: deptError } = await supabase
+            .from('departments')
+            .select('id, name')
+            .eq('leader_user_id', data.user.id)
+            .eq('is_active', true)
+            .single();
+
+          if (deptData && !deptError) {
+            departmentId = deptData.id;
+          }
+        }
+
+        if (departmentId) {
+          window.location.href = `/departments/${departmentId}`;
+          return;
         }
       }
 
-      // Force a full page reload to ensure middleware picks up the new session
-      window.location.href = redirectPath;
+      // Default redirect for admins, pastors, or leaders without departments
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      window.location.href = redirect;
     } catch (error: any) {
       console.error('Login exception:', error);
       if (error?.message?.includes('Failed to fetch')) {
@@ -174,7 +209,7 @@ function LoginForm() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border-2 border-yellow-400 rounded-xl focus:outline-none focus:border-blue-500 transition-all"
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 hover:border-gray-300"
                   placeholder="you@example.com"
                 />
               </div>
@@ -197,7 +232,7 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 border-2 border-yellow-400 rounded-xl focus:outline-none focus:border-blue-500 transition-all"
+                  className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 hover:border-gray-300"
                   placeholder="Enter your password"
                 />
                 <button
@@ -374,17 +409,5 @@ function LoginForm() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
   );
 }

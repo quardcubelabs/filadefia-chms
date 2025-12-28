@@ -285,113 +285,115 @@ export default function AttendancePage() {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
-            <p className="text-gray-600 mt-1">
-              Track and manage church attendance records
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Attendance Management</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              Track and manage attendance records
               {isDepartmentLeader && (
-                <span className="text-sm text-blue-600 ml-2">
+                <span className="text-xs sm:text-sm text-blue-600 ml-2 block sm:inline mt-1 sm:mt-0">
                   • Department: {departmentId}
                 </span>
               )}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={migrateLegacySessions}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+              className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors text-xs sm:text-sm"
               title="Add QR codes to existing manual sessions"
             >
-              <QrCode className="w-4 h-4" />
-              Migrate Sessions
+              <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Migrate Sessions</span>
+              <span className="sm:hidden">Migrate</span>
             </button>
             <button
               onClick={() => router.push('/attendance/record')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors text-xs sm:text-sm"
             >
-              <Plus className="w-4 h-4" />
-              Record Attendance
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Record Attendance</span>
+              <span className="sm:hidden">Record</span>
             </button>
           </div>
         </div>
 
         {/* Statistics Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm border p-6 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded"></div>
+              <div key={i} className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6 animate-pulse">
+                <div className="h-3 sm:h-4 bg-gray-200 rounded mb-3 sm:mb-4"></div>
+                <div className="h-6 sm:h-8 bg-gray-200 rounded mb-2"></div>
+                <div className="h-2 sm:h-3 bg-gray-200 rounded"></div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {/* Total Members */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Members</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalMembers}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Members</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.totalMembers}</p>
                 </div>
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
                 </div>
               </div>
             </div>
 
             {/* Present Today */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Present This Week</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">{stats.presentToday}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Present This Week</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{stats.presentToday}</p>
                 </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <UserCheck className="w-6 h-6 text-green-600" />
+                <div className="bg-green-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
                 </div>
               </div>
             </div>
 
             {/* Attendance Rate */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Attendance Rate</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">
                     {stats.attendanceRate.toFixed(1)}%
                   </p>
-                  <div className="flex items-center mt-1">
+                  <div className="flex items-center mt-0.5 sm:mt-1">
                     {stats.weeklyTrend >= 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                      <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-0.5 sm:mr-1" />
                     ) : (
-                      <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                      <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 mr-0.5 sm:mr-1" />
                     )}
-                    <span className={`text-sm ${stats.weeklyTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {Math.abs(stats.weeklyTrend).toFixed(1)}% vs last week
+                    <span className={`text-[10px] sm:text-xs md:text-sm ${stats.weeklyTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {Math.abs(stats.weeklyTrend).toFixed(1)}%
                     </span>
                   </div>
                 </div>
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <Activity className="w-6 h-6 text-purple-600" />
+                <div className="bg-purple-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-600" />
                 </div>
               </div>
             </div>
 
             {/* Check-ins Breakdown */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="bg-orange-50 p-2 rounded-lg mr-3">
-                    <QrCode className="w-5 h-5 text-orange-600" />
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="flex items-center min-w-0">
+                  <div className="bg-orange-50 p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                    <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-orange-600" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Check-ins This Week</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalCheckIns}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Check-ins</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.totalCheckIns}</p>
                   </div>
                 </div>
               </div>
@@ -420,69 +422,69 @@ export default function AttendancePage() {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {quickActions.map((action) => (
             <div
               key={action.title}
               onClick={() => router.push(action.href)}
-              className={`bg-gradient-to-br ${action.gradient} rounded-lg p-6 border cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-105 group`}
+              className={`bg-gradient-to-br ${action.gradient} rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group touch-manipulation`}
             >
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between">
                 <div className="flex-1">
-                  <div className={`${action.color} mb-3 group-hover:scale-110 transition-transform`}>
-                    <action.icon className="w-8 h-8" />
+                  <div className={`${action.color} mb-2 sm:mb-3 group-hover:scale-110 transition-transform`}>
+                    <action.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">{action.title}</h3>
-                  <p className="text-sm text-gray-600">{action.description}</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">{action.title}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">{action.description}</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors hidden sm:block" />
               </div>
             </div>
           ))}
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Attendance Sessions</h2>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border">
+          <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Sessions</h2>
               <button
                 onClick={() => router.push('/attendance/reports')}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center gap-1"
               >
-                View All Reports
-                <ArrowRight className="w-4 h-4" />
+                View All
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-3 sm:p-4 md:p-6">
             {loading ? (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 sm:h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded w-3/4"></div>
                   </div>
                 ))}
               </div>
             ) : stats.recentSessions.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-2 sm:space-y-4">
                 {stats.recentSessions.map((session) => (
                   <div
                     key={session.id}
                     onClick={() => handleSessionClick(session)}
-                    className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg transition-all duration-200 ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl transition-all duration-200 gap-2 sm:gap-4 ${
                       session.hasQRCode
                         ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
-                          ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md' 
-                          : 'hover:bg-orange-50 cursor-pointer border-l-4 border-l-orange-400 hover:shadow-md'
+                          ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md active:scale-[0.98]' 
+                          : 'hover:bg-orange-50 cursor-pointer border-l-4 border-l-orange-400 hover:shadow-md active:scale-[0.98]'
                         : session.isQRSession 
-                        ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md' 
-                        : 'hover:bg-gray-100 cursor-pointer hover:shadow-sm'
-                    }`}
+                        ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md active:scale-[0.98]' 
+                        : 'hover:bg-gray-100 cursor-pointer hover:shadow-sm active:scale-[0.98]'
+                    } touch-manipulation`}
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-lg ${
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                      <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
                         session.hasQRCode
                           ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
                             ? 'bg-green-100' 
@@ -492,7 +494,7 @@ export default function AttendancePage() {
                           : 'bg-blue-100'
                       }`}>
                         {session.hasQRCode || session.isQRSession ? (
-                          <QrCode className={`w-5 h-5 ${
+                          <QrCode className={`w-4 h-4 sm:w-5 sm:h-5 ${
                             session.hasQRCode
                               ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
                                 ? 'text-green-600' 
@@ -500,16 +502,16 @@ export default function AttendancePage() {
                               : 'text-green-600'
                           }`} />
                         ) : (
-                          <Calendar className="w-5 h-5 text-blue-600" />
+                          <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                         )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-gray-900">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
                             {getAttendanceTypeLabel(session.attendance_type)}
                           </h4>
                           {(session.hasQRCode || session.isQRSession) && (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium flex-shrink-0 ${
                               session.hasQRCode
                                 ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
                                   ? 'bg-green-100 text-green-800'
@@ -525,25 +527,13 @@ export default function AttendancePage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {formatDate(session.date)} • {session.present_count} of {session.total_count} present
-                          <span className={`ml-1 ${
-                            session.hasQRCode
-                              ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
-                                ? 'text-green-600'
-                                : 'text-orange-600'
-                              : 'text-blue-600'
-                          }`}>
-                            • Click to view session details & QR code
-                            {session.hasQRCode && session.qr_expires_at && new Date(session.qr_expires_at) <= new Date() && (
-                              <span className="text-orange-600"> (QR Expired)</span>
-                            )}
-                          </span>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">
+                          {formatDate(session.date)} • {session.present_count}/{session.total_count}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    <div className="flex items-center gap-2 sm:gap-3 justify-end">
+                      <div className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
                         session.percentage >= 80
                           ? 'bg-green-100 text-green-800'
                           : session.percentage >= 60

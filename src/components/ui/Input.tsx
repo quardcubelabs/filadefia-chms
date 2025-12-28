@@ -24,8 +24,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = !!error;
 
-    const inputBaseStyles = 'block w-full rounded-xl border transition-all focus:outline-none';
-    const inputSizeStyles = icon ? (iconPosition === 'left' ? 'pl-12 pr-4 py-3' : 'pl-4 pr-12 py-3') : 'px-4 py-3';
+    const inputBaseStyles = 'block w-full rounded-lg sm:rounded-xl border transition-all focus:outline-none text-sm sm:text-base';
+    const inputSizeStyles = icon ? (iconPosition === 'left' ? 'pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3' : 'pl-3 sm:pl-4 pr-9 sm:pr-12 py-2.5 sm:py-3') : 'px-3 sm:px-4 py-2.5 sm:py-3';
     const inputStateStyles = hasError
       ? '!border-red-300 focus:!border-red-500 focus:!ring-red-500 focus:!ring-2 focus:!outline-none !bg-red-50'
       : '!border-red-300 focus:!border-red-500 focus:!ring-red-500 focus:!ring-2 focus:!outline-none !bg-red-50';
@@ -33,13 +33,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor={inputId} className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && iconPosition === 'left' && (
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-red-500">
+            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-red-500">
               {icon}
             </div>
           )}
@@ -50,16 +50,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {icon && iconPosition === 'right' && (
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-red-500">
+            <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center pointer-events-none text-red-500">
               {icon}
             </div>
           )}
         </div>
         {error && (
-          <p className="mt-2 text-sm text-red-600 font-medium">{error}</p>
+          <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-red-600 font-medium">{error}</p>
         )}
         {helperText && !error && (
-          <p className="mt-2 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-500">{helperText}</p>
         )}
       </div>
     );

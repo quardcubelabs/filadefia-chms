@@ -551,45 +551,50 @@ export default function EventsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Department Leader Access Notification */}
         {isDepartmentLeader && departmentName && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <Calendar className="h-5 w-5 text-red-600 mr-2" />
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div className="flex items-start sm:items-center">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
               <div>
-                <h3 className="text-sm font-medium text-red-800">
+                <h3 className="text-xs sm:text-sm font-medium text-red-800">
                   Department Events: {departmentName}
                 </h3>
-                <p className="text-sm text-red-700">
-                  Showing events for your department only. You can create and manage events for {departmentName}.
+                <p className="text-xs sm:text-sm text-red-700 mt-0.5">
+                  Showing events for your department only.
                 </p>
               </div>
             </div>
           </div>
         )}
         
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-8">
           <div>
             {events.length > 0 && (
-              <span className="text-sm font-normal text-gray-500">
+              <span className="text-xs sm:text-sm font-normal text-gray-500">
                 ({events.length} {events.length === 1 ? 'event' : 'events'})
               </span>
             )}
           </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <Button 
                   variant="outline"
+                  size="sm"
                   onClick={async () => {
                     console.log('Manual refresh clicked');
                     await loadEvents();
                   }}
                   disabled={loading}
+                  className="flex-1 sm:flex-none"
                 >
                   {loading ? 'Loading...' : 'Refresh'}
                 </Button>
                 <Button 
                   onClick={() => setIsAddModalOpen(true)}
                   icon={<Plus className="h-4 w-4" />}
+                  size="sm"
+                  className="flex-1 sm:flex-none"
                 >
-                  Add Event
+                  <span className="hidden sm:inline">Add Event</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </div>
             </div>
@@ -599,7 +604,7 @@ export default function EventsPage() {
               <Alert
                 variant="error"
                 onClose={() => setError('')}
-                className="mb-4"
+                className="mb-3 sm:mb-4"
               >
                 {error}
               </Alert>
@@ -608,17 +613,17 @@ export default function EventsPage() {
               <Alert
                 variant="success"
                 onClose={() => setSuccess('')}
-                className="mb-4"
+                className="mb-3 sm:mb-4"
               >
                 {success}
               </Alert>
             )}
 
             {/* Search and Filters */}
-            <Card className="mb-6">
+            <Card className="mb-4 sm:mb-6" padding="sm" rounded="xl">
               <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="sm:col-span-2 lg:col-span-2">
                     <Input
                       placeholder="Search events..."
                       value={searchTerm}
@@ -659,15 +664,15 @@ export default function EventsPage() {
             {/* Events List */}
             {filteredEvents.length === 0 ? (
               <EmptyState
-                icon={<Calendar className="h-16 w-16 text-gray-400" />}
+                icon={<Calendar className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />}
                 title={events.length === 0 ? "No Events Yet" : "No Events Match Filters"}
                 description={
                   events.length === 0 
-                    ? "Get started by creating your first church event. You can organize conferences, workshops, fellowship meetings, and more."
-                    : "No events match your current search and filter criteria. Try adjusting your search terms or filters to find events."
+                    ? "Get started by creating your first church event."
+                    : "Try adjusting your search or filters."
                 }
                 action={{
-                  label: events.length === 0 ? "Create First Event" : "Clear Filters",
+                  label: events.length === 0 ? "Create Event" : "Clear Filters",
                   onClick: events.length === 0 
                     ? () => setIsAddModalOpen(true)
                     : () => {
@@ -678,23 +683,23 @@ export default function EventsPage() {
                 }}
               />
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filteredEvents.map((event) => (
-                  <Card key={event.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={event.id} className="hover:shadow-lg transition-shadow" padding="sm" rounded="xl">
                     <CardBody>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                      <div className="flex justify-between items-start mb-3 sm:mb-4">
+                        <div className="flex-1 min-w-0 mr-2">
+                          <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1 truncate">
                             {event.title}
                           </h3>
                           <Badge 
                             variant="default" 
-                            className={getEventTypeColor(event.event_type)}
+                            className={`text-xs ${getEventTypeColor(event.event_type)}`}
                           >
                             {event.event_type.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </div>
-                        <div className="flex space-x-1">
+                        <div className="flex space-x-1 flex-shrink-0">
                           <Button
                             variant="ghost"
                             size="sm"

@@ -58,7 +58,7 @@ export default function TopNavbar({
   };
 
   // Auto-generate title if not provided
-  const displayTitle = title || `Hello ${user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} 👋`;
+  const displayTitle = title || `Hello ${user?.profile?.first_name || user?.email?.split('@')[0] || 'User'}`;
   const displaySubtitle = subtitle || (isDepartmentLeader && departmentName 
     ? `Department Leader - ${departmentName}` 
     : 'Tanzania Assemblies of God - FCC'
@@ -81,7 +81,7 @@ export default function TopNavbar({
             </Button>
             
             <div className="min-w-0">
-              <h1 className={`text-lg sm:text-xl md:text-2xl font-bold ${textPrimary} truncate`}>
+              <h1 className={`text-lg sm:text-xl md:text-2xl font-bold ${textPrimary} truncate hidden sm:block`}>
                 {displayTitle}
               </h1>
               {displaySubtitle && (

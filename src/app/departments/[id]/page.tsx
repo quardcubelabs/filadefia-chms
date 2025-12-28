@@ -42,7 +42,7 @@ export default function DepartmentDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
-  const { isDepartmentLeader, departmentId } = useDepartmentAccess();
+  const { isDepartmentLeader, departmentId, loading: deptAccessLoading } = useDepartmentAccess();
   
   const [department, setDepartment] = useState<Department | null>(null);
   const [members, setMembers] = useState<DepartmentMember[]>([]);
@@ -51,6 +51,7 @@ export default function DepartmentDashboardPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Financial data
   const [financialData, setFinancialData] = useState({
@@ -63,12 +64,14 @@ export default function DepartmentDashboardPage() {
   const [showEditMember, setShowEditMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<DepartmentMember | null>(null);
 
+  // Wait for auth and department access to be ready before fetching data
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && !deptAccessLoading && user && !isInitialized) {
+      setIsInitialized(true);
       fetchDepartmentData();
       fetchFinancialData();
     }
-  }, [authLoading, user, params.id]);
+  }, [authLoading, deptAccessLoading, user, isInitialized, params.id]);
 
   const fetchDepartmentData = async () => {
     try {
@@ -320,6 +323,18 @@ export default function DepartmentDashboardPage() {
 
   if (!user && !authLoading) {
     return null;
+  }
+
+  // Show loading screen while auth or department access is loading
+  if (authLoading || deptAccessLoading || !isInitialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent mb-4" />
+          <p className="text-gray-600 font-medium">Loading department dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   // Styling variables

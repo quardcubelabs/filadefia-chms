@@ -45,26 +45,18 @@ export default function UserDropdown({ darkMode = false }: UserDropdownProps) {
 
   return (
     <div className="relative">
-      {/* User Button */}
+      {/* User Button - Avatar only */}
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${
+        className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
           darkMode 
             ? 'hover:bg-gray-700 text-white' 
             : 'hover:bg-gray-100 text-gray-900'
         }`}
       >
         {/* Avatar */}
-        <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+        <div className="w-9 h-9 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
           {initials}
-        </div>
-        
-        {/* Name and Role */}
-        <div className="text-left">
-          <p className="text-sm font-medium">{displayName}</p>
-          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} capitalize`}>
-            {user.profile.role?.replace('_', ' ')}
-          </p>
         </div>
         
         {/* Chevron */}
@@ -81,10 +73,24 @@ export default function UserDropdown({ darkMode = false }: UserDropdownProps) {
           />
           
           {/* Menu */}
-          <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20 ${
+          <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg z-20 ${
             darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           } border`}>
             <div className="py-1">
+              {/* User Info Header */}
+              <div className={`px-4 py-3 border-b ${
+                darkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>{displayName}</p>
+                <p className={`text-xs capitalize ${
+                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  {user.profile.role?.replace('_', ' ')}
+                </p>
+              </div>
+
               {/* View Profile */}
               <Link
                 href="/profile"
