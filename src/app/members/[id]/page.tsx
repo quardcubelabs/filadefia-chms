@@ -77,6 +77,7 @@ export default function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'contributions' | 'activity'>('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Stats state
   const [totalAttendance, setTotalAttendance] = useState<number>(0);
@@ -285,11 +286,19 @@ export default function MemberProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       
-      <main className="ml-20 p-8">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      <main className="lg:ml-20 p-3 sm:p-4 md:p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <Button
             variant="ghost"
             onClick={() => router.push('/members')}
@@ -299,19 +308,19 @@ export default function MemberProfilePage() {
             Back to Members
           </Button>
           
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-tag-gray-900 flex items-center">
-              <User className="h-8 w-8 mr-3 text-tag-red-600" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-tag-gray-900 flex items-center">
+              <User className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-tag-red-600" />
               Member Profile
             </h1>
             
             {member && (
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleEdit}>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" onClick={handleEdit} className="flex-1 sm:flex-none">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
-                <Button variant="outline" onClick={handleDelete}>
+                <Button variant="outline" onClick={handleDelete} className="flex-1 sm:flex-none">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
@@ -322,7 +331,7 @@ export default function MemberProfilePage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <Alert variant="error" onClose={() => setError(null)}>
               {error}
             </Alert>
@@ -332,13 +341,13 @@ export default function MemberProfilePage() {
         {/* Loading State */}
         {loading ? (
           <Card variant="default">
-            <CardBody className="p-12">
+            <CardBody className="p-8 sm:p-12">
               <Loading />
             </CardBody>
           </Card>
         ) : !member ? (
           <Card variant="default">
-            <CardBody className="p-12">
+            <CardBody className="p-8 sm:p-12">
               <EmptyState
                 icon={<User className="h-12 w-12" />}
                 title="Member not found"

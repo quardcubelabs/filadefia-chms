@@ -40,14 +40,87 @@ export function Table<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="w-full overflow-x-auto">
-        <table className={`w-full ${className}`}>
+      <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="inline-block min-w-full align-middle">
+          <table className={`min-w-full divide-y divide-tag-gray-200 ${className}`}>
+            <thead className="bg-tag-gray-50">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} whitespace-nowrap`}
+                    style={{ width: column.width }}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className={striped && i % 2 === 0 ? 'bg-tag-gray-50' : ''}>
+                  {columns.map((column) => (
+                    <td key={column.key} className={`px-3 sm:px-4 py-3 sm:py-4 ${bordered ? 'border-b border-tag-gray-200' : ''}`}>
+                      <div className="h-4 bg-tag-gray-200 rounded animate-pulse"></div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="inline-block min-w-full align-middle">
+          <table className={`min-w-full divide-y divide-tag-gray-200 ${className}`}>
+            <thead className="bg-tag-gray-50">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
+                      alignClasses[column.align || 'left']
+                    } whitespace-nowrap`}
+                    style={{ width: column.width }}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className={`px-3 sm:px-4 py-8 sm:py-12 text-center text-tag-gray-500 ${bordered ? 'border-b border-tag-gray-200' : ''}`}
+                >
+                  {emptyMessage}
+                </td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+      <div className="inline-block min-w-full align-middle">
+        <table className={`min-w-full divide-y divide-tag-gray-200 ${className}`}>
           <thead className="bg-tag-gray-50">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-4 py-3 text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''}`}
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
+                    alignClasses[column.align || 'left']
+                  } whitespace-nowrap`}
                   style={{ width: column.width }}
                 >
                   {column.header}
@@ -55,12 +128,25 @@ export function Table<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody>
-            {[...Array(5)].map((_, i) => (
-              <tr key={i} className={striped && i % 2 === 0 ? 'bg-tag-gray-50' : ''}>
+          <tbody className="bg-white divide-y divide-tag-gray-200">
+            {data.map((row, index) => (
+              <tr
+                key={index}
+                onClick={() => onRowClick?.(row, index)}
+                className={`
+                  ${striped && index % 2 === 0 ? 'bg-tag-gray-50' : ''}
+                  ${hoverable ? 'hover:bg-tag-red-50 hover:shadow-sm transition-all duration-200' : ''}
+                  ${onRowClick ? 'cursor-pointer' : ''}
+                `}
+              >
                 {columns.map((column) => (
-                  <td key={column.key} className={`px-4 py-4 ${bordered ? 'border-b border-tag-gray-200' : ''}`}>
-                    <div className="h-4 bg-tag-gray-200 rounded animate-pulse"></div>
+                  <td
+                    key={column.key}
+                    className={`px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-tag-gray-900 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
+                      alignClasses[column.align || 'left']
+                    }`}
+                  >
+                    {column.render ? column.render(row, index) : row[column.key]}
                   </td>
                 ))}
               </tr>
@@ -68,86 +154,6 @@ export function Table<T extends Record<string, any>>({
           </tbody>
         </table>
       </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="w-full overflow-x-auto">
-        <table className={`w-full ${className}`}>
-          <thead className="bg-tag-gray-50">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={`px-4 py-3 text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
-                    alignClasses[column.align || 'left']
-                  }`}
-                  style={{ width: column.width }}
-                >
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td
-                colSpan={columns.length}
-                className={`px-4 py-12 text-center text-tag-gray-500 ${bordered ? 'border-b border-tag-gray-200' : ''}`}
-              >
-                {emptyMessage}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full overflow-x-auto">
-      <table className={`w-full ${className}`}>
-        <thead className="bg-tag-gray-50">
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className={`px-4 py-3 text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
-                  alignClasses[column.align || 'left']
-                }`}
-                style={{ width: column.width }}
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white">
-          {data.map((row, index) => (
-            <tr
-              key={index}
-              onClick={() => onRowClick?.(row, index)}
-              className={`
-                ${striped && index % 2 === 0 ? 'bg-tag-gray-50' : ''}
-                ${hoverable ? 'hover:bg-tag-red-50 hover:shadow-sm transition-all duration-200' : ''}
-                ${onRowClick ? 'cursor-pointer' : ''}
-              `}
-            >
-              {columns.map((column) => (
-                <td
-                  key={column.key}
-                  className={`px-4 py-4 text-sm text-tag-gray-900 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
-                    alignClasses[column.align || 'left']
-                  }`}
-                >
-                  {column.render ? column.render(row, index) : row[column.key]}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

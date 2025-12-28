@@ -116,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [supabase, session]);
 
-  // Load user profile from database with JWT retry
+  // Load user profile from database with JWT retry and network error handling
   const loadUserProfile = useCallback(async (authUser: User, retryCount = 0): Promise<Profile | null> => {
     if (!supabase) return null;
 
@@ -194,6 +194,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return profile;
     } catch (error: any) {
+      // Handle network errors gracefully
+      if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
+        console.warn('Network error loading profile, will retry on reconnect');
+        // Return null but don't clear auth - allow retry on network restore
+        return null;
+      }
+      
       if (isJWTExpiredError(error) && retryCount < 2) {
         const refreshed = await refreshSession();
         if (refreshed) {

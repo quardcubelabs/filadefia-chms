@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useZoneAccess } from '@/hooks/useZoneAccess';
 import MainLayout from '@/components/MainLayout';
 import { 
   Button, 
@@ -41,7 +42,9 @@ import {
   File,
   Folder,
   FileImage,
-  FileSpreadsheet
+  FileSpreadsheet,
+  TrendingUp,
+  MapPin
 } from 'lucide-react';
 
 interface MeetingMinutes {
@@ -81,11 +84,30 @@ interface Report {
   title: string;
   type: 'monthly' | 'quarterly' | 'annual';
   department_id?: string;
+  zone_id?: string;
   content: string;
   generated_by: string;
   file_url?: string;
+  source?: 'manual' | 'generated';
+  description?: string;
+  period_start?: string;
+  period_end?: string;
+  data?: {
+    reportType?: string;
+    reportPeriod?: string;
+    filename?: string;
+    totalMembers?: number;
+    totalIncome?: number;
+    totalExpenses?: number;
+    generatedAt?: string;
+    generatedBy?: string;
+    content?: string;
+  };
   created_at: string;
   department?: {
+    name: string;
+  };
+  zone?: {
     name: string;
   };
   generator?: {
@@ -111,6 +133,7 @@ export default function DocumentsPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
   const { isDepartmentLeader, departmentId, departmentName } = useDepartmentAccess();
+  const { isZoneLeader, zoneId, zoneName } = useZoneAccess();
   
   const [meetingMinutes, setMeetingMinutes] = useState<MeetingMinutes[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
@@ -128,6 +151,7 @@ export default function DocumentsPage() {
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterSource, setFilterSource] = useState<string>('all');
   
   // Modal states
   const [isMinutesModalOpen, setIsMinutesModalOpen] = useState(false);
@@ -297,12 +321,18 @@ export default function DocumentsPage() {
       .select(`
         *,
         department:departments(name),
+        zone:zones(name),
         generator:profiles(first_name, last_name)
       `);
 
     // Filter by department for department leaders
     if (isDepartmentLeader && departmentId) {
       reportsQuery = reportsQuery.eq('department_id', departmentId);
+    }
+    
+    // Filter by zone for zone leaders
+    if (isZoneLeader && zoneId) {
+      reportsQuery = reportsQuery.eq('zone_id', zoneId);
     }
 
     const { data, error } = await reportsQuery
@@ -712,14 +742,18 @@ export default function DocumentsPage() {
   });
 
   const filteredReports = reports.filter(report => {
+    const searchContent = report.data?.content || '';
     const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.content.toLowerCase().includes(searchTerm.toLowerCase());
+                         searchContent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (report.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDepartment = filterDepartment === 'all' || 
-                             (filterDepartment === 'church-wide' && !report.department_id) ||
+                             (filterDepartment === 'church-wide' && !report.department_id && !report.zone_id) ||
+                             (filterDepartment === 'zones' && report.zone_id) ||
                              report.department_id === filterDepartment;
     const matchesType = filterType === 'all' || report.type === filterType;
+    const matchesSource = filterSource === 'all' || report.source === filterSource;
     
-    return matchesSearch && matchesDepartment && matchesType;
+    return matchesSearch && matchesDepartment && matchesType && matchesSource;
   });
 
   if (authLoading || loading) {
@@ -750,6 +784,21 @@ export default function DocumentsPage() {
                 <h3 className="font-medium text-purple-900">Department Documents: {departmentName}</h3>
                 <p className="text-purple-700 text-sm mt-1">
                   You can view and manage meeting minutes and reports for your department only.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Zone Access Notification */}
+        {isZoneLeader && zoneName && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <FileText className="h-5 w-5 text-green-600 mr-3" />
+              <div>
+                <h3 className="font-medium text-green-900">Zone Documents: {zoneName}</h3>
+                <p className="text-green-700 text-sm mt-1">
+                  You can view reports generated for your zone. Generate new reports from the Reports page.
                 </p>
               </div>
             </div>
@@ -822,14 +871,17 @@ export default function DocumentsPage() {
                       icon={<Search className="h-4 w-4" />}
                     />
                   </div>
-                  {!isDepartmentLeader && (
+                  {!isDepartmentLeader && !isZoneLeader && (
                     <Select
                       value={filterDepartment}
                       onChange={(e) => setFilterDepartment(e.target.value)}
-                      placeholder="Department"
+                      placeholder="Filter by Entity"
                       options={[
-                        { value: "all", label: "All Departments" },
-                        ...(activeTab === 'reports' ? [{ value: "church-wide", label: "Church-wide" }] : []),
+                        { value: "all", label: "All Sources" },
+                        ...(activeTab === 'reports' ? [
+                          { value: "church-wide", label: "Church-wide" },
+                          { value: "zones", label: "All Zones" }
+                        ] : []),
                         ...departments.map(dept => ({ value: dept.id, label: dept.name }))
                       ]}
                     />
@@ -1011,13 +1063,27 @@ export default function DocumentsPage() {
                   </Button>
                 </div>
                 
+                {/* Filter by Source */}
+                <div className="flex gap-4 mb-4">
+                  <Select
+                    value={filterSource}
+                    onChange={(e) => setFilterSource(e.target.value)}
+                    className="w-48"
+                    options={[
+                      { value: "all", label: "All Sources" },
+                      { value: "generated", label: "Auto-generated (from Reports Page)" },
+                      { value: "manual", label: "Manually Created" }
+                    ]}
+                  />
+                </div>
+                
                 {filteredReports.length === 0 ? (
                   <EmptyState
                     icon={<Folder className="h-16 w-16 text-gray-400" />}
                     title="No Reports Found"
-                    description="No reports match your current filters."
+                    description="No reports match your current filters. Generate reports from the Reports page."
                     action={{
-                      label: "Create First Report",
+                      label: "Create Manual Report",
                       onClick: () => setIsReportModalOpen(true)
                     }}
                   />
@@ -1038,18 +1104,36 @@ export default function DocumentsPage() {
                               >
                                 {report.type.toUpperCase()}
                               </Badge>
+                              {report.source === 'generated' && (
+                                <Badge variant="warning" className="text-xs">
+                                  Auto
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                icon={<Eye className="h-4 w-4" />}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                icon={<Download className="h-4 w-4" />}
-                              />
+                              {report.file_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(report.file_url, '_blank')}
+                                  icon={<Eye className="h-4 w-4" />}
+                                  title="View PDF"
+                                />
+                              )}
+                              {report.file_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = report.file_url!;
+                                    link.download = report.data?.filename || `report-${report.id}.pdf`;
+                                    link.click();
+                                  }}
+                                  icon={<Download className="h-4 w-4" />}
+                                  title="Download PDF"
+                                />
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1059,6 +1143,7 @@ export default function DocumentsPage() {
                                 }}
                                 icon={<Trash2 className="h-4 w-4" />}
                                 className="text-red-600 hover:text-red-700"
+                                title="Delete Report"
                               />
                             </div>
                           </div>
@@ -1067,19 +1152,54 @@ export default function DocumentsPage() {
                             {report.title}
                           </h3>
 
-                          {report.department ? (
-                            <Badge variant="default" className="mb-3">
-                              {report.department.name}
-                            </Badge>
-                          ) : (
-                            <Badge variant="success" className="mb-3">
-                              Church-wide
-                            </Badge>
-                          )}
+                          {/* Show department or zone badge */}
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {report.department ? (
+                              <Badge variant="default">
+                                <Building2 className="h-3 w-3 mr-1" />
+                                {report.department.name}
+                              </Badge>
+                            ) : report.zone ? (
+                              <Badge variant="info">
+                                <Users className="h-3 w-3 mr-1" />
+                                {report.zone.name} Zone
+                              </Badge>
+                            ) : (
+                              <Badge variant="success">
+                                Church-wide
+                              </Badge>
+                            )}
+                            
+                            {/* Show period if available */}
+                            {report.period_start && report.period_end && (
+                              <Badge variant="default" className="text-xs">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {new Date(report.period_start).toLocaleDateString()} - {new Date(report.period_end).toLocaleDateString()}
+                              </Badge>
+                            )}
+                          </div>
 
                           <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                            {report.content}
+                            {report.description || report.data?.content || 'No description available'}
                           </p>
+
+                          {/* Show report stats if available */}
+                          {report.data && (report.data.totalMembers || report.data.totalIncome) && (
+                            <div className="flex gap-4 text-xs text-gray-500 mb-3 bg-gray-50 p-2 rounded">
+                              {report.data.totalMembers !== undefined && (
+                                <span>
+                                  <Users className="h-3 w-3 inline mr-1" />
+                                  {report.data.totalMembers} members
+                                </span>
+                              )}
+                              {report.data.totalIncome !== undefined && (
+                                <span>
+                                  <TrendingUp className="h-3 w-3 inline mr-1" />
+                                  TZS {(report.data.totalIncome / 1000).toFixed(0)}K
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                           <div className="text-sm text-gray-500">
                             <div className="flex justify-between items-center">

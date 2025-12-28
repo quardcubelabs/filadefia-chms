@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, status, signOut, supabase } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showTimeout, setShowTimeout] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     totalMembers: 0,
@@ -179,7 +180,7 @@ export default function DashboardPage() {
       // Fetch total income (all income transactions) with department filtering
       let incomeQuery = supabase
         .from('financial_transactions')
-        .select('amount, members(department_members(department_id))')
+        .select('amount')
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true);
 
@@ -188,7 +189,12 @@ export default function DashboardPage() {
       const { data: incomeData, error: incomeError } = await incomeQuery;
       
       if (incomeError) {
-        console.error('Error fetching income data:', incomeError);
+        // Handle network errors gracefully
+        if (incomeError.message?.includes('Failed to fetch')) {
+          console.warn('Network error fetching income data, will retry on reconnect');
+        } else {
+          console.error('Error fetching income data:', incomeError.message || incomeError);
+        }
         return;
       }
       
@@ -200,7 +206,7 @@ export default function DashboardPage() {
       
       let monthlyQuery = supabase
         .from('financial_transactions')
-        .select('amount, members(department_members(department_id))')
+        .select('amount')
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true)
         .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
@@ -210,7 +216,11 @@ export default function DashboardPage() {
       const { data: monthlyData, error: monthlyError } = await monthlyQuery;
       
       if (monthlyError) {
-        console.error('Error fetching monthly data:', monthlyError);
+        if (monthlyError.message?.includes('Failed to fetch')) {
+          console.warn('Network error fetching monthly data, will retry on reconnect');
+        } else {
+          console.error('Error fetching monthly data:', monthlyError.message || monthlyError);
+        }
         return;
       }
       
@@ -540,27 +550,36 @@ export default function DashboardPage() {
   return (
     <div className={`min-h-screen ${bgColor}`}>
       {/* Sidebar Component */}
-      <Sidebar darkMode={darkMode} onSignOut={signOut} />
+      <Sidebar darkMode={darkMode} onSignOut={signOut} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+      
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
-      <div className="ml-20">
+      <div className="lg:ml-20 transition-all duration-300">
         {/* Top Navbar */}
         <TopNavbar
           title={`Hello ${user?.profile?.first_name || user?.email?.split('@')[0] || 'User'} 👋`}
           subtitle="Tanzania Assemblies of God - FCC"
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onMenuClick={() => setSidebarOpen(true)}
         />
 
         {/* Dashboard Content */}
-        <main className="p-8">
+        <main className="p-3 sm:p-4 md:p-6 lg:p-8">
           {/* Admin Dashboard - Church-wide data */}
 
-          <div className="grid grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             {/* Left Column - Stats and Charts */}
-            <div className="col-span-12 lg:col-span-7 space-y-6">
+            <div className="col-span-1 lg:col-span-7 space-y-4 sm:space-y-6">
               {/* Stats Cards Grid */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {/* Total Departments Card */}
                 <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-3xl p-6 shadow-sm`}>
                   <div className={`inline-flex p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-2xl mb-4`}>

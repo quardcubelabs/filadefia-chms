@@ -16,7 +16,9 @@ export type Gender = 'male' | 'female';
 
 export type DepartmentPosition = 'chairperson' | 'secretary' | 'treasurer' | 'coordinator' | 'member';
 
-export type AttendanceType = 'sunday_service' | 'midweek_fellowship' | 'special_event' | 'department_meeting';
+export type ZonePosition = 'leader' | 'assistant_leader' | 'secretary' | 'treasurer' | 'member';
+
+export type AttendanceType = 'sunday_service' | 'midweek_fellowship' | 'special_event' | 'department_meeting' | 'zone_meeting';
 
 export type TransactionType = 'tithe' | 'offering' | 'donation' | 'project' | 'pledge' | 'mission' | 'welfare' | 'expense';
 
@@ -85,6 +87,27 @@ export interface DepartmentMember {
   department_id: string;
   member_id: string;
   position: DepartmentPosition;
+  joined_date: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+  swahili_name?: string;
+  description?: string;
+  leader_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ZoneMember {
+  id: string;
+  zone_id: string;
+  member_id: string;
+  position: ZonePosition;
   joined_date: string;
   is_active: boolean;
   created_at: string;

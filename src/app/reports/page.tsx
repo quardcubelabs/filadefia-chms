@@ -32,6 +32,7 @@ import { Card, CardBody, Button, Badge, Loading, Alert } from '@/components/ui';
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useZoneAccess } from '@/hooks/useZoneAccess';
 import { pdf } from '@react-pdf/renderer';
 import PDFReport from '@/components/reports/PDFReport';
 
@@ -190,6 +191,12 @@ export default function ReportsPage() {
     canAccessAllDepartments,
     loading: departmentLoading 
   } = useDepartmentAccess();
+  const {
+    zoneId,
+    zoneName,
+    isZoneLeader,
+    loading: zoneLoading
+  } = useZoneAccess();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -201,6 +208,7 @@ export default function ReportsPage() {
   const [selectedJumuiya, setSelectedJumuiya] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('membership');
+  const [savingReport, setSavingReport] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -242,8 +250,8 @@ export default function ReportsPage() {
     }
   }, [reportPeriod]);
 
-  // Show loading while department access is being determined
-  if (authLoading || departmentLoading) {
+  // Show loading while department/zone access is being determined
+  if (authLoading || departmentLoading || zoneLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loading size="lg" />
@@ -1025,13 +1033,23 @@ export default function ReportsPage() {
     if (!reportData) return;
 
     try {
+      setSavingReport(true);
+      
       // Generate filename
       const currentDate = new Date().toISOString().split('T')[0];
       const periodText = reportPeriod === 'weekly' ? 'Weekly' : 
                         reportPeriod === 'monthly' ? 'Monthly' : 
                         reportPeriod === 'quarterly' ? 'Quarterly' : 'Custom';
       
-      const filename = `FCC-${periodText}-Report-${currentDate}.pdf`;
+      // Include department/zone name in filename if applicable
+      let entityName = '';
+      if (isDepartmentLeader && departmentName) {
+        entityName = `-${departmentName.replace(/\s+/g, '-')}`;
+      } else if (isZoneLeader && zoneName) {
+        entityName = `-${zoneName.replace(/\s+/g, '-')}`;
+      }
+      
+      const filename = `FCC${entityName}-${periodText}-Report-${currentDate}.pdf`;
       
       // Generate PDF using react-pdf
       const doc = pdf(
@@ -1045,6 +1063,124 @@ export default function ReportsPage() {
 
       const pdfBlob = await doc.toBlob();
       
+      // Save report to database for document storage
+      if (supabase && user?.profile?.id) {
+        try {
+          // Upload PDF to Supabase Storage
+          const fileExt = 'pdf';
+          const filePath = `reports/${user.profile.id}/${Date.now()}-${filename}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('documents')
+            .upload(filePath, pdfBlob, {
+              contentType: 'application/pdf',
+              cacheControl: '3600'
+            });
+          
+          let fileUrl: string | null = null;
+          
+          if (!uploadError && uploadData) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('documents')
+              .getPublicUrl(filePath);
+            fileUrl = publicUrl;
+          } else {
+            console.warn('Failed to upload PDF to storage:', uploadError);
+          }
+          
+          // Determine report type for database
+          let dbReportType: 'monthly' | 'quarterly' | 'annual' = 'monthly';
+          if (reportPeriod === 'quarterly') dbReportType = 'quarterly';
+          else if (reportPeriod === 'yearly') dbReportType = 'annual';
+          
+          // Create title for the report
+          const reportTitle = isDepartmentLeader && departmentName 
+            ? `${departmentName} - ${periodText} ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`
+            : isZoneLeader && zoneName
+            ? `${zoneName} Zone - ${periodText} ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`
+            : `Church ${periodText} ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
+          
+          // Save report metadata to database
+          // First try with extended columns (zone_id, file_url, source, description)
+          const extendedReportRecord = {
+            title: reportTitle,
+            type: dbReportType,
+            department_id: isDepartmentLeader ? departmentId : null,
+            zone_id: isZoneLeader ? zoneId : null,
+            period_start: startDate,
+            period_end: endDate,
+            data: {
+              reportType,
+              reportPeriod,
+              filename,
+              totalMembers: reportData.totalMembers || 0,
+              totalIncome: reportData.totalIncome || 0,
+              totalExpenses: reportData.totalExpenses || 0,
+              generatedAt: new Date().toISOString(),
+              generatedBy: isDepartmentLeader ? 'department_leader' : isZoneLeader ? 'zone_leader' : 'admin',
+              file_url: fileUrl,
+              source: 'generated',
+              description: `Auto-generated ${periodText.toLowerCase()} ${reportType} report for period ${startDate} to ${endDate}`
+            },
+            file_url: fileUrl,
+            source: 'generated',
+            description: `Auto-generated ${periodText.toLowerCase()} ${reportType} report for period ${startDate} to ${endDate}`,
+            generated_by: user.profile.id
+          };
+          
+          let { error: insertError } = await supabase
+            .from('reports')
+            .insert(extendedReportRecord);
+          
+          // If extended columns don't exist, fallback to base schema
+          if (insertError) {
+            console.warn('Extended insert failed, trying base schema:', insertError.message || insertError.code || JSON.stringify(insertError));
+            
+            // Fallback: use only base schema columns
+            const baseReportRecord = {
+              title: reportTitle,
+              type: dbReportType,
+              department_id: isDepartmentLeader ? departmentId : null,
+              period_start: startDate,
+              period_end: endDate,
+              data: {
+                reportType,
+                reportPeriod,
+                filename,
+                totalMembers: reportData.totalMembers || 0,
+                totalIncome: reportData.totalIncome || 0,
+                totalExpenses: reportData.totalExpenses || 0,
+                generatedAt: new Date().toISOString(),
+                generatedBy: isDepartmentLeader ? 'department_leader' : isZoneLeader ? 'zone_leader' : 'admin',
+                file_url: fileUrl,
+                zoneName: isZoneLeader ? zoneName : null,
+                zoneId: isZoneLeader ? zoneId : null
+              },
+              generated_by: user.profile.id
+            };
+            
+            const { error: baseInsertError } = await supabase
+              .from('reports')
+              .insert(baseReportRecord);
+            
+            if (baseInsertError) {
+              console.error('Failed to save report to database:', baseInsertError.message || baseInsertError.code || JSON.stringify(baseInsertError));
+              setError(`Report downloaded but failed to save: ${baseInsertError.message || 'Unknown error'}`);
+            } else {
+              console.log('✅ Report saved to documents (base schema)');
+              setSuccess('Report generated and saved to Documents!');
+            }
+          } else {
+            console.log('✅ Report saved to documents successfully');
+            setSuccess('Report generated and saved to Documents!');
+          }
+          
+        } catch (dbError) {
+          console.error('Error saving report to database:', dbError);
+          // Continue with download even if database save fails
+        }
+      }
+      
       // Create download link and trigger download
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
@@ -1055,9 +1191,123 @@ export default function ReportsPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
+      setTimeout(() => setSuccess(null), 5000);
+      
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      setError('Failed to generate PDF. Please try again.');
+    } finally {
+      setSavingReport(false);
+    }
+  };
+
+  // Save report to database without generating PDF
+  const saveReportToDatabase = async () => {
+    if (!reportData || !supabase || !user?.profile?.id) {
+      setError('Unable to save report. Please ensure you are logged in.');
+      return;
+    }
+
+    try {
+      setSavingReport(true);
+      setError(null);
+
+      const periodText = reportPeriod === 'weekly' ? 'Weekly' : 
+                        reportPeriod === 'monthly' ? 'Monthly' : 
+                        reportPeriod === 'quarterly' ? 'Quarterly' : 
+                        reportPeriod === 'yearly' ? 'Annual' : 'Custom';
+      
+      // Determine report type for database
+      let dbReportType: 'monthly' | 'quarterly' | 'annual' = 'monthly';
+      if (reportPeriod === 'quarterly') dbReportType = 'quarterly';
+      else if (reportPeriod === 'yearly') dbReportType = 'annual';
+      
+      // Create title for the report
+      const reportTitle = isDepartmentLeader && departmentName 
+        ? `${departmentName} - ${periodText} ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`
+        : isZoneLeader && zoneName
+        ? `${zoneName} Zone - ${periodText} ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`
+        : `Church ${periodText} ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
+      
+      // Try extended schema first
+      const extendedReportRecord = {
+        title: reportTitle,
+        type: dbReportType,
+        department_id: isDepartmentLeader ? departmentId : null,
+        zone_id: isZoneLeader ? zoneId : null,
+        period_start: startDate,
+        period_end: endDate,
+        data: {
+          reportType,
+          reportPeriod,
+          totalMembers: reportData.totalMembers || 0,
+          totalIncome: reportData.totalIncome || 0,
+          totalExpenses: reportData.totalExpenses || 0,
+          netAmount: reportData.netAmount || 0,
+          activeMembers: reportData.activeMembers || 0,
+          newMembers: reportData.newMembers || 0,
+          totalEvents: reportData.totalEvents || 0,
+          averageAttendance: reportData.averageAttendance || 0,
+          generatedAt: new Date().toISOString(),
+          generatedBy: isDepartmentLeader ? 'department_leader' : isZoneLeader ? 'zone_leader' : 'admin'
+        },
+        source: 'generated',
+        description: `${periodText} ${reportType} report for period ${startDate} to ${endDate}`,
+        generated_by: user.profile.id
+      };
+      
+      let { error: insertError } = await supabase
+        .from('reports')
+        .insert(extendedReportRecord);
+      
+      // Fallback to base schema if extended columns don't exist
+      if (insertError) {
+        console.warn('Extended insert failed, trying base schema:', insertError.message || insertError.code);
+        
+        const baseReportRecord = {
+          title: reportTitle,
+          type: dbReportType,
+          department_id: isDepartmentLeader ? departmentId : null,
+          period_start: startDate,
+          period_end: endDate,
+          data: {
+            reportType,
+            reportPeriod,
+            totalMembers: reportData.totalMembers || 0,
+            totalIncome: reportData.totalIncome || 0,
+            totalExpenses: reportData.totalExpenses || 0,
+            netAmount: reportData.netAmount || 0,
+            activeMembers: reportData.activeMembers || 0,
+            newMembers: reportData.newMembers || 0,
+            totalEvents: reportData.totalEvents || 0,
+            averageAttendance: reportData.averageAttendance || 0,
+            generatedAt: new Date().toISOString(),
+            generatedBy: isDepartmentLeader ? 'department_leader' : isZoneLeader ? 'zone_leader' : 'admin',
+            zoneName: isZoneLeader ? zoneName : null,
+            zoneId: isZoneLeader ? zoneId : null
+          },
+          generated_by: user.profile.id
+        };
+        
+        const { error: baseInsertError } = await supabase
+          .from('reports')
+          .insert(baseReportRecord);
+        
+        if (baseInsertError) {
+          console.error('Failed to save report:', baseInsertError.message || baseInsertError.code || JSON.stringify(baseInsertError));
+          setError(`Failed to save report: ${baseInsertError.message || 'Unknown error'}`);
+          return;
+        }
+      }
+      
+      setSuccess('Report saved to Documents successfully!');
+      setTimeout(() => setSuccess(null), 5000);
+      
+    } catch (error) {
+      console.error('Error saving report:', error);
+      setError('Failed to save report. Please try again.');
+    } finally {
+      setSavingReport(false);
     }
   };
 
@@ -1338,6 +1588,7 @@ export default function ReportsPage() {
                       variant="outline"
                       onClick={() => exportReport('pdf')}
                       className="flex items-center space-x-2"
+                      disabled={savingReport}
                     >
                       <Download className="h-4 w-4" />
                       <span>Export PDF</span>
@@ -1349,6 +1600,24 @@ export default function ReportsPage() {
                     >
                       <Download className="h-4 w-4" />
                       <span>Export CSV</span>
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={() => saveReportToDatabase()}
+                      className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+                      disabled={savingReport}
+                    >
+                      {savingReport ? (
+                        <>
+                          <Loading size="sm" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4" />
+                          <span>Save Report</span>
+                        </>
+                      )}
                     </Button>
                   </>
                 )}

@@ -28,6 +28,7 @@ export default function MainLayout({
   className = ''
 }: MainLayoutProps) {
   const [darkMode, setDarkMode] = useState(initialDarkMode);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -37,11 +38,23 @@ export default function MainLayout({
 
   return (
     <div className={`min-h-screen ${bgColor} ${darkMode ? 'dark' : ''}`}>
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar */}
-      <Sidebar darkMode={darkMode} />
+      <Sidebar 
+        darkMode={darkMode} 
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
+      />
       
       {/* Main Content Area */}
-      <div className="ml-20">
+      <div className="lg:ml-20 transition-all duration-300">
         {/* Top Navbar */}
         <TopNavbar
           title={title}
@@ -52,10 +65,11 @@ export default function MainLayout({
           searchPlaceholder={searchPlaceholder}
           onSearch={onSearch}
           actions={navbarActions}
+          onMenuClick={() => setSidebarOpen(true)}
         />
         
         {/* Page Content */}
-        <main className={`p-4 sm:p-6 lg:p-8 ${className}`}>
+        <main className={`p-3 sm:p-4 md:p-6 lg:p-8 ${className}`}>
           {children}
         </main>
       </div>

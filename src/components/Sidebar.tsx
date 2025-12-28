@@ -19,12 +19,16 @@ import {
   ChevronLeft,
   Church,
   Briefcase,
-  UserCheck
+  UserCheck,
+  MapPin,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
   darkMode?: boolean;
   onSignOut?: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 interface NavItem {
@@ -34,7 +38,7 @@ interface NavItem {
   badge?: number;
 }
 
-export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
+export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = false, onMobileClose }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
@@ -108,15 +112,23 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
       { icon: <Settings className="h-5 w-5" />, label: 'Settings', href: '/settings' },
     ];
 
-    // Only show Departments page for non-department leaders
+    // Only show Departments and Zones pages for non-department leaders
     if (!isDepartmentLeader) {
       baseNavItems.splice(3, 0, { icon: <Briefcase className="h-5 w-5" />, label: 'Departments', href: '/departments' });
+      baseNavItems.splice(4, 0, { icon: <MapPin className="h-5 w-5" />, label: 'Zones', href: '/zones' });
     }
 
     return baseNavItems;
   }, [isDepartmentLeader, departmentId, eventCount, messageCount]);
 
   const isActive = (href: string) => pathname === href;
+
+  // Handle navigation click on mobile
+  const handleNavClick = () => {
+    if (mobileOpen && onMobileClose) {
+      onMobileClose();
+    }
+  };
 
   return (
     <aside
@@ -125,9 +137,25 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
       className={`fixed left-0 top-0 h-full ${
         darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
       } border-r flex flex-col py-6 z-50 transition-all duration-300 ease-in-out shadow-lg ${
-        isExpanded ? 'w-64' : 'w-20'
-      }`}
+        mobileOpen 
+          ? 'w-64 translate-x-0' 
+          : isExpanded 
+            ? 'w-64 hidden lg:flex' 
+            : 'w-20 hidden lg:flex'
+      } ${mobileOpen ? 'lg:w-64' : ''}`}
     >
+        {/* Mobile Close Button */}
+        {mobileOpen && (
+          <button
+            onClick={onMobileClose}
+            className={`absolute top-4 right-4 p-2 rounded-lg lg:hidden ${
+              darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+            }`}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+
         {/* Logo Section */}
         <div className="px-5 mb-8">
           <div className="flex items-center space-x-3">
@@ -140,7 +168,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
             </div>
             <div
               className={`overflow-hidden transition-all duration-300 ${
-                isExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0'
+                isExpanded || mobileOpen ? 'w-auto opacity-100' : 'w-0 opacity-0'
               }`}
             >
               <h2 className={`text-lg font-bold ${
@@ -165,6 +193,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
               <Link
                 key={index}
                 href={item.href}
+                onClick={handleNavClick}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
                   active
                     ? 'bg-red-100 text-red-700 shadow-md ring-1 ring-red-200'
@@ -176,7 +205,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
                 {/* Icon */}
                 <div className="flex-shrink-0 relative">
                   {item.icon}
-                  {item.badge && !isExpanded && (
+                  {item.badge && !isExpanded && !mobileOpen && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-yellow-400 text-gray-900 text-xs rounded-full flex items-center justify-center font-bold border-2 border-white">
                       {item.badge > 9 ? '9+' : item.badge}
                     </span>
@@ -186,11 +215,11 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
                 {/* Label */}
                 <div
                   className={`flex items-center justify-between flex-1 overflow-hidden transition-all duration-300 ${
-                    isExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0'
+                    isExpanded || mobileOpen ? 'w-auto opacity-100' : 'w-0 opacity-0'
                   }`}
                 >
                   <span className="font-medium whitespace-nowrap">{item.label}</span>
-                  {item.badge && isExpanded && (
+                  {item.badge && (isExpanded || mobileOpen) && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                       active 
                         ? 'bg-white text-red-600' 
@@ -202,7 +231,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
                 </div>
 
                 {/* Hover tooltip when collapsed */}
-                {!isExpanded && (
+                {!isExpanded && !mobileOpen && (
                   <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-lg">
                     {item.label}
                     <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-0 h-0 border-t-4 border-t-transparent border-r-4 border-r-gray-900 border-b-4 border-b-transparent"></div>
@@ -214,7 +243,7 @@ export default function Sidebar({ darkMode = false, onSignOut }: SidebarProps) {
         </nav>
 
         {/* Expand/Collapse Indicator */}
-        <div className="px-5 mt-auto">
+        <div className="px-5 mt-auto hidden lg:block">
           <div
             className={`flex items-center justify-center h-8 w-8 rounded-lg ${
               darkMode 

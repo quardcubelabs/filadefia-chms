@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+// Prevent SSR/prerendering issues during build
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
-import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert, Table } from '@/components/ui';
+import { Button, Card, CardBody, Badge, Avatar, EmptyState, Loading, Alert } from '@/components/ui';
 import { 
-  ArrowLeft, Users, UserCheck, Crown, Briefcase, Phone, Mail,
-  Calendar, TrendingUp, Building2, Edit, DollarSign, ChevronDown
+  ArrowLeft, Users, UserCheck, Crown, MapPin, Phone, Mail,
+  Calendar, TrendingUp, Edit, DollarSign, UserPlus, UserMinus, X, Search, Plus
 } from 'lucide-react';
 
-interface Department {
+interface Zone {
   id: string;
   name: string;
   swahili_name?: string;
@@ -21,7 +23,7 @@ interface Department {
   is_active: boolean;
 }
 
-interface DepartmentMember {
+interface ZoneMember {
   id: string;
   member_id: string;
   position: string;
@@ -35,93 +37,113 @@ interface DepartmentMember {
     email?: string;
     photo_url?: string;
     status: string;
+    date_of_birth?: string;
   };
 }
 
-export default function DepartmentDashboardPage() {
-  const params = useParams();
+interface Member {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email?: string;
+  photo_url?: string;
+}
+
+export default function ZoneDashboardPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
-  const { isDepartmentLeader, departmentId } = useDepartmentAccess();
   
-  const [department, setDepartment] = useState<Department | null>(null);
-  const [members, setMembers] = useState<DepartmentMember[]>([]);
+  const [zone, setZone] = useState<Zone | null>(null);
+  const [members, setMembers] = useState<ZoneMember[]>([]);
+  const [availableMembers, setAvailableMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
   
   // Financial data
   const [financialData, setFinancialData] = useState({
-    totalDepartmentIncome: 0,
-    monthlyDepartmentIncome: 0,
+    totalZoneIncome: 0,
+    monthlyZoneIncome: 0,
     weeklyOfferings: [] as Array<{ week: string, amount: number, label: string }>
   });
   
-  // CRUD operation states
+  // Modal states
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showEditMember, setShowEditMember] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<DepartmentMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<ZoneMember | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPosition, setSelectedPosition] = useState('member');
+  const [saving, setSaving] = useState(false);
+
+  const positions = [
+    { value: 'leader', label: 'Leader' },
+    { value: 'assistant_leader', label: 'Assistant Leader' },
+    { value: 'secretary', label: 'Secretary' },
+    { value: 'treasurer', label: 'Treasurer' },
+    { value: 'member', label: 'Member' },
+  ];
 
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchDepartmentData();
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!authLoading && user && supabase && id) {
+      fetchZoneData();
       fetchFinancialData();
     }
-  }, [authLoading, user, params.id]);
+  }, [authLoading, user, supabase, id]);
 
-  const fetchDepartmentData = async () => {
+  const fetchZoneData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch department details
       if (!supabase) return;
-      const { data: deptData, error: deptError } = await supabase
-        .from('departments')
+      
+      // Fetch zone details
+      const { data: zoneData, error: zoneError } = await supabase
+        .from('zones')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .single();
 
-      if (deptError) throw deptError;
-      setDepartment(deptData);
+      if (zoneError) throw zoneError;
+      setZone(zoneData);
 
-      // Fetch department members with member details - using fallback approach for broken relationships
-      if (!supabase) return;
+      // Fetch zone members with member details
       const { data: membersData, error: membersError } = await supabase
-        .from('department_members')
+        .from('zone_members')
         .select(`
           *,
           member:members(*)
         `)
-        .eq('department_id', params.id)
+        .eq('zone_id', id)
         .eq('is_active', true)
         .order('position');
 
       if (membersError) throw membersError;
 
-      // For broken relationships, fetch members separately and merge
+      // Handle broken relationships
       let processedMembers = membersData || [];
       
-      if (processedMembers.some((dm: DepartmentMember) => !dm.member)) {
-        console.log('🔧 Fixing broken member relationships...');
-        
-        // Get all member IDs from department_members
-        const memberIds = processedMembers.map((dm: DepartmentMember) => dm.member_id).filter(Boolean);
+      if (processedMembers.some((zm: ZoneMember) => !zm.member)) {
+        const memberIds = processedMembers.map((zm: ZoneMember) => zm.member_id).filter(Boolean);
         
         if (memberIds.length > 0) {
-          // Fetch member details separately
-          if (!supabase) return;
           const { data: memberDetails, error: memberError } = await supabase
             .from('members')
             .select('*')
             .in('id', memberIds);
 
           if (!memberError && memberDetails) {
-            // Merge member details back into department_members
-            processedMembers = processedMembers.map((dm: DepartmentMember) => ({
-              ...dm,
-              member: memberDetails.find((m: any) => m.id === dm.member_id) || null
+            processedMembers = processedMembers.map((zm: ZoneMember) => ({
+              ...zm,
+              member: memberDetails.find((m: any) => m.id === zm.member_id) || null
             }));
           }
         }
@@ -130,7 +152,7 @@ export default function DepartmentDashboardPage() {
       setMembers(processedMembers);
 
     } catch (err: any) {
-      setError(err.message || 'Failed to load department data');
+      setError(err.message || 'Failed to load zone data');
     } finally {
       setLoading(false);
     }
@@ -138,38 +160,49 @@ export default function DepartmentDashboardPage() {
 
   const fetchFinancialData = async () => {
     try {
-      if (!supabase || !params.id) {
-        console.error('Supabase client or department ID not available');
+      if (!supabase || !id) return;
+
+      // Fetch total zone income - based on zone members
+      const { data: zoneMembers } = await supabase
+        .from('zone_members')
+        .select('member_id')
+        .eq('zone_id', id)
+        .eq('is_active', true);
+
+      const zoneMemberIds = zoneMembers?.map(zm => zm.member_id) || [];
+
+      if (zoneMemberIds.length === 0) {
+        setFinancialData({
+          totalZoneIncome: 0,
+          monthlyZoneIncome: 0,
+          weeklyOfferings: []
+        });
         return;
       }
 
-      // Fetch total department income with department filtering
+      // Fetch total income from zone members
       const { data: incomeData, error: incomeError } = await supabase
         .from('financial_transactions')
-        .select('amount, members(department_members(department_id))')
+        .select('amount')
+        .in('member_id', zoneMemberIds)
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true);
       
       if (incomeError) {
-        console.error('Error fetching income data:', incomeError);
+        console.error('Error fetching zone income:', incomeError);
         return;
       }
       
-      // Filter by department
-      const deptIncome = incomeData?.filter((t: any) => {
-        const deptMembers = t.members?.department_members || [];
-        return deptMembers.some((dm: any) => dm.department_id === params.id);
-      }) || [];
+      const totalZoneIncome = incomeData?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
-      const totalDepartmentIncome = deptIncome.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
-      
-      // Fetch current month department income
+      // Fetch current month zone income
       const currentMonth = new Date();
       const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       
       const { data: monthlyData, error: monthlyError } = await supabase
         .from('financial_transactions')
-        .select('amount, members(department_members(department_id))')
+        .select('amount')
+        .in('member_id', zoneMemberIds)
         .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
         .eq('verified', true)
         .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
@@ -179,12 +212,7 @@ export default function DepartmentDashboardPage() {
         return;
       }
       
-      const deptMonthlyData = monthlyData?.filter((t: any) => {
-        const deptMembers = t.members?.department_members || [];
-        return deptMembers.some((dm: any) => dm.department_id === params.id);
-      }) || [];
-      
-      const monthlyDepartmentIncome = deptMonthlyData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+      const monthlyZoneIncome = monthlyData?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
       // Fetch weekly offerings for the last 8 weeks
       const weeks = [];
@@ -196,19 +224,15 @@ export default function DepartmentDashboardPage() {
         
         const { data: weekData, error: weekError } = await supabase
           .from('financial_transactions')
-          .select('amount, members(department_members(department_id))')
+          .select('amount')
+          .in('member_id', zoneMemberIds)
           .eq('transaction_type', 'offering')
           .eq('verified', true)
           .gte('date', weekStart.toISOString().split('T')[0])
           .lte('date', weekEnd.toISOString().split('T')[0]);
         
         if (!weekError && weekData) {
-          const deptWeekData = weekData.filter((t: any) => {
-            const deptMembers = t.members?.department_members || [];
-            return deptMembers.some((dm: any) => dm.department_id === params.id);
-          });
-          
-          const weekAmount = deptWeekData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+          const weekAmount = weekData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
           weeks.push({
             week: `W${8-i}`,
             amount: weekAmount,
@@ -218,8 +242,8 @@ export default function DepartmentDashboardPage() {
       }
       
       setFinancialData({
-        totalDepartmentIncome,
-        monthlyDepartmentIncome,
+        totalZoneIncome,
+        monthlyZoneIncome,
         weeklyOfferings: weeks
       });
       
@@ -228,18 +252,67 @@ export default function DepartmentDashboardPage() {
     }
   };
 
-  const handleUpdateMemberPosition = async (departmentMemberId: string, newPosition: string) => {
+  const fetchAvailableMembers = async () => {
+    try {
+      if (!supabase) return;
+
+      const { data: allMembers, error: membersError } = await supabase
+        .from('members')
+        .select('id, first_name, last_name, phone, email, photo_url')
+        .eq('status', 'active')
+        .order('first_name');
+
+      if (membersError) throw membersError;
+
+      const zoneMemberIds = members.map(m => m.member_id);
+      const available = (allMembers || []).filter(m => !zoneMemberIds.includes(m.id));
+      
+      setAvailableMembers(available);
+    } catch (err: any) {
+      console.error('Error fetching available members:', err);
+    }
+  };
+
+  const handleAddMember = async (memberId: string) => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const { error: insertError } = await supabase!
+        .from('zone_members')
+        .insert({
+          zone_id: id,
+          member_id: memberId,
+          position: selectedPosition,
+          is_active: true
+        });
+
+      if (insertError) throw insertError;
+
+      setShowAddMemberModal(false);
+      setSelectedPosition('member');
+      setSearchQuery('');
+      fetchZoneData();
+      fetchFinancialData();
+    } catch (err: any) {
+      console.error('Error adding member:', err);
+      setError(err.message || 'Failed to add member');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateMemberPosition = async (zoneMemberId: string, newPosition: string) => {
     try {
       if (!supabase) return;
       const { error } = await supabase
-        .from('department_members')
+        .from('zone_members')
         .update({ position: newPosition })
-        .eq('id', departmentMemberId);
+        .eq('id', zoneMemberId);
 
       if (error) throw error;
 
-      // Refresh department data
-      await fetchDepartmentData();
+      await fetchZoneData();
       setShowEditMember(false);
       setSelectedMember(null);
       
@@ -248,22 +321,22 @@ export default function DepartmentDashboardPage() {
     }
   };
 
-  const handleRemoveMember = async (departmentMemberId: string) => {
-    if (!confirm('Are you sure you want to remove this member from the department?')) {
+  const handleRemoveMember = async (zoneMemberId: string) => {
+    if (!confirm('Are you sure you want to remove this member from the zone?')) {
       return;
     }
     
     try {
       if (!supabase) return;
       const { error } = await supabase
-        .from('department_members')
+        .from('zone_members')
         .update({ is_active: false })
-        .eq('id', departmentMemberId);
+        .eq('id', zoneMemberId);
 
       if (error) throw error;
 
-      // Refresh department data
-      await fetchDepartmentData();
+      await fetchZoneData();
+      await fetchFinancialData();
       
     } catch (err: any) {
       setError(err.message || 'Failed to remove member');
@@ -272,51 +345,75 @@ export default function DepartmentDashboardPage() {
 
   const getPositionBadge = (position: string) => {
     const variants: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
-      chairperson: 'success',
+      leader: 'success',
+      assistant_leader: 'info',
       secretary: 'info',
       treasurer: 'warning',
-      coordinator: 'info',
       member: 'default',
     };
     
     const icons: Record<string, any> = {
-      chairperson: Crown,
+      leader: Crown,
+      assistant_leader: UserCheck,
       secretary: Edit,
-      treasurer: Briefcase,
-      coordinator: UserCheck,
+      treasurer: DollarSign,
       member: Users,
     };
 
     const Icon = icons[position] || Users;
+    const displayName = position.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
     
     return (
       <Badge variant={variants[position] || 'default'}>
         <Icon className="h-3 w-3 mr-1 inline" />
-        {position.charAt(0).toUpperCase() + position.slice(1)}
+        {displayName}
       </Badge>
     );
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
-      active: 'success',
-      visitor: 'info',
-      transferred: 'warning',
-      inactive: 'default',
-    };
-    return <Badge variant={variants[status]} dot>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
-  };
-
-  // Group members by position (filter out null member records)
-  const leadershipMembers = members.filter(m => m.member && ['chairperson', 'secretary', 'treasurer', 'coordinator'].includes(m.position));
+  // Group members by position
+  const leadershipMembers = members.filter(m => m.member && ['leader', 'assistant_leader', 'secretary', 'treasurer'].includes(m.position));
   const regularMembers = members.filter(m => m.member && m.position === 'member');
   
-  // Calculate member age distribution - fetch separately if needed
-  const membersByAge = {
-    youth: Math.floor(members.length * 0.35),   // 15-35 - estimated
-    adults: Math.floor(members.length * 0.50),  // 36-60 - estimated
-    seniors: Math.ceil(members.length * 0.15)   // 61+ - estimated
+  // Calculate member age distribution
+  const calculateAge = (dob: string) => {
+    const today = new Date();
+    const birthDate = new Date(dob);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
+
+  const membersByAge = members.reduce((acc, m) => {
+    if (m.member?.date_of_birth) {
+      const age = calculateAge(m.member.date_of_birth);
+      if (age >= 15 && age <= 35) acc.youth++;
+      else if (age >= 36 && age <= 60) acc.adults++;
+      else if (age > 60) acc.seniors++;
+    } else {
+      // Estimate if no DOB
+      acc.adults++;
+    }
+    return acc;
+  }, { youth: 0, adults: 0, seniors: 0 });
+
+  // If no members have DOB, use estimation
+  if (members.length > 0 && membersByAge.youth === 0 && membersByAge.adults === 0 && membersByAge.seniors === 0) {
+    membersByAge.youth = Math.floor(members.length * 0.35);
+    membersByAge.adults = Math.floor(members.length * 0.50);
+    membersByAge.seniors = Math.ceil(members.length * 0.15);
+  }
+
+  const filteredAvailableMembers = availableMembers.filter(member => {
+    const fullName = `${member.first_name} ${member.last_name}`.toLowerCase();
+    return fullName.includes(searchQuery.toLowerCase()) || 
+           member.phone.includes(searchQuery);
+  });
 
   if (!user && !authLoading) {
     return null;
@@ -343,8 +440,8 @@ export default function DepartmentDashboardPage() {
       )}
       
       <TopNavbar 
-        title={department?.name || 'Department Dashboard'}
-        subtitle={`${department?.swahili_name ? department.swahili_name : ''} - Department Management`.trim()}
+        title={zone?.name || 'Zone Dashboard'}
+        subtitle={`${zone?.swahili_name ? zone.swahili_name + ' - ' : ''}Zone Management`}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         onMenuClick={() => setSidebarOpen(true)}
@@ -364,25 +461,46 @@ export default function DepartmentDashboardPage() {
         {loading ? (
           <Card variant="default">
             <CardBody className="p-8 sm:p-12">
-              <Loading text="Loading department dashboard..." />
+              <Loading text="Loading zone dashboard..." />
             </CardBody>
           </Card>
-        ) : !department ? (
+        ) : !zone ? (
           <Card variant="default">
             <CardBody className="p-8 sm:p-12">
               <EmptyState
-                icon={<Building2 className="h-12 w-12" />}
-                title="Department not found"
-                description="The department you're looking for doesn't exist"
+                icon={<MapPin className="h-12 w-12" />}
+                title="Zone not found"
+                description="The zone you're looking for doesn't exist"
                 action={{
-                  label: 'Go to Departments',
-                  onClick: () => router.push('/departments')
+                  label: 'Go to Zones',
+                  onClick: () => router.push('/zones')
                 }}
               />
             </CardBody>
           </Card>
         ) : (
           <>
+            {/* Header Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+              <button
+                onClick={() => router.push('/zones')}
+                className={`flex items-center gap-2 ${textSecondary} hover:${textPrimary} transition-colors`}
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back to Zones</span>
+              </button>
+              <Button
+                onClick={() => {
+                  fetchAvailableMembers();
+                  setShowAddMemberModal(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
+
             {/* Dashboard Grid - Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
               {/* Left Column - Stats and Charts */}
@@ -422,14 +540,16 @@ export default function DepartmentDashboardPage() {
                     </h3>
                   </div>
 
-                  {/* Department Income Card */}
+                  {/* Zone Income Card */}
                   <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-3xl p-6 shadow-sm`}>
                     <div className={`inline-flex p-4 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-2xl mb-4`}>
                       <DollarSign className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
                     </div>
                     <p className={`text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-2`}>Total Income</p>
                     <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {`TZS ${(financialData.totalDepartmentIncome / 1000000).toFixed(1)}M`}
+                      {financialData.totalZoneIncome >= 1000000 
+                        ? `TZS ${(financialData.totalZoneIncome / 1000000).toFixed(1)}M`
+                        : `TZS ${(financialData.totalZoneIncome / 1000).toFixed(0)}K`}
                     </h3>
                   </div>
                 </div>
@@ -438,7 +558,7 @@ export default function DepartmentDashboardPage() {
                 <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
                   <div className="flex items-center justify-between mb-8">
                     <h3 className={`text-2xl font-bold ${textPrimary}`}>Members by Age</h3>
-                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
+                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}>
                       <option>All Time</option>
                       <option>This Year</option>
                     </select>
@@ -467,10 +587,6 @@ export default function DepartmentDashboardPage() {
                             );
                           }
 
-                          const youthPercentage = (membersByAge.youth / totalMembers) * 100;
-                          const adultsPercentage = (membersByAge.adults / totalMembers) * 100;
-                          const seniorsPercentage = (membersByAge.seniors / totalMembers) * 100;
-
                           const youthRatio = membersByAge.youth / totalMembers;
                           const adultsRatio = membersByAge.adults / totalMembers;
                           const seniorsRatio = membersByAge.seniors / totalMembers;
@@ -478,15 +594,15 @@ export default function DepartmentDashboardPage() {
                           return (
                             <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
                               <defs>
-                                <linearGradient id="deptMemberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <linearGradient id="zoneMemberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
                                   <stop offset="100%" style={{ stopColor: '#06b6d4', stopOpacity: 1 }} />
                                 </linearGradient>
-                                <linearGradient id="deptMemberGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <linearGradient id="zoneMemberGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
                                   <stop offset="100%" style={{ stopColor: '#1d4ed8', stopOpacity: 1 }} />
                                 </linearGradient>
-                                <linearGradient id="deptMemberGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <linearGradient id="zoneMemberGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" style={{ stopColor: '#ef4444', stopOpacity: 1 }} />
                                   <stop offset="100%" style={{ stopColor: '#dc2626', stopOpacity: 1 }} />
                                 </linearGradient>
@@ -509,7 +625,7 @@ export default function DepartmentDashboardPage() {
                                   cy="100"
                                   r="80"
                                   fill="none"
-                                  stroke="url(#deptMemberGradient1)"
+                                  stroke="url(#zoneMemberGradient1)"
                                   strokeWidth="32"
                                   strokeDasharray={`${2 * Math.PI * 80 * youthRatio} ${2 * Math.PI * 80 * (1 - youthRatio)}`}
                                   strokeLinecap="butt"
@@ -523,7 +639,7 @@ export default function DepartmentDashboardPage() {
                                   cy="100"
                                   r="72"
                                   fill="none"
-                                  stroke="url(#deptMemberGradient2)"
+                                  stroke="url(#zoneMemberGradient2)"
                                   strokeWidth="20"
                                   strokeDasharray={`${2 * Math.PI * 72 * adultsRatio} ${2 * Math.PI * 72 * (1 - adultsRatio)}`}
                                   strokeDashoffset={`${-2 * Math.PI * 72 * youthRatio}`}
@@ -538,7 +654,7 @@ export default function DepartmentDashboardPage() {
                                   cy="100"
                                   r="76"
                                   fill="none"
-                                  stroke="url(#deptMemberGradient3)"
+                                  stroke="url(#zoneMemberGradient3)"
                                   strokeWidth="28"
                                   strokeDasharray={`${2 * Math.PI * 76 * seniorsRatio} ${2 * Math.PI * 76 * (1 - seniorsRatio)}`}
                                   strokeDashoffset={`${-2 * Math.PI * 76 * (youthRatio + adultsRatio)}`}
@@ -612,13 +728,13 @@ export default function DepartmentDashboardPage() {
                     <div>
                       <p className={`text-xs ${textSecondary} mb-1`}>Total Income</p>
                       <p className={`text-2xl font-bold ${textPrimary}`}>
-                        {`TZS ${(financialData.totalDepartmentIncome / 1000).toFixed(0)}k`}
+                        {`TZS ${(financialData.totalZoneIncome / 1000).toFixed(0)}k`}
                       </p>
                     </div>
                     <div>
                       <p className={`text-xs ${textSecondary} mb-1`}>Monthly Income</p>
                       <p className={`text-2xl font-bold ${textPrimary}`}>
-                        {`TZS ${(financialData.monthlyDepartmentIncome / 1000).toFixed(0)}k`}
+                        {`TZS ${(financialData.monthlyZoneIncome / 1000).toFixed(0)}k`}
                       </p>
                     </div>
                     <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-6 py-3 rounded-xl`}>
@@ -684,34 +800,52 @@ export default function DepartmentDashboardPage() {
               <div className="col-span-12 lg:col-span-5 space-y-6">
                 {/* Leadership Team */}
                 {leadershipMembers.length > 0 && (
-                  <Card variant="default" className="">
+                  <Card variant="default">
                     <CardBody className="p-6">
-                      <h2 className="text-xl font-bold text-tag-gray-900 mb-6 flex items-center">
-                        <Crown className="h-6 w-6 mr-2 text-tag-yellow-600" />
-                        Leadership Team
+                      <h2 className={`text-xl font-bold ${textPrimary} mb-6 flex items-center`}>
+                        <Crown className="h-6 w-6 mr-2 text-yellow-600" />
+                        Zone Leadership
                       </h2>
 
                       <div className="grid grid-cols-1 gap-4">
-                        {leadershipMembers.map((dm) => (
+                        {leadershipMembers.map((zm) => (
                           <div
-                            key={dm.id}
-                            className="bg-gradient-to-br from-tag-gray-50 to-white border border-tag-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => dm.member && router.push(`/members/${dm.member.id}`)}
+                            key={zm.id}
+                            className={`bg-gradient-to-br from-gray-50 to-white border ${borderColor} rounded-lg p-4 hover:shadow-md transition-shadow`}
                           >
                             <div className="flex items-center gap-3">
                               <Avatar
-                                src={dm.member?.photo_url}
-                                alt={`${dm.member?.first_name} ${dm.member?.last_name}`}
+                                src={zm.member?.photo_url}
+                                alt={`${zm.member?.first_name} ${zm.member?.last_name}`}
                                 size="md"
                               />
                               <div className="flex-1">
-                                <h3 className="font-bold text-tag-gray-900">
-                                  {dm.member?.first_name} {dm.member?.last_name}
+                                <h3 className={`font-bold ${textPrimary}`}>
+                                  {zm.member?.first_name} {zm.member?.last_name}
                                 </h3>
-                                <p className="text-xs text-tag-gray-600 mb-2">
-                                  {dm.member?.member_number}
+                                <p className={`text-xs ${textSecondary} mb-2`}>
+                                  {zm.member?.member_number}
                                 </p>
-                                {getPositionBadge(dm.position)}
+                                {getPositionBadge(zm.position)}
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => {
+                                    setSelectedMember(zm);
+                                    setShowEditMember(true);
+                                  }}
+                                  className="p-1.5 text-gray-400 hover:text-blue-600 rounded"
+                                  title="Edit Position"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveMember(zm.id)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 rounded"
+                                  title="Remove from Zone"
+                                >
+                                  <UserMinus className="h-4 w-4" />
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -724,31 +858,31 @@ export default function DepartmentDashboardPage() {
                 {/* Members Statistics */}
                 <Card variant="default">
                   <CardBody className="p-6">
-                    <h2 className="text-xl font-bold text-tag-gray-900 mb-4 flex items-center">
-                      <Users className="h-6 w-6 mr-2 text-tag-blue-600" />
+                    <h2 className={`text-xl font-bold ${textPrimary} mb-4 flex items-center`}>
+                      <Users className="h-6 w-6 mr-2 text-blue-600" />
                       Members Overview
                     </h2>
                     
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-tag-gray-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Total Members</span>
-                        <span className="text-2xl font-bold text-tag-blue-600">{members.length}</span>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-700 font-medium">Total Members</span>
+                        <span className="text-2xl font-bold text-blue-600">{members.length}</span>
                       </div>
                       
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Active Members</span>
+                        <span className="text-gray-700 font-medium">Active Members</span>
                         <span className="text-2xl font-bold text-green-600">
                           {members.filter(m => m.member && m.member.status === 'active').length}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Leadership</span>
+                        <span className="text-gray-700 font-medium">Leadership</span>
                         <span className="text-2xl font-bold text-purple-600">{leadershipMembers.length}</span>
                       </div>
 
                       <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Regular Members</span>
+                        <span className="text-gray-700 font-medium">Regular Members</span>
                         <span className="text-2xl font-bold text-orange-600">{regularMembers.length}</span>
                       </div>
                     </div>
@@ -758,36 +892,48 @@ export default function DepartmentDashboardPage() {
                 {/* Recent Members */}
                 <Card variant="default">
                   <CardBody className="p-6">
-                    <h2 className="text-xl font-bold text-tag-gray-900 mb-4">Recent Members</h2>
+                    <h2 className={`text-xl font-bold ${textPrimary} mb-4`}>Zone Members</h2>
                     
                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {members.slice(0, 5).map((dm) => (
+                      {members.slice(0, 10).map((zm) => (
                         <div 
-                          key={dm.id}
-                          className="flex items-center gap-3 p-3 hover:bg-tag-gray-50 rounded-lg cursor-pointer transition-colors"
-                          onClick={() => dm.member && router.push(`/members/${dm.member.id}`)}
+                          key={zm.id}
+                          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          onClick={() => zm.member && router.push(`/members/${zm.member.id}`)}
                         >
                           <Avatar
-                            src={dm.member?.photo_url}
-                            alt={`${dm.member?.first_name} ${dm.member?.last_name}`}
+                            src={zm.member?.photo_url}
+                            alt={`${zm.member?.first_name} ${zm.member?.last_name}`}
                             size="sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-tag-gray-900 truncate">
-                              {dm.member?.first_name} {dm.member?.last_name}
+                            <p className={`font-medium ${textPrimary} truncate`}>
+                              {zm.member?.first_name} {zm.member?.last_name}
                             </p>
-                            <p className="text-xs text-tag-gray-600 truncate">
-                              {dm.member?.member_number}
+                            <p className={`text-xs ${textSecondary} truncate`}>
+                              {zm.member?.phone}
                             </p>
                           </div>
-                          <Badge variant={dm.member?.status === 'active' ? 'success' : 'default'} dot>
-                            {dm.member?.status}
+                          <Badge variant={zm.member?.status === 'active' ? 'success' : 'default'} dot>
+                            {zm.member?.status}
                           </Badge>
                         </div>
                       ))}
                       
                       {members.length === 0 && (
-                        <p className="text-center text-tag-gray-600 py-4">No members yet</p>
+                        <div className="text-center py-8">
+                          <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                          <p className={textSecondary}>No members yet</p>
+                          <button
+                            onClick={() => {
+                              fetchAvailableMembers();
+                              setShowAddMemberModal(true);
+                            }}
+                            className="mt-3 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                          >
+                            Add First Member
+                          </button>
+                        </div>
                       )}
                     </div>
                   </CardBody>
@@ -795,6 +941,92 @@ export default function DepartmentDashboardPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Add Member Modal */}
+        {showAddMemberModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between px-6 py-4 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">Add Member to Zone</h3>
+                <button
+                  onClick={() => {
+                    setShowAddMemberModal(false);
+                    setSearchQuery('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="p-4 border-b">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search members..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Position
+                  </label>
+                  <select
+                    value={selectedPosition}
+                    onChange={(e) => setSelectedPosition(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {positions.map((pos) => (
+                      <option key={pos.value} value={pos.value}>{pos.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4">
+                {filteredAvailableMembers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery ? 'No members found matching your search' : 'No available members to add'}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredAvailableMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                            {member.photo_url ? (
+                              <img src={member.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                            ) : (
+                              <Users className="h-5 w-5 text-gray-500" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{member.first_name} {member.last_name}</p>
+                            <p className="text-sm text-gray-500">{member.phone}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleAddMember(member.id)}
+                          disabled={saving}
+                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Edit Member Modal */}
@@ -819,14 +1051,12 @@ export default function DepartmentDashboardPage() {
                     </label>
                     <select
                       id="edit-position-select"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       defaultValue={selectedMember.position}
                     >
-                      <option value="member">Member</option>
-                      <option value="coordinator">Coordinator</option>
-                      <option value="secretary">Secretary</option>
-                      <option value="treasurer">Treasurer</option>
-                      <option value="chairperson">Chairperson</option>
+                      {positions.map((pos) => (
+                        <option key={pos.value} value={pos.value}>{pos.label}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -846,7 +1076,7 @@ export default function DepartmentDashboardPage() {
                       const positionSelect = document.getElementById('edit-position-select') as HTMLSelectElement;
                       handleUpdateMemberPosition(selectedMember.id, positionSelect.value);
                     }}
-                    className="bg-tag-red-600 hover:bg-tag-red-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     Update Position
                   </Button>

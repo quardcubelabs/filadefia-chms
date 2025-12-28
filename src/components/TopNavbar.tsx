@@ -25,6 +25,7 @@ interface TopNavbarProps {
   searchPlaceholder?: string;
   onSearch?: (query: string) => void;
   actions?: React.ReactNode;
+  onMenuClick?: () => void;
 }
 
 export default function TopNavbar({
@@ -35,7 +36,8 @@ export default function TopNavbar({
   showSearch = false,
   searchPlaceholder = "Search...",
   onSearch,
-  actions
+  actions,
+  onMenuClick
 }: TopNavbarProps) {
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -64,16 +66,26 @@ export default function TopNavbar({
 
   return (
     <header className={`${bgColor} border-b ${borderColor} sticky top-0 z-40 shadow-sm`}>
-      <div className="ml-20 px-4 sm:px-6 lg:px-8 py-4">
+      <div className="lg:ml-0 px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex items-center justify-between">
-          {/* Left Section - Title */}
-          <div className="flex items-center space-x-4">
-            <div>
-              <h1 className={`text-xl sm:text-2xl font-bold ${textPrimary}`}>
+          {/* Left Section - Menu Button (mobile) + Title */}
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMenuClick}
+              className="lg:hidden p-2"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            
+            <div className="min-w-0">
+              <h1 className={`text-lg sm:text-xl md:text-2xl font-bold ${textPrimary} truncate`}>
                 {displayTitle}
               </h1>
               {displaySubtitle && (
-                <p className={`text-sm ${textSecondary} mt-1 hidden sm:block`}>
+                <p className={`text-xs sm:text-sm ${textSecondary} mt-0.5 sm:mt-1 hidden sm:block truncate`}>
                   {displaySubtitle}
                 </p>
               )}

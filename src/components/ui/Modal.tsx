@@ -55,7 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    full: 'max-w-full mx-2 sm:mx-4',
   };
 
   return (
@@ -67,22 +67,22 @@ export const Modal: React.FC<ModalProps> = ({
       ></div>
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
         <div 
-          className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizes[size]} transform transition-all`}
+          className={`relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full ${sizes[size]} transform transition-all max-h-[90vh] sm:max-h-[85vh] flex flex-col`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {(title || description) && (
-            <div className="px-6 py-5 border-b border-tag-gray-200">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-tag-gray-200 flex-shrink-0">
               <div className="flex items-start justify-between">
-                <div>
-                  {title && <h3 className="text-xl font-semibold text-tag-gray-900">{title}</h3>}
-                  {description && <p className="mt-1 text-sm text-tag-gray-600">{description}</p>}
+                <div className="pr-8">
+                  {title && <h3 className="text-lg sm:text-xl font-semibold text-tag-gray-900">{title}</h3>}
+                  {description && <p className="mt-1 text-xs sm:text-sm text-tag-gray-600">{description}</p>}
                 </div>
                 <button
                   onClick={onClose}
-                  className="ml-4 text-tag-gray-400 hover:text-tag-red-600 transition-colors p-2 hover:bg-tag-red-50 rounded-lg"
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 text-tag-gray-400 hover:text-tag-red-600 transition-colors p-2 hover:bg-tag-red-50 rounded-lg"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -91,13 +91,13 @@ export const Modal: React.FC<ModalProps> = ({
           )}
 
           {/* Body */}
-          <div className="px-6 py-5">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto flex-1">
             {children}
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 bg-tag-gray-50 border-t border-tag-gray-200 rounded-b-2xl flex items-center justify-end gap-3">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-tag-gray-50 border-t border-tag-gray-200 rounded-b-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
               {footer}
             </div>
           )}

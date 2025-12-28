@@ -42,64 +42,93 @@ export default function LoginPage() {
     try {
       if (!supabase) {
         setError('System not available. Please try again later.');
+        setLoading(false);
         return;
       }
 
+      console.log('Attempting login for:', email);
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (authError) {
-        setError(authError.message);
+        console.error('Auth error:', authError);
+        // More user-friendly error messages
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (authError.message.includes('Email not confirmed')) {
+          setError('Please confirm your email address before logging in.');
+        } else {
+          setError(authError.message);
+        }
+        setLoading(false);
         return;
       }
 
-      if (data.user) {
-        // Get user profile to determine role and department
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, department_id, first_name, last_name')
-          .eq('user_id', data.user.id)
-          .single();
+      if (!data.user || !data.session) {
+        setError('Login failed. Please try again.');
+        setLoading(false);
+        return;
+      }
 
-        if (profileError) {
-          // Profile will be created by AuthContext, redirect to dashboard
-          router.replace('/dashboard');
+      console.log('Login successful, user:', data.user.id);
+
+      // Wait a moment for session to be established
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Get user profile to determine role and department
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, department_id, first_name, last_name')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.log('Profile not found, will be created. Redirecting to dashboard...');
+        // Profile will be created by AuthContext, redirect to dashboard
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      console.log('User profile:', profile);
+
+      // REDIRECT BASED ON ROLE
+      if (profile.role === 'department_leader') {
+        // Check if they have a department assigned
+        let departmentId = profile.department_id;
+        
+        // If no department_id in profile, check departments table
+        if (!departmentId && supabase) {
+          const { data: deptData, error: deptError } = await supabase
+            .from('departments')
+            .select('id, name')
+            .eq('leader_user_id', data.user.id)
+            .eq('is_active', true)
+            .single();
+
+          if (deptData && !deptError) {
+            departmentId = deptData.id;
+          }
+        }
+
+        if (departmentId) {
+          window.location.href = `/departments/${departmentId}`;
           return;
         }
-
-        // REDIRECT BASED ON ROLE
-        if (profile.role === 'department_leader') {
-          // Check if they have a department assigned
-          let departmentId = profile.department_id;
-          
-          // If no department_id in profile, check departments table
-          if (!departmentId && supabase) {
-            const { data: deptData, error: deptError } = await supabase
-              .from('departments')
-              .select('id, name')
-              .eq('leader_user_id', data.user.id)
-              .eq('is_active', true)
-              .single();
-
-            if (deptData && !deptError) {
-              departmentId = deptData.id;
-            }
-          }
-
-          if (departmentId) {
-            router.replace(`/departments/${departmentId}`);
-            return;
-          }
-        }
-
-        // Default redirect for admins, pastors, or leaders without departments
-        router.replace('/dashboard');
       }
-    } catch (error) {
-      setError('An unexpected error occurred');
-    } finally {
+
+      // Default redirect for admins, pastors, or leaders without departments
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      window.location.href = redirect;
+    } catch (error: any) {
+      console.error('Login exception:', error);
+      if (error?.message?.includes('Failed to fetch')) {
+        setError('Network error. Please check your internet connection and try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       setLoading(false);
     }
   };
