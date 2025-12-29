@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
               : 0;
 
             // Calculate current streak
-            stats.recent_records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            stats.recent_records.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
             
             if (stats.recent_records.length > 0) {
               const latestRecord = stats.recent_records[0];
