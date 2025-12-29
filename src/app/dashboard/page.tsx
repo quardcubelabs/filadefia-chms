@@ -502,12 +502,20 @@ export default function DashboardPage() {
   }
 
   // Show loading while waiting for redirect (user is null but status might not be updated yet)
-  if (!user) {
+  if (!user && status === AuthStatus.AUTHENTICATED) {
     return <DashboardLoading />;
   }
 
-  // Show loading while department leader is being redirected
-  if (isDepartmentLeader && departmentId) {
+  // If unauthenticated, redirect to login instead of showing loading
+  if (!user && status === AuthStatus.UNAUTHENTICATED) {
+    router.replace('/login');
+    return <DashboardLoading />;
+  }
+
+  // Show loading only briefly while department leader is being redirected
+  if (isDepartmentLeader && departmentId && !deptAccessLoading) {
+    // Force redirect if it hasn't happened yet
+    router.replace(`/departments/${departmentId}`);
     return <DashboardLoading />;
   }
 
