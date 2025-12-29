@@ -398,8 +398,198 @@ export default function DepartmentDashboardPage() {
           </Card>
         ) : (
           <>
-            {/* Dashboard Grid - Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+            {/* ========== MOBILE VIEW (shown only on small screens) ========== */}
+            <div className="sm:hidden space-y-4 w-full">
+              {/* Mobile Stats Cards */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Total Members Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <Users className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+                  </div>
+                  <p className={`text-xs ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-1`}>Members</p>
+                  <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {members.length}
+                  </h3>
+                </div>
+
+                {/* Leadership Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <Crown className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
+                  </div>
+                  <p className={`text-xs ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-1`}>Leaders</p>
+                  <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {leadershipMembers.length}
+                  </h3>
+                </div>
+
+                {/* Active Members Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <UserCheck className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-green-600'}`} />
+                  </div>
+                  <p className={`text-xs ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-1`}>Active</p>
+                  <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {members.filter(m => m.member && m.member.status === 'active').length}
+                  </h3>
+                </div>
+
+                {/* Department Income Card */}
+                <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-xl p-3 shadow-sm`}>
+                  <div className={`inline-flex p-2 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-lg mb-2`}>
+                    <DollarSign className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
+                  </div>
+                  <p className={`text-xs ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-1`}>Income</p>
+                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {`${(financialData.totalDepartmentIncome / 1000000).toFixed(1)}M`}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Mobile Age Distribution */}
+              <div className={`${cardBg} rounded-xl p-4 border ${borderColor} shadow-sm`}>
+                <h3 className={`text-base font-bold ${textPrimary} mb-3`}>Members by Age</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <p className={`text-xs ${textSecondary} mb-1`}>Total</p>
+                    <p className={`text-lg font-bold ${textPrimary}`}>
+                      {`${members.length} People`}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-center">
+                      <div className="w-3 h-3 rounded-full bg-cyan-400 mx-auto mb-1"></div>
+                      <p className={`text-[10px] ${textSecondary}`}>Youth</p>
+                      <p className={`text-xs font-semibold ${textPrimary}`}>{membersByAge.youth}</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-3 h-3 rounded-full bg-blue-600 mx-auto mb-1"></div>
+                      <p className={`text-[10px] ${textSecondary}`}>Adults</p>
+                      <p className={`text-xs font-semibold ${textPrimary}`}>{membersByAge.adults}</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-3 h-3 rounded-full bg-red-500 mx-auto mb-1"></div>
+                      <p className={`text-[10px] ${textSecondary}`}>Seniors</p>
+                      <p className={`text-xs font-semibold ${textPrimary}`}>{membersByAge.seniors}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Weekly Offerings */}
+              <div className={`${cardBg} rounded-xl p-4 border ${borderColor} shadow-sm`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-base font-bold ${textPrimary}`}>Weekly Offerings</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-sm bg-blue-600"></div>
+                    <span className={`text-xs ${textSecondary}`}>Revenue</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex-1">
+                    <p className={`text-xs ${textSecondary} mb-1`}>Total Revenue</p>
+                    <p className={`text-base font-bold ${textPrimary}`}>
+                      {`TZS ${(financialData.totalDepartmentIncome / 1000).toFixed(0)}k`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-xs ${textSecondary} mb-1`}>Monthly</p>
+                    <p className={`text-base font-semibold ${textPrimary}`}>
+                      {`TZS ${(financialData.monthlyDepartmentIncome / 1000).toFixed(0)}k`}
+                    </p>
+                  </div>
+                </div>
+                {/* Mini Bar Chart */}
+                <div className="h-16 flex items-end gap-1">
+                  {(financialData.weeklyOfferings.length > 0 ? financialData.weeklyOfferings : [
+                    { week: 'W1', amount: 0, label: '01' },
+                    { week: 'W2', amount: 0, label: '02' },
+                    { week: 'W3', amount: 0, label: '03' },
+                    { week: 'W4', amount: 0, label: '04' },
+                    { week: 'W5', amount: 0, label: '05' },
+                    { week: 'W6', amount: 0, label: '06' },
+                    { week: 'W7', amount: 0, label: '07' },
+                    { week: 'W8', amount: 0, label: '08' }
+                  ]).map((bar, idx) => {
+                    const maxAmount = Math.max(...financialData.weeklyOfferings.map(w => w.amount), 1);
+                    const height = Math.max((bar.amount / maxAmount) * 48, 4);
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center">
+                        <div 
+                          className="w-full bg-blue-600 rounded-t"
+                          style={{ height: `${height}px` }}
+                        ></div>
+                        <span className={`text-[9px] mt-1 ${textSecondary}`}>{bar.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mobile Member Lists */}
+              <div className="space-y-3">
+                {/* Leadership Team */}
+                {leadershipMembers.length > 0 && (
+                  <div className={`${cardBg} rounded-xl p-4 border ${borderColor} shadow-sm`}>
+                    <h3 className={`text-base font-bold ${textPrimary} mb-3`}>Leadership Team</h3>
+                    <div className="space-y-2">
+                      {leadershipMembers.map((member, index) => (
+                        <div key={member.id} className={`flex items-center gap-3 p-2 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                          <Avatar
+                            src={member.member?.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.member?.first_name}`}
+                            alt={`${member.member?.first_name} ${member.member?.last_name}`}
+                            size="sm"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${textPrimary} truncate`}>
+                              {member.member?.first_name} {member.member?.last_name}
+                            </p>
+                            <p className={`text-xs ${textSecondary} truncate`}>{member.member?.phone}</p>
+                          </div>
+                          {getPositionBadge(member.position)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Regular Members */}
+                <div className={`${cardBg} rounded-xl p-4 border ${borderColor} shadow-sm`}>
+                  <h3 className={`text-base font-bold ${textPrimary} mb-3`}>
+                    Members ({regularMembers.length})
+                  </h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {regularMembers.slice(0, 10).map((member, index) => (
+                      <div key={member.id} className={`flex items-center gap-3 p-2 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                        <Avatar
+                          src={member.member?.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.member?.first_name}`}
+                          alt={`${member.member?.first_name} ${member.member?.last_name}`}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${textPrimary} truncate`}>
+                            {member.member?.first_name} {member.member?.last_name}
+                          </p>
+                          <p className={`text-xs ${textSecondary} truncate`}>{member.member?.phone}</p>
+                        </div>
+                        {getStatusBadge(member.member?.status || 'inactive')}
+                      </div>
+                    ))}
+                    {regularMembers.length > 10 && (
+                      <div className="text-center pt-2">
+                        <p className={`text-xs ${textSecondary}`}>
+                          +{regularMembers.length - 10} more members
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ========== DESKTOP VIEW (hidden on small screens) ========== */}
+            <div className="hidden sm:grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
               {/* Left Column - Stats and Charts */}
               <div className="col-span-1 lg:col-span-7 space-y-4 sm:space-y-6">
                 {/* Stats Cards Grid */}
