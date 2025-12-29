@@ -214,12 +214,14 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const type = searchParams.get('type');
     const eventId = searchParams.get('event_id');
+    const memberId = searchParams.get('member_id');
 
-    if (!date || !type) {
-      return NextResponse.json({ error: 'Date and type are required' }, { status: 400 });
+    // If member_id is provided, we don't require date and type
+    if (!memberId && (!date || !type)) {
+      return NextResponse.json({ error: 'Either member_id or both date and type are required' }, { status: 400 });
     }
 
-    console.log('Fetching attendance records for:', { date, type, eventId });
+    console.log('Fetching attendance records for:', { date, type, eventId, memberId });
 
     // Build query
     let query = supabase
@@ -227,17 +229,32 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         member_id,
+        date,
+        attendance_type,
         present,
         notes,
+        event_id,
+        recorded_by,
         created_at,
         members!inner(
           first_name,
           last_name,
           member_number
         )
-      `)
-      .eq('date', date)
-      .eq('attendance_type', type);
+      `);
+
+    // Apply filters based on provided parameters
+    if (memberId) {
+      query = query.eq('member_id', memberId);
+    }
+    
+    if (date) {
+      query = query.eq('date', date);
+    }
+    
+    if (type) {
+      query = query.eq('attendance_type', type);
+    }
 
     // Add event_id filter if provided
     if (eventId) {

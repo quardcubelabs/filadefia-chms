@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
         error = rpcResult.error;
       } catch (rpcError) {
         console.error('RPC function also failed:', rpcError);
-        error = rpcError;
+        error = rpcError as any;
       }
     }
 
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         
         // Get attendance stats for all members
         const { data: attendanceStats, error: statsError } = await supabase
-          .from('attendance_records')
+          .from('attendance')
           .select(`
             member_id,
             present,
@@ -135,9 +135,9 @@ export async function GET(request: NextRequest) {
 
         if (statsError) {
           console.log('Attendance stats error:', statsError.message);
-          // If attendance_records table doesn't exist, continue without stats
-          if (statsError.message.includes('attendance_records') && statsError.message.includes('not find')) {
-            console.log('attendance_records table not found, returning members without stats');
+          // If attendance table doesn't exist, continue without stats
+          if (statsError.message.includes('attendance') && statsError.message.includes('not find')) {
+            console.log('attendance table not found, returning members without stats');
           }
         } else if (attendanceStats) {
           // Calculate stats for each member
