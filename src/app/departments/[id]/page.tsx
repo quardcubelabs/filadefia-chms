@@ -229,7 +229,7 @@ export default function DepartmentDashboardPage() {
       console.log(`🔍 Department ${params.id} Income Debug:`, {
         totalTransactions: incomeData?.length || 0,
         departmentTransactions: deptIncome.length,
-        transactionAmounts: deptIncome.map(t => ({ id: t.id, amount: t.amount, type: t.transaction_type })),
+        transactionAmounts: deptIncome.map(t => ({ amount: t.amount, type: t.transaction_type })),
         directDepartmentAssociation: 'Using department_id field directly - no member filtering needed'
       });
       
