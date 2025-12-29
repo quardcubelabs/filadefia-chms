@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // GET - Get specific attendance session by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -12,7 +12,7 @@ export async function GET(
       process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
 
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
@@ -70,7 +70,7 @@ export async function GET(
 // PUT - Update attendance session
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -78,7 +78,7 @@ export async function PUT(
       process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
     const body = await request.json();
     const { action, qr_duration_hours } = body;
 
