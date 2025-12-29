@@ -57,7 +57,9 @@ export default function DepartmentDashboardPage() {
   const [financialData, setFinancialData] = useState({
     totalDepartmentIncome: 0,
     monthlyDepartmentIncome: 0,
-    weeklyOfferings: [] as Array<{ week: string, amount: number, label: string }>
+    totalDepartmentExpenses: 0,
+    monthlyDepartmentExpenses: 0,
+    weeklyFinances: [] as Array<{ week: string, income: number, expenses: number, label: string }>
   });
   
   // CRUD operation states
@@ -141,93 +143,333 @@ export default function DepartmentDashboardPage() {
 
   const fetchFinancialData = async () => {
     try {
+      console.log(`🔄 DEPARTMENT DASHBOARD: Starting financial data fetch for department: ${params.id}`);
+      
       if (!supabase || !params.id) {
         console.error('Supabase client or department ID not available');
         return;
       }
 
-      // Fetch total department income with department filtering
-      const { data: incomeData, error: incomeError } = await supabase
+      // Check what transaction types are available in the database
+      const { data: typeCheck, error: typeError } = await supabase
         .from('financial_transactions')
-        .select('amount, members(department_members(department_id))')
-        .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
-        .eq('verified', true);
+        .select('transaction_type')
+        .limit(50);
       
-      if (incomeError) {
-        console.error('Error fetching income data:', incomeError);
+      if (typeError) {
+        console.warn('Financial transactions table not accessible, using default values:', typeError);
+        // Set default empty financial data
+        setFinancialData({
+          totalDepartmentIncome: 0,
+          monthlyDepartmentIncome: 0,
+          totalDepartmentExpenses: 0,
+          monthlyDepartmentExpenses: 0,
+          weeklyFinances: Array.from({ length: 8 }, (_, i) => ({
+            week: `W${i + 1}`,
+            income: 0,
+            expenses: 0,
+            label: String(i + 1).padStart(2, '0')
+          }))
+        });
         return;
       }
+
+      // Extract available transaction types
+      const availableTypes = [...new Set(typeCheck?.map(t => t.transaction_type) || [])];
+      console.log('Available transaction types:', availableTypes);
       
-      // Filter by department
-      const deptIncome = incomeData?.filter((t: any) => {
-        const deptMembers = t.members?.department_members || [];
-        return deptMembers.some((dm: any) => dm.department_id === params.id);
-      }) || [];
+      // Define income and expense types based on what's available
+      const incomeTypes = availableTypes.filter(type => 
+        ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'].includes(type)
+      );
+      const expenseTypes = availableTypes.filter(type => 
+        ['expense', 'withdrawal'].includes(type) || type.toLowerCase().includes('expense')
+      );
+      
+      console.log(`📊 Query setup for Department ${params.id}:`, {
+        incomeTypes,
+        expenseTypes,
+        willUseAmountFallback: {
+          income: incomeTypes.length === 0,
+          expense: expenseTypes.length === 0
+        }
+      });
+
+      // Fetch total department income using department_id directly
+      let incomeData = null, incomeError = null;
+      if (incomeTypes.length > 0) {
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .in('transaction_type', incomeTypes)
+          .eq('verified', true)
+          .eq('department_id', params.id);
+        incomeData = result.data;
+        incomeError = result.error;
+      } else {
+        // Fallback to positive amounts if no income types found
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .gt('amount', 0)
+          .eq('verified', true)
+          .eq('department_id', params.id);
+        incomeData = result.data;
+        incomeError = result.error;
+      }
+      
+      if (incomeError) {
+        console.warn('Could not fetch income data, using default values:', incomeError);
+        // Continue with default values rather than failing completely
+      }
+      
+      // No need to filter - transactions are already department-specific
+      const deptIncome = incomeData || [];
+      
+      console.log(`🔍 Department ${params.id} Income Debug:`, {
+        totalTransactions: incomeData?.length || 0,
+        departmentTransactions: deptIncome.length,
+        transactionAmounts: deptIncome.map(t => ({ id: t.id, amount: t.amount, type: t.transaction_type })),
+        directDepartmentAssociation: 'Using department_id field directly - no member filtering needed'
+      });
       
       const totalDepartmentIncome = deptIncome.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
       
-      // Fetch current month department income
+      console.log(`💰 DEPARTMENT DASHBOARD Total Income: TZS ${totalDepartmentIncome.toLocaleString()}`);
+      console.log(`📊 DEPARTMENT DASHBOARD Financial Summary:`, {
+        departmentId: params.id,
+        totalIncomeTransactions: deptIncome.length,
+        totalIncomeAmount: totalDepartmentIncome,
+        displayedAmount: `TZS ${(totalDepartmentIncome / 1000000).toFixed(1)}M`
+      });
+
+      // Fetch total department expenses using department_id directly
+      let expenseData = null, expenseError = null;
+      if (expenseTypes.length > 0) {
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .in('transaction_type', expenseTypes)
+          .eq('verified', true)
+          .eq('department_id', params.id);
+        expenseData = result.data;
+        expenseError = result.error;
+      } else {
+        // Fallback to negative amounts if no expense types found
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .lt('amount', 0)
+          .eq('verified', true)
+          .eq('department_id', params.id);
+        expenseData = result.data;
+        expenseError = result.error;
+      }
+      
+      if (expenseError) {
+        console.warn('Could not fetch expense data, using income-only view:', expenseError);
+        // Continue without expenses rather than failing completely
+      }
+      
+      // No need to filter - transactions are already department-specific
+      const deptExpenses = expenseData || [];
+      
+      const totalDepartmentExpenses = deptExpenses.reduce((sum: number, t: any) => {
+        // Use absolute value for negative amounts, regular value for expense types
+        const amount = t.amount < 0 ? Math.abs(t.amount) : t.amount;
+        return sum + (amount || 0);
+      }, 0) || 0;
+      
+      // Fetch current month department income and expenses
       const currentMonth = new Date();
       const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       
-      const { data: monthlyData, error: monthlyError } = await supabase
-        .from('financial_transactions')
-        .select('amount, members(department_members(department_id))')
-        .in('transaction_type', ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'])
-        .eq('verified', true)
-        .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
-      
-      if (monthlyError) {
-        console.error('Error fetching monthly data:', monthlyError);
-        return;
+      // Monthly income using department_id directly
+      let monthlyIncomeData = null, monthlyIncomeError = null;
+      if (incomeTypes.length > 0) {
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .in('transaction_type', incomeTypes)
+          .eq('verified', true)
+          .eq('department_id', params.id)
+          .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
+        monthlyIncomeData = result.data;
+        monthlyIncomeError = result.error;
+      } else {
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .gt('amount', 0)
+          .eq('verified', true)
+          .eq('department_id', params.id)
+          .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
+        monthlyIncomeData = result.data;
+        monthlyIncomeError = result.error;
       }
       
-      const deptMonthlyData = monthlyData?.filter((t: any) => {
-        const deptMembers = t.members?.department_members || [];
-        return deptMembers.some((dm: any) => dm.department_id === params.id);
-      }) || [];
+      if (monthlyIncomeError) {
+        console.warn('Could not fetch monthly income data:', monthlyIncomeError);
+        // Continue without monthly income data
+      }
       
-      const monthlyDepartmentIncome = deptMonthlyData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+      // No need to filter - transactions are already department-specific
+      const deptMonthlyIncomeData = monthlyIncomeData || [];
       
-      // Fetch weekly offerings for the last 8 weeks
-      const weeks = [];
-      for (let i = 7; i >= 0; i--) {
-        const weekEnd = new Date();
-        weekEnd.setDate(weekEnd.getDate() - (i * 7));
-        const weekStart = new Date(weekEnd);
-        weekStart.setDate(weekStart.getDate() - 6);
-        
-        const { data: weekData, error: weekError } = await supabase
+      const monthlyDepartmentIncome = deptMonthlyIncomeData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+
+      // Monthly expenses using department_id directly
+      let monthlyExpenseData = null, monthlyExpenseError = null;
+      if (expenseTypes.length > 0) {
+        const result = await supabase
           .from('financial_transactions')
-          .select('amount, members(department_members(department_id))')
-          .eq('transaction_type', 'offering')
+          .select('amount, transaction_type')
+          .in('transaction_type', expenseTypes)
           .eq('verified', true)
-          .gte('date', weekStart.toISOString().split('T')[0])
-          .lte('date', weekEnd.toISOString().split('T')[0]);
-        
-        if (!weekError && weekData) {
-          const deptWeekData = weekData.filter((t: any) => {
-            const deptMembers = t.members?.department_members || [];
-            return deptMembers.some((dm: any) => dm.department_id === params.id);
-          });
-          
-          const weekAmount = deptWeekData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
-          weeks.push({
-            week: `W${8-i}`,
-            amount: weekAmount,
-            label: String(8-i).padStart(2, '0')
-          });
+          .eq('department_id', params.id)
+          .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
+        monthlyExpenseData = result.data;
+        monthlyExpenseError = result.error;
+      } else {
+        const result = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .lt('amount', 0)
+          .eq('verified', true)
+          .eq('department_id', params.id)
+          .gte('date', firstDayOfMonth.toISOString().split('T')[0]);
+        monthlyExpenseData = result.data;
+        monthlyExpenseError = result.error;
+      }
+      
+      if (monthlyExpenseError) {
+        console.warn('Could not fetch monthly expense data:', monthlyExpenseError);
+        // Continue without monthly expenses
+      }
+      
+      // No need to filter - transactions are already department-specific
+      const deptMonthlyExpenseData = monthlyExpenseData || [];
+      
+      const monthlyDepartmentExpenses = deptMonthlyExpenseData.reduce((sum: number, t: any) => {
+        const amount = t.amount < 0 ? Math.abs(t.amount) : t.amount;
+        return sum + (amount || 0);
+      }, 0) || 0;
+      
+      // Helper function to fetch weekly data with proper type handling using department_id directly
+      const fetchWeeklyData = async (weekStart: Date, weekEnd: Date, isIncome: boolean) => {
+        const types = isIncome ? incomeTypes : expenseTypes;
+        if (types.length > 0) {
+          return await supabase
+            .from('financial_transactions')
+            .select('amount, transaction_type')
+            .in('transaction_type', types)
+            .eq('verified', true)
+            .eq('department_id', params.id)
+            .gte('date', weekStart.toISOString().split('T')[0])
+            .lte('date', weekEnd.toISOString().split('T')[0]);
+        } else {
+          // Fallback to amount-based filtering
+          return await supabase
+            .from('financial_transactions')
+            .select('amount, transaction_type')
+            [isIncome ? 'gt' : 'lt']('amount', 0)
+            .eq('verified', true)
+            .eq('department_id', params.id)
+            .gte('date', weekStart.toISOString().split('T')[0])
+            .lte('date', weekEnd.toISOString().split('T')[0]);
         }
+      };
+
+      // Fetch weekly finances for the last 8 weeks
+      // Configure as: weeks 1-4 for last month, weeks 5-8 for current month
+      const currentDate = new Date();
+      const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+      const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      
+      const weeks = [];
+      
+      // Weeks 1-4: Last month (split into 4 weeks)
+      for (let i = 0; i < 4; i++) {
+        const weekStart = new Date(lastMonth);
+        weekStart.setDate(1 + (i * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        // Fetch income and expenses for this week using helper function
+        const { data: weekIncomeData, error: weekIncomeError } = await fetchWeeklyData(weekStart, weekEnd, true);
+        const { data: weekExpenseData, error: weekExpenseError } = await fetchWeeklyData(weekStart, weekEnd, false);
+        
+        let weekIncome = 0;
+        let weekExpenses = 0;
+        
+        if (!weekIncomeError && weekIncomeData) {
+          // No need to filter - transactions are already department-specific
+          weekIncome = weekIncomeData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+        }
+        
+        if (!weekExpenseError && weekExpenseData) {
+          // No need to filter - transactions are already department-specific
+          weekExpenses = weekExpenseData.reduce((sum: number, t: any) => {
+            const amount = t.amount < 0 ? Math.abs(t.amount) : t.amount;
+            return sum + (amount || 0);
+          }, 0) || 0;
+        }
+        
+        weeks.push({
+          week: `W${i + 1}`,
+          income: weekIncome,
+          expenses: weekExpenses,
+          label: String(i + 1).padStart(2, '0')
+        });
+      }
+      
+      // Weeks 5-8: Current month (split into 4 weeks)
+      for (let i = 0; i < 4; i++) {
+        const weekStart = new Date(currentMonthStart);
+        weekStart.setDate(1 + (i * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        // Fetch income and expenses for this week using helper function
+        const { data: weekIncomeData, error: weekIncomeError } = await fetchWeeklyData(weekStart, weekEnd, true);
+        const { data: weekExpenseData, error: weekExpenseError } = await fetchWeeklyData(weekStart, weekEnd, false);
+        
+        let weekIncome = 0;
+        let weekExpenses = 0;
+        
+        if (!weekIncomeError && weekIncomeData) {
+          // No need to filter - transactions are already department-specific
+          weekIncome = weekIncomeData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+        }
+        
+        if (!weekExpenseError && weekExpenseData) {
+          // No need to filter - transactions are already department-specific
+          weekExpenses = weekExpenseData.reduce((sum: number, t: any) => {
+            const amount = t.amount < 0 ? Math.abs(t.amount) : t.amount;
+            return sum + (amount || 0);
+          }, 0) || 0;
+        }
+        
+        weeks.push({
+          week: `W${i + 5}`,
+          income: weekIncome,
+          expenses: weekExpenses,
+          label: String(i + 5).padStart(2, '0')
+        });
       }
       
       setFinancialData({
         totalDepartmentIncome,
         monthlyDepartmentIncome,
-        weeklyOfferings: weeks
+        totalDepartmentExpenses,
+        monthlyDepartmentExpenses,
+        weeklyFinances: weeks
       });
       
+      console.log(`✅ DEPARTMENT DASHBOARD: Financial data updated successfully`);
+      
     } catch (error) {
-      console.error('Error fetching financial data:', error);
+      console.error('❌ DEPARTMENT DASHBOARD: Error fetching financial data:', error);
     }
   };
 
@@ -375,6 +617,8 @@ export default function DepartmentDashboardPage() {
           </div>
         )}
 
+
+
         {/* Loading State */}
         {loading ? (
           <Card variant="default">
@@ -477,49 +721,65 @@ export default function DepartmentDashboardPage() {
                 </div>
               </div>
 
-              {/* Mobile Weekly Offerings */}
+              {/* Mobile Finances */}
               <div className={`${cardBg} rounded-xl p-4 border ${borderColor} shadow-sm`}>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className={`text-base font-bold ${textPrimary}`}>Weekly Offerings</h3>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-sm bg-blue-600"></div>
-                    <span className={`text-xs ${textSecondary}`}>Revenue</span>
+                  <h3 className={`text-base font-bold ${textPrimary}`}>Finances</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-sm bg-blue-600"></div>
+                      <span className={`text-xs ${textSecondary}`}>Income</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-sm bg-gray-400"></div>
+                      <span className={`text-xs ${textSecondary}`}>Expenses</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="flex-1">
-                    <p className={`text-xs ${textSecondary} mb-1`}>Total Revenue</p>
+                    <p className={`text-xs ${textSecondary} mb-1`}>Total Income</p>
                     <p className={`text-base font-bold ${textPrimary}`}>
                       {`TZS ${(financialData.totalDepartmentIncome / 1000).toFixed(0)}k`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className={`text-xs ${textSecondary} mb-1`}>Monthly</p>
+                    <p className={`text-xs ${textSecondary} mb-1`}>Total Expenses</p>
                     <p className={`text-base font-semibold ${textPrimary}`}>
-                      {`TZS ${(financialData.monthlyDepartmentIncome / 1000).toFixed(0)}k`}
+                      {`TZS ${(financialData.totalDepartmentExpenses / 1000).toFixed(0)}k`}
                     </p>
                   </div>
                 </div>
                 {/* Mini Bar Chart */}
                 <div className="h-16 flex items-end gap-1">
-                  {(financialData.weeklyOfferings.length > 0 ? financialData.weeklyOfferings : [
-                    { week: 'W1', amount: 0, label: '01' },
-                    { week: 'W2', amount: 0, label: '02' },
-                    { week: 'W3', amount: 0, label: '03' },
-                    { week: 'W4', amount: 0, label: '04' },
-                    { week: 'W5', amount: 0, label: '05' },
-                    { week: 'W6', amount: 0, label: '06' },
-                    { week: 'W7', amount: 0, label: '07' },
-                    { week: 'W8', amount: 0, label: '08' }
+                  {(financialData.weeklyFinances.length > 0 ? financialData.weeklyFinances : [
+                    { week: 'W1', income: 0, expenses: 0, label: '01' },
+                    { week: 'W2', income: 0, expenses: 0, label: '02' },
+                    { week: 'W3', income: 0, expenses: 0, label: '03' },
+                    { week: 'W4', income: 0, expenses: 0, label: '04' },
+                    { week: 'W5', income: 0, expenses: 0, label: '05' },
+                    { week: 'W6', income: 0, expenses: 0, label: '06' },
+                    { week: 'W7', income: 0, expenses: 0, label: '07' },
+                    { week: 'W8', income: 0, expenses: 0, label: '08' }
                   ]).map((bar, idx) => {
-                    const maxAmount = Math.max(...financialData.weeklyOfferings.map(w => w.amount), 1);
-                    const height = Math.max((bar.amount / maxAmount) * 48, 4);
+                    const maxAmount = Math.max(
+                      ...financialData.weeklyFinances.map(w => Math.max(w.income, w.expenses)), 
+                      1
+                    );
+                    const incomeHeight = Math.max((bar.income / maxAmount) * 48, 2);
+                    const expenseHeight = Math.max((bar.expenses / maxAmount) * 48, 2);
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full bg-blue-600 rounded-t"
-                          style={{ height: `${height}px` }}
-                        ></div>
+                        <div className="w-full flex items-end gap-0.5">
+                          <div 
+                            className="flex-1 bg-blue-600 rounded-t"
+                            style={{ height: `${incomeHeight}px` }}
+                          ></div>
+                          <div 
+                            className="flex-1 bg-gray-400 rounded-t"
+                            style={{ height: `${expenseHeight}px` }}
+                          ></div>
+                        </div>
                         <span className={`text-[9px] mt-1 ${textSecondary}`}>{bar.label}</span>
                       </div>
                     );
@@ -795,19 +1055,19 @@ export default function DepartmentDashboardPage() {
                   </div>
                 </div>
 
-                {/* Weekly Offerings Chart */}
+                {/* Finances Chart */}
                 <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
                   {/* Header */}
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className={`text-xl font-bold ${textPrimary}`}>Weekly Offerings</h3>
+                    <h3 className={`text-xl font-bold ${textPrimary}`}>Finances</h3>
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-gray-300"></div>
-                        <span className={`text-xs ${textSecondary}`}>Target</span>
+                        <div className="w-2.5 h-2.5 rounded-sm bg-blue-600"></div>
+                        <span className={`text-xs ${textSecondary}`}>Income</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-blue-600"></div>
-                        <span className={`text-xs ${textSecondary}`}>Actual</span>
+                        <div className="w-2.5 h-2.5 rounded-sm bg-gray-400"></div>
+                        <span className={`text-xs ${textSecondary}`}>Expenses</span>
                       </div>
                     </div>
                   </div>
@@ -821,58 +1081,54 @@ export default function DepartmentDashboardPage() {
                       </p>
                     </div>
                     <div>
-                      <p className={`text-xs ${textSecondary} mb-1`}>Monthly Income</p>
+                      <p className={`text-xs ${textSecondary} mb-1`}>Total Expenses</p>
                       <p className={`text-2xl font-bold ${textPrimary}`}>
-                        {`TZS ${(financialData.monthlyDepartmentIncome / 1000).toFixed(0)}k`}
+                        {`TZS ${(financialData.totalDepartmentExpenses / 1000).toFixed(0)}k`}
                       </p>
                     </div>
-                    <div className={`${darkMode ? 'bg-blue-600' : 'bg-blue-50'} px-6 py-3 rounded-xl`}>
-                      <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-blue-600'}`}>
-                        {`${Math.max(...(financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)) || [0]))}K`}
+                    <div>
+                      <p className={`text-xs ${textSecondary} mb-1`}>Net Balance</p>
+                      <p className={`text-2xl font-bold ${(financialData.totalDepartmentIncome - financialData.totalDepartmentExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {`TZS ${((financialData.totalDepartmentIncome - financialData.totalDepartmentExpenses) / 1000).toFixed(0)}k`}
                       </p>
                     </div>
                   </div>
 
                   {/* Bar Chart */}
                   <div className="relative" style={{ height: '180px' }}>
-                    {/* Floating label above highest bar */}
-                    {financialData.weeklyOfferings.length > 0 && (
-                      <div className="absolute top-0 left-[62%] transform -translate-x-1/2 bg-blue-600 px-3 py-1.5 rounded-lg shadow-lg z-10">
-                        <p className="text-white text-sm font-bold">
-                          {Math.max(...financialData.weeklyOfferings.map(w => Math.round(w.amount / 1000)), 0)}K
-                        </p>
-                      </div>
-                    )}
-
                     {/* Bar Chart Container */}
-                    <div className="h-full flex items-end justify-between gap-4 pt-10">
-                      {(financialData.weeklyOfferings.length > 0 ? financialData.weeklyOfferings : [
-                        { week: 'W1', amount: 0, label: '01' },
-                        { week: 'W2', amount: 0, label: '02' },
-                        { week: 'W3', amount: 0, label: '03' },
-                        { week: 'W4', amount: 0, label: '04' },
-                        { week: 'W5', amount: 0, label: '05' },
-                        { week: 'W6', amount: 0, label: '06' },
-                        { week: 'W7', amount: 0, label: '07' },
-                        { week: 'W8', amount: 0, label: '08' }
+                    <div className="h-full flex items-end justify-between gap-4">
+                      {(financialData.weeklyFinances.length > 0 ? financialData.weeklyFinances : [
+                        { week: 'W1', income: 0, expenses: 0, label: '01' },
+                        { week: 'W2', income: 0, expenses: 0, label: '02' },
+                        { week: 'W3', income: 0, expenses: 0, label: '03' },
+                        { week: 'W4', income: 0, expenses: 0, label: '04' },
+                        { week: 'W5', income: 0, expenses: 0, label: '05' },
+                        { week: 'W6', income: 0, expenses: 0, label: '06' },
+                        { week: 'W7', income: 0, expenses: 0, label: '07' },
+                        { week: 'W8', income: 0, expenses: 0, label: '08' }
                       ]).map((bar, idx) => {
-                        const maxAmount = Math.max(...financialData.weeklyOfferings.map(w => w.amount), 1);
-                        const height = Math.max((bar.amount / maxAmount) * 120, 10);
-                        const forecastHeight = Math.max(height * 0.9, 8);
+                        const maxAmount = Math.max(
+                          ...financialData.weeklyFinances.map(w => Math.max(w.income, w.expenses)), 
+                          1
+                        );
+                        const incomeHeight = Math.max((bar.income / maxAmount) * 150, 4);
+                        const expenseHeight = Math.max((bar.expenses / maxAmount) * 150, 4);
                         return (
                           <div key={idx} className="flex-1 flex flex-col items-center">
                             {/* Bar Group */}
-                            <div className="w-full flex items-end justify-center gap-1">
-                              {/* Actual Bar (Dark Blue) */}
+                            <div className="w-full flex items-end justify-center gap-2">
+                              {/* Income Bar (Blue) */}
                               <div 
                                 className="flex-1 bg-blue-600 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-blue-700"
-                                style={{ height: `${height}px` }}
-                                title={`Week ${idx + 1}: TZS ${bar.amount.toLocaleString()}`}
+                                style={{ height: `${incomeHeight}px` }}
+                                title={`Week ${idx + 1} Income: TZS ${bar.income.toLocaleString()}`}
                               ></div>
-                              {/* Target Bar (Light Gray) */}
+                              {/* Expense Bar (Gray) */}
                               <div 
-                                className="flex-1 bg-gray-300 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-gray-400"
-                                style={{ height: `${forecastHeight}px` }}
+                                className="flex-1 bg-gray-400 rounded-t-md transition-all duration-200 cursor-pointer hover:bg-gray-500"
+                                style={{ height: `${expenseHeight}px` }}
+                                title={`Week ${idx + 1} Expenses: TZS ${bar.expenses.toLocaleString()}`}
                               ></div>
                             </div>
                             {/* Label */}

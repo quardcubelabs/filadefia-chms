@@ -700,24 +700,7 @@ export default function FinancePage() {
               </Alert>
             )}
 
-            {/* Department Access Notification */}
-            {isDepartmentLeader && departmentName && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <DollarSign className="h-5 w-5 text-blue-400" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">
-                      Department Financial View - {departmentName}
-                    </h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      <p>You are viewing financial transactions for your department only. All summary statistics reflect transactions specific to {departmentName}.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             {/* Financial Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">

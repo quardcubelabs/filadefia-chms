@@ -546,22 +546,7 @@ export default function MembersPage() {
       title={title}
       subtitle={subtitle}
     >
-      {/* Department Leader Access Notification */}
-      {isDepartmentLeader && departmentName && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center">
-            <Briefcase className="h-5 w-5 text-red-600 mr-2" />
-            <div>
-              <h3 className="text-sm font-medium text-red-800">
-                Department View: {departmentName}
-              </h3>
-              <p className="text-sm text-red-700">
-                Showing members from your department only. You can add, edit, and manage members within {departmentName}.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Error Alert */}
       {error && (
