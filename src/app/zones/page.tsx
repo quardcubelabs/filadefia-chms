@@ -304,26 +304,26 @@ export default function ZonesPage() {
 
         {/* Statistics Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm border p-6 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded"></div>
+              <div key={i} className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6 animate-pulse">
+                <div className="h-3 sm:h-4 bg-gray-200 rounded mb-2 sm:mb-4"></div>
+                <div className="h-6 sm:h-8 bg-gray-200 rounded mb-1 sm:mb-2"></div>
+                <div className="h-2 sm:h-3 bg-gray-200 rounded"></div>
               </div>
             ))}
           </div>
         ) : zones.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No zones found</h3>
-            <p className="text-gray-600 mb-4">No active zones are currently configured in the system</p>
+          <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-6 sm:p-12 text-center">
+            <MapPin className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No zones found</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4">No active zones are currently configured in the system</p>
             <button
               onClick={() => {
                 setFormData({ name: '', swahili_name: '', description: '' });
                 setShowAddModal(true);
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors mx-auto"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg flex items-center gap-2 transition-colors mx-auto text-sm sm:text-base"
             >
               <Plus className="w-4 h-4" />
               Add First Zone
@@ -332,109 +332,109 @@ export default function ZonesPage() {
         ) : (
           <>
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
               {/* Total Zones */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Zones</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{zones.length}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Zones</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{zones.length}</p>
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <MapPin className="w-6 h-6 text-blue-600" />
+                  <div className="bg-blue-50 p-2 sm:p-3 rounded-lg ml-2">
+                    <MapPin className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
                   </div>
                 </div>
               </div>
 
               {/* Total Members */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Members</p>
-                    <p className="text-2xl font-bold text-green-600 mt-1">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Members</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">
                       {zones.reduce((sum, z) => sum + z.member_count, 0)}
                     </p>
                   </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <Users className="w-6 h-6 text-green-600" />
+                  <div className="bg-green-50 p-2 sm:p-3 rounded-lg ml-2">
+                    <Users className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
                   </div>
                 </div>
               </div>
 
               {/* Average Members */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Avg Members/Zone</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Avg Members/Zone</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">
                       {zones.length > 0 ? Math.round(zones.reduce((sum, z) => sum + z.member_count, 0) / zones.length) : 0}
                     </p>
                   </div>
-                  <div className="bg-purple-50 p-3 rounded-lg">
-                    <TrendingUp className="w-6 h-6 text-purple-600" />
+                  <div className="bg-purple-50 p-2 sm:p-3 rounded-lg ml-2">
+                    <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" />
                   </div>
                 </div>
               </div>
 
               {/* Active Status */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Status</p>
-                    <p className="text-2xl font-bold text-green-600 mt-1">Active</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Status</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">Active</p>
                   </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <UserCheck className="w-6 h-6 text-green-600" />
+                  <div className="bg-green-50 p-2 sm:p-3 rounded-lg ml-2">
+                    <UserCheck className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Zones Grid */}
-            <div className="hidden md:block bg-white rounded-lg shadow-sm border">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">All Zones</h3>
-                <p className="text-sm text-gray-600 mt-1">Click on any zone to view details and manage members</p>
+            <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border">
+              <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">All Zones</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">Click on any zone to view details and manage members</p>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="p-3 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                   {zones.map((zone) => (
                     <div 
                       key={zone.id} 
-                      className="border border-gray-200 rounded-lg p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+                      className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
                       onClick={() => router.push(`/zones/${zone.id}`)}
                     >
                       {/* Icon and Badge */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={`h-12 w-12 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
-                          <MapPin className="h-6 w-6 text-white" />
+                      <div className="flex items-start justify-between mb-3 sm:mb-4">
+                        <div className={`h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
+                          <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {zone.member_count} {zone.member_count === 1 ? 'Member' : 'Members'}
                         </span>
                       </div>
 
                       {/* Zone Name */}
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                         {zone.name}
                       </h4>
 
                       {/* Swahili Name */}
                       {zone.swahili_name && (
-                        <p className="text-sm font-medium text-gray-500 mb-2">
+                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-2">
                           {zone.swahili_name}
                         </p>
                       )}
 
                       {/* Leader */}
                       {zone.leader_name && (
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2">
                           <span className="font-medium">Leader:</span> {zone.leader_name}
                         </p>
                       )}
 
                       {/* Description */}
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
                         {zone.description || 'No description available'}
                       </p>
 
@@ -448,7 +448,7 @@ export default function ZonesPage() {
                           }}
                           title="Edit Zone"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                         </button>
                         <button
                           className="text-gray-500 hover:text-red-600 p-1"

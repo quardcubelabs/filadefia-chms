@@ -361,32 +361,32 @@ export default function AttendancePage() {
 
             {/* Attendance Rate */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2 sm:mb-0">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Attendance Rate</p>
                   <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">
                     {stats.attendanceRate.toFixed(1)}%
                   </p>
-                  <div className="flex items-center mt-0.5 sm:mt-1">
-                    {stats.weeklyTrend >= 0 ? (
-                      <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-0.5 sm:mr-1" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 mr-0.5 sm:mr-1" />
-                    )}
-                    <span className={`text-[10px] sm:text-xs md:text-sm ${stats.weeklyTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {Math.abs(stats.weeklyTrend).toFixed(1)}%
-                    </span>
-                  </div>
                 </div>
                 <div className="bg-purple-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
                   <Activity className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-600" />
                 </div>
               </div>
+              <div className="flex items-center mt-1 sm:mt-2">
+                {stats.weeklyTrend >= 0 ? (
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1 sm:mr-2 flex-shrink-0" />
+                ) : (
+                  <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 mr-1 sm:mr-2 flex-shrink-0" />
+                )}
+                <span className={`text-xs sm:text-sm ${stats.weeklyTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {Math.abs(stats.weeklyTrend).toFixed(1)}% vs last week
+                </span>
+              </div>
             </div>
 
             {/* Check-ins Breakdown */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className="flex items-center min-w-0">
                   <div className="bg-orange-50 p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
                     <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-orange-600" />
@@ -397,23 +397,23 @@ export default function AttendancePage() {
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">QR Check-ins</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
+                    <span className="text-gray-600 truncate">QR</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {stats.qrCheckIns} ({stats.qrCheckInPercentage?.toFixed(1)}%)
+                  <span className="font-medium text-gray-900 ml-1">
+                    {stats.qrCheckIns || 0} ({(stats.qrCheckInPercentage || 0).toFixed(1)}%)
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Manual Check-ins</span>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 flex-shrink-0"></div>
+                    <span className="text-gray-600 truncate">Manual</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {stats.manualCheckIns} ({stats.manualCheckInPercentage?.toFixed(1)}%)
+                  <span className="font-medium text-gray-900 ml-1">
+                    {stats.manualCheckIns || 0} ({(stats.manualCheckInPercentage || 0).toFixed(1)}%)
                   </span>
                 </div>
               </div>

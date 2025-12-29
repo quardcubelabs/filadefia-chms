@@ -215,7 +215,7 @@ export default function MemberAttendancePage() {
       return acc;
     }, {});
 
-    const monthlyStats = Object.entries(monthlyData).map(([month, data]: [string, any]) => ({
+    const monthlyStats = Object.entries(monthlyData).map(([month, data]) => ({
       month,
       total: data.total,
       present: data.present,
@@ -311,95 +311,105 @@ export default function MemberAttendancePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-4 mb-6">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div className="flex items-center space-x-4 flex-1">
-              <div className="flex-shrink-0">
-                {member.photo_url ? (
-                  <img
-                    src={member.photo_url}
-                    alt={`${member.first_name} ${member.last_name}`}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="w-8 h-8 text-gray-400" />
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col space-y-4 sm:space-y-6">
+            {/* Top row with back button and member info */}
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <button
+                onClick={() => router.back()}
+                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              </button>
+              
+              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 flex-1 min-w-0">
+                {/* Member photo and basic info */}
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <div className="flex-shrink-0">
+                    {member.photo_url ? (
+                      <img
+                        src={member.photo_url}
+                        alt={`${member.first_name} ${member.last_name}`}
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                        <User className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {member.first_name} {member.last_name}
-                </h1>
-                <p className="text-gray-600 mb-2">#{member.member_number}</p>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <div className="flex items-center space-x-1">
-                    <Phone className="w-4 h-4" />
-                    <span>{member.phone}</span>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
+                      {member.first_name} {member.last_name}
+                    </h1>
+                    <p className="text-sm sm:text-base text-gray-600 mb-1 sm:mb-2">#{member.member_number}</p>
+                  </div>
+                </div>
+
+                {/* Contact info - stack on mobile */}
+                <div className="flex flex-col space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-600">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate">{member.phone}</span>
                   </div>
                   {member.email && (
-                    <div className="flex items-center space-x-1">
-                      <Mail className="w-4 h-4" />
-                      <span>{member.email}</span>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <Mail className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">{member.email}</span>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={loadAttendanceData}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Refresh</span>
-                </button>
-                <button
-                  onClick={exportAttendance}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Export</span>
-                </button>
-              </div>
             </div>
-          </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                onClick={loadAttendanceData}
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
-                <option value="all">All Time</option>
-              </select>
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={exportAttendance}
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export</span>
+              </button>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Services</option>
-                <option value="sunday_service">Sunday Service</option>
-                <option value="midweek_fellowship">Midweek Fellowship</option>
-                <option value="special_event">Special Event</option>
-                <option value="department_meeting">Department Meeting</option>
+
+            {/* Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                  <option value="all">All Time</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Services</option>
+                  <option value="sunday_service">Sunday Service</option>
+                  <option value="midweek_fellowship">Midweek Fellowship</option>
+                  <option value="special_event">Special Event</option>
+                  <option value="department_meeting">Department Meeting</option>
               </select>
             </div>
           </div>
@@ -407,49 +417,57 @@ export default function MemberAttendancePage() {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Sessions</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total_sessions}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Sessions</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.total_sessions}</p>
                 </div>
-                <Calendar className="w-8 h-8 text-blue-600" />
+                <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Present</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.present_count}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Present</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{stats.present_count}</p>
                 </div>
-                <UserCheck className="w-8 h-8 text-green-600" />
+                <div className="bg-green-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
-                  <p className={`text-2xl font-bold ${getAttendanceColor(stats.attendance_rate)}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Rate</p>
+                  <p className={`text-lg sm:text-xl md:text-2xl font-bold ${getAttendanceColor(stats.attendance_rate)} mt-0.5 sm:mt-1`}>
                     {stats.attendance_rate.toFixed(1)}%
                   </p>
                 </div>
-                <Activity className="w-8 h-8 text-blue-600" />
+                <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Current Streak</p>
-                  <p className={`text-2xl font-bold ${getStreakColor(stats.streak.type)}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Streak</p>
+                  <p className={`text-lg sm:text-xl md:text-2xl font-bold ${getStreakColor(stats.streak.type)} mt-0.5 sm:mt-1`}>
                     {stats.streak.current}
                   </p>
-                  <p className="text-xs text-gray-600 capitalize">{stats.streak.type}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 capitalize mt-0.5">{stats.streak.type}</p>
                 </div>
-                <Award className="w-8 h-8 text-yellow-600" />
+                <div className="bg-yellow-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-yellow-600" />
+                </div>
               </div>
             </div>
           </div>
@@ -457,20 +475,20 @@ export default function MemberAttendancePage() {
 
         {/* Charts */}
         {stats && stats.monthly_stats.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Monthly Attendance Trend */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Attendance Rate</h3>
-              <ResponsiveContainer width="100%" height={300}>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Monthly Attendance Rate</h3>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={stats.monthly_stats}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="month" 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
                     tickFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' })}
                   />
                   <YAxis 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
                     domain={[0, 100]}
                     tickFormatter={(value) => `${value}%`}
                   />
@@ -483,24 +501,24 @@ export default function MemberAttendancePage() {
                     dataKey="rate" 
                     stroke="#2563eb" 
                     strokeWidth={2}
-                    dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: '#2563eb', strokeWidth: 2, r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
 
             {/* Monthly Sessions */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Sessions</h3>
-              <ResponsiveContainer width="100%" height={300}>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Monthly Sessions</h3>
+              <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={stats.monthly_stats}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="month" 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
                     tickFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' })}
                   />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <Tooltip 
                     labelFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   />
@@ -513,62 +531,54 @@ export default function MemberAttendancePage() {
         )}
 
         {/* Attendance Records */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Attendance History</h3>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Attendance History</h3>
           </div>
           
           {attendanceRecords.length === 0 ? (
-            <div className="text-center py-12">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No attendance records</h3>
-              <p className="text-gray-500">No attendance records found for the selected filters.</p>
+            <div className="text-center py-8 sm:py-12 px-3 sm:px-6">
+              <Calendar className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No attendance records</h3>
+              <p className="text-sm sm:text-base text-gray-500">No attendance records found for the selected filters.</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+            <div className="divide-y divide-gray-200 max-h-80 sm:max-h-96 overflow-y-auto">
               {attendanceRecords.map(record => (
-                <div key={record.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-lg ${
-                        record.present 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
+                <div key={record.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4">
+                    <div className="flex items-start space-x-3 sm:space-x-4 min-w-0 flex-1">
+                      <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${record.present ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {record.present ? (
-                          <UserCheck className="w-5 h-5" />
+                          <UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />
                         ) : (
-                          <UserX className="w-5 h-5" />
+                          <UserX className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
                       </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm sm:text-base font-medium text-gray-900 truncate">
                           {formatAttendanceType(record.attendance_type)}
                         </h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
                           {new Date(record.date).toLocaleDateString('en-US', {
-                            weekday: 'long',
+                            weekday: 'short',
                             year: 'numeric',
-                            month: 'long',
+                            month: 'short',
                             day: 'numeric'
                           })}
                         </p>
                         {record.notes && (
-                          <p className="text-xs text-gray-500 mt-1">{record.notes}</p>
+                          <p className="text-xs text-gray-500 mt-1 truncate">{record.notes}</p>
                         )}
                       </div>
                     </div>
                     
-                    <div className="text-right">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        record.present 
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
+                    <div className="flex flex-col sm:text-right space-y-1 flex-shrink-0">
+                      <span className={`self-start sm:self-end px-2 py-1 rounded-full text-xs font-medium ${record.present ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {record.present ? 'Present' : 'Absent'}
                       </span>
                       {record.recorder && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-[10px] sm:text-xs text-gray-500">
                           by {record.recorder.first_name} {record.recorder.last_name}
                         </p>
                       )}

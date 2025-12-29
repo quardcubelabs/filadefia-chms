@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { Card, Button, Input, Select, Modal } from '@/components/ui';
 import { 
   User, 
@@ -386,429 +386,441 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className={`min-h-screen ${bgColor}`}>
-      <Sidebar darkMode={darkMode} onSignOut={signOut} />
-      
-      <div className="ml-64 p-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className={`text-3xl font-bold ${textPrimary} mb-2`}>Settings</h1>
-            <p className={`${textSecondary}`}>Manage your account and preferences</p>
-          </div>
+    <MainLayout
+      title="Settings"
+      subtitle="Manage your account and preferences"
+    >
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
 
-          {/* Message Alert */}
-          {message && (
-            <div className={`p-4 rounded-lg ${
-              message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-            }`}>
-              <div className="flex items-center">
-                {message.type === 'success' ? 
-                  <CheckCircle className="w-5 h-5 text-green-600 mr-2" /> :
-                  <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-                }
-                <span className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
-                  {message.text}
-                </span>
+        {/* Message Alert */}
+        {message && (
+          <div className={`p-3 sm:p-4 rounded-lg ${
+            message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-start sm:items-center">
+              {message.type === 'success' ? 
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" /> :
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
+              }
+              <span className={`text-sm sm:text-base flex-1 ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                {message.text}
+              </span>
+              <button 
+                onClick={() => setMessage(null)}
+                className="ml-2 text-gray-500 hover:text-gray-700 flex-shrink-0"
+              >
+                <X className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Navigation - Mobile responsive */}
+        <Card className={`${cardBg} p-0 overflow-x-auto`}>
+          <nav className="flex space-x-0 min-w-fit">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-red-100 text-red-600 rounded-tl-lg'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
+                {activeTab === tab.id && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
+                )}
+              </button>
+            ))}
+          </nav>
+        </Card>
+
+        {/* Tab Content */}
+        {activeTab === 'profile' && (
+          <Card className={`${cardBg} p-3 sm:p-4 md:p-6`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+              <h2 className={`text-lg sm:text-xl font-semibold ${textPrimary}`}>Profile Information</h2>
+              <Button
+                onClick={() => isEditing ? handleProfileUpdate() : setIsEditing(true)}
+                disabled={isSaving}
+                className="flex items-center space-x-1 sm:space-x-2 text-sm"
+                size="sm"
+              >
+                {isEditing ? <Save className="w-3 h-3 sm:w-4 sm:h-4" /> : <Edit className="w-3 h-3 sm:w-4 sm:h-4" />}
+                <span>{isEditing ? (isSaving ? 'Saving...' : 'Save') : 'Edit'}</span>
+              </Button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-4 sm:mb-6">
+              {/* Profile Picture */}
+              <div className="relative group mx-auto sm:mx-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gray-200">
+                  <img
+                    src={
+                      profile?.photo_url || 
+                      user?.user_metadata?.avatar_url || 
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.name || user?.email || '')}&background=3b82f6&color=fff&size=200`
+                    }
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <button 
-                  onClick={() => setMessage(null)}
-                  className="ml-auto text-gray-500 hover:text-gray-700"
+                  onClick={() => setShowPhotoModal(true)}
+                  className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <X className="w-4 h-4" />
+                  <Camera className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 </button>
               </div>
+
+              {/* Quick Stats */}
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className={`text-xl sm:text-2xl font-bold ${textPrimary}`}>${stats.totalContributions}</p>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Total Contributions</p>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className={`text-xl sm:text-2xl font-bold ${textPrimary}`}>{stats.totalEvents}</p>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Events Attended</p>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className={`text-xl sm:text-2xl font-bold ${textPrimary}`}>{stats.memberSince}</p>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Member Since</p>
+                </div>
+              </div>
             </div>
+
+            {/* Profile Form */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Full Name</label>
+                <Input
+                  value={isEditing ? editedProfile.name : (profile?.name || '')}
+                  onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Enter your full name"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Email</label>
+                <Input
+                  value={user?.email || ''}
+                  disabled
+                  className="bg-gray-100 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">Email is managed by Google</p>
+              </div>
+
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Phone</label>
+                <Input
+                  value={isEditing ? editedProfile.phone : (profile?.phone || '')}
+                  onChange={(e) => setEditedProfile(prev => ({ ...prev, phone: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Enter your phone number"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Role</label>
+                <Input
+                  value={profile?.role || 'Member'}
+                  disabled
+                  className="bg-gray-100 text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Address</label>
+                <Input
+                  value={isEditing ? editedProfile.address : (profile?.address || '')}
+                  onChange={(e) => setEditedProfile(prev => ({ ...prev, address: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Enter your address"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Emergency Contact</label>
+                <Input
+                  value={isEditing ? editedProfile.emergency_contact : (profile?.emergency_contact || '')}
+                  onChange={(e) => setEditedProfile(prev => ({ ...prev, emergency_contact: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Emergency contact name"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Emergency Phone</label>
+                <Input
+                  value={isEditing ? editedProfile.emergency_phone : (profile?.emergency_phone || '')}
+                  onChange={(e) => setEditedProfile(prev => ({ ...prev, emergency_phone: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Emergency contact phone"
+                  className="text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Bio</label>
+                <textarea
+                  value={isEditing ? editedProfile.bio : (profile?.bio || '')}
+                  onChange={(e) => setEditedProfile(prev => ({ ...prev, bio: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Tell us about yourself..."
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
+                />
+              </div>
+            </div>
+            </Card>
           )}
 
-          {/* Tab Navigation - Same design as image */}
-          <Card className={`${cardBg} p-0`}>
-            <nav className="flex space-x-0">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center space-x-2 px-4 py-3 font-medium text-sm transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'bg-red-100 text-red-600 rounded-tl-lg'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600"></div>
-                  )}
-                </button>
-              ))}
-            </nav>
-          </Card>
+        {activeTab === 'notifications' && (
+          <Card className={`${cardBg} p-3 sm:p-4 md:p-6`}>
+            <h2 className={`text-lg sm:text-xl font-semibold ${textPrimary} mb-4 sm:mb-6`}>Notification Preferences</h2>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Email Notifications</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Receive notifications via email</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.email}
+                    onChange={(e) => handleSettingsUpdate('notifications', 'email', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
 
-          {/* Tab Content */}
-          {activeTab === 'profile' && (
-            <Card className={`${cardBg} p-6`}>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className={`text-xl font-semibold ${textPrimary}`}>Profile Information</h2>
-                <Button
-                  onClick={() => isEditing ? handleProfileUpdate() : setIsEditing(true)}
-                  disabled={isSaving}
-                  className="flex items-center space-x-2"
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Push Notifications</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Receive push notifications on your device</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.push}
+                    onChange={(e) => handleSettingsUpdate('notifications', 'push', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Event Notifications</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Get notified about church events</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.events}
+                    onChange={(e) => handleSettingsUpdate('notifications', 'events', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Financial Updates</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Notifications about offerings and financial reports</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.finances}
+                    onChange={(e) => handleSettingsUpdate('notifications', 'finances', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Announcements</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Important church announcements</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.announcements}
+                    onChange={(e) => handleSettingsUpdate('notifications', 'announcements', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+              </div>
+            </Card>
+          )}
+
+        {activeTab === 'privacy' && (
+          <Card className={`${cardBg} p-3 sm:p-4 md:p-6`}>
+            <h2 className={`text-lg sm:text-xl font-semibold ${textPrimary} mb-4 sm:mb-6`}>Privacy Settings</h2>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Profile Visibility</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Allow other members to see your profile</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.privacy.profileVisible}
+                    onChange={(e) => handleSettingsUpdate('privacy', 'profileVisible', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Show Email</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Display your email to other members</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.privacy.showEmail}
+                    onChange={(e) => handleSettingsUpdate('privacy', 'showEmail', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Show Phone</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Display your phone number to other members</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.privacy.showPhone}
+                    onChange={(e) => handleSettingsUpdate('privacy', 'showPhone', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+              </div>
+            </Card>
+          )}
+
+        {activeTab === 'security' && (
+          <Card className={`${cardBg} p-3 sm:p-4 md:p-6`}>
+            <h2 className={`text-lg sm:text-xl font-semibold ${textPrimary} mb-4 sm:mb-6`}>Security Settings</h2>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Change Password</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Update your account password</p>
+                </div>
+                <Button 
+                  onClick={() => setShowPasswordModal(true)}
+                  size="sm"
+                  className="text-sm self-start sm:self-auto"
                 >
-                  {isEditing ? <Save className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
-                  <span>{isEditing ? (isSaving ? 'Saving...' : 'Save') : 'Edit'}</span>
+                  <span className="hidden sm:inline">Change Password</span>
+                  <span className="sm:hidden">Change</span>
                 </Button>
               </div>
 
-              <div className="flex items-start space-x-6 mb-6">
-                {/* Profile Picture */}
-                <div className="relative group">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200">
-                    <img
-                      src={
-                        profile?.photo_url || 
-                        user?.user_metadata?.avatar_url || 
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.name || user?.email || '')}&background=3b82f6&color=fff&size=200`
-                      }
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <button 
-                    onClick={() => setShowPhotoModal(true)}
-                    className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex-1">
+                  <h3 className={`font-medium text-sm sm:text-base ${textPrimary}`}>Login Notifications</h3>
+                  <p className={`text-xs sm:text-sm ${textSecondary}`}>Get notified when someone logs into your account</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
+                  <input
+                    type="checkbox"
+                    checked={settings.security.loginNotifications}
+                    onChange={(e) => handleSettingsUpdate('security', 'loginNotifications', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              <div className="border-t pt-3 sm:pt-4">
+                <h3 className={`font-medium text-sm sm:text-base ${textPrimary} mb-3 sm:mb-4`}>Account Actions</h3>
+                <div className="space-y-2 sm:space-y-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => signOut()}
+                    className="w-full justify-start text-sm"
+                    size="sm"
                   >
-                    <Camera className="w-6 h-6 text-white" />
-                  </button>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="flex-1 grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <p className={`text-2xl font-bold ${textPrimary}`}>${stats.totalContributions}</p>
-                    <p className={`text-sm ${textSecondary}`}>Total Contributions</p>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-2xl font-bold ${textPrimary}`}>{stats.totalEvents}</p>
-                    <p className={`text-sm ${textSecondary}`}>Events Attended</p>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-2xl font-bold ${textPrimary}`}>{stats.memberSince}</p>
-                    <p className={`text-sm ${textSecondary}`}>Member Since</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Profile Form */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Full Name</label>
-                  <Input
-                    value={isEditing ? editedProfile.name : (profile?.name || '')}
-                    onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
-                    disabled={!isEditing}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Email</label>
-                  <Input
-                    value={user?.email || ''}
-                    disabled
-                    className="bg-gray-100"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Email is managed by Google</p>
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Phone</label>
-                  <Input
-                    value={isEditing ? editedProfile.phone : (profile?.phone || '')}
-                    onChange={(e) => setEditedProfile(prev => ({ ...prev, phone: e.target.value }))}
-                    disabled={!isEditing}
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Role</label>
-                  <Input
-                    value={profile?.role || 'Member'}
-                    disabled
-                    className="bg-gray-100"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Address</label>
-                  <Input
-                    value={isEditing ? editedProfile.address : (profile?.address || '')}
-                    onChange={(e) => setEditedProfile(prev => ({ ...prev, address: e.target.value }))}
-                    disabled={!isEditing}
-                    placeholder="Enter your address"
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Emergency Contact</label>
-                  <Input
-                    value={isEditing ? editedProfile.emergency_contact : (profile?.emergency_contact || '')}
-                    onChange={(e) => setEditedProfile(prev => ({ ...prev, emergency_contact: e.target.value }))}
-                    disabled={!isEditing}
-                    placeholder="Emergency contact name"
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Emergency Phone</label>
-                  <Input
-                    value={isEditing ? editedProfile.emergency_phone : (profile?.emergency_phone || '')}
-                    onChange={(e) => setEditedProfile(prev => ({ ...prev, emergency_phone: e.target.value }))}
-                    disabled={!isEditing}
-                    placeholder="Emergency contact phone"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Bio</label>
-                  <textarea
-                    value={isEditing ? editedProfile.bio : (profile?.bio || '')}
-                    onChange={(e) => setEditedProfile(prev => ({ ...prev, bio: e.target.value }))}
-                    disabled={!isEditing}
-                    placeholder="Tell us about yourself..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
-                  />
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {activeTab === 'notifications' && (
-            <Card className={`${cardBg} p-6`}>
-              <h2 className={`text-xl font-semibold ${textPrimary} mb-6`}>Notification Preferences</h2>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Email Notifications</h3>
-                    <p className={`text-sm ${textSecondary}`}>Receive notifications via email</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.email}
-                      onChange={(e) => handleSettingsUpdate('notifications', 'email', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Push Notifications</h3>
-                    <p className={`text-sm ${textSecondary}`}>Receive push notifications on your device</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.push}
-                      onChange={(e) => handleSettingsUpdate('notifications', 'push', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Event Notifications</h3>
-                    <p className={`text-sm ${textSecondary}`}>Get notified about church events</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.events}
-                      onChange={(e) => handleSettingsUpdate('notifications', 'events', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Financial Updates</h3>
-                    <p className={`text-sm ${textSecondary}`}>Notifications about offerings and financial reports</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.finances}
-                      onChange={(e) => handleSettingsUpdate('notifications', 'finances', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Announcements</h3>
-                    <p className={`text-sm ${textSecondary}`}>Important church announcements</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.announcements}
-                      onChange={(e) => handleSettingsUpdate('notifications', 'announcements', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {activeTab === 'privacy' && (
-            <Card className={`${cardBg} p-6`}>
-              <h2 className={`text-xl font-semibold ${textPrimary} mb-6`}>Privacy Settings</h2>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Profile Visibility</h3>
-                    <p className={`text-sm ${textSecondary}`}>Allow other members to see your profile</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.privacy.profileVisible}
-                      onChange={(e) => handleSettingsUpdate('privacy', 'profileVisible', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Show Email</h3>
-                    <p className={`text-sm ${textSecondary}`}>Display your email to other members</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.privacy.showEmail}
-                      onChange={(e) => handleSettingsUpdate('privacy', 'showEmail', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Show Phone</h3>
-                    <p className={`text-sm ${textSecondary}`}>Display your phone number to other members</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.privacy.showPhone}
-                      onChange={(e) => handleSettingsUpdate('privacy', 'showPhone', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {activeTab === 'security' && (
-            <Card className={`${cardBg} p-6`}>
-              <h2 className={`text-xl font-semibold ${textPrimary} mb-6`}>Security Settings</h2>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Change Password</h3>
-                    <p className={`text-sm ${textSecondary}`}>Update your account password</p>
-                  </div>
-                  <Button onClick={() => setShowPasswordModal(true)}>
-                    Change Password
+                    <Key className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                    <span className="hidden sm:inline">Sign Out of All Devices</span>
+                    <span className="sm:hidden">Sign Out All</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50 text-sm"
+                    size="sm"
+                  >
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                    Delete Account
                   </Button>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className={`font-medium ${textPrimary}`}>Login Notifications</h3>
-                    <p className={`text-sm ${textSecondary}`}>Get notified when someone logs into your account</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.security.loginNotifications}
-                      onChange={(e) => handleSettingsUpdate('security', 'loginNotifications', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h3 className={`font-medium ${textPrimary} mb-4`}>Account Actions</h3>
-                  <div className="space-y-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => signOut()}
-                      className="w-full justify-start"
-                    >
-                      <Key className="w-4 h-4 mr-2" />
-                      Sign Out of All Devices
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteModal(true)}
-                      className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Account
-                    </Button>
-                  </div>
-                </div>
+              </div>
               </div>
             </Card>
           )}
 
-          {activeTab === 'appearance' && (
-            <Card className={`${cardBg} p-6`}>
-              <h2 className={`text-xl font-semibold ${textPrimary} mb-6`}>Appearance Settings</h2>
-              <div className="space-y-6">
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Theme</label>
-                  <Select
-                    value={settings.appearance.theme}
-                    onChange={(value) => handleSettingsUpdate('appearance', 'theme', value)}
-                    options={[
-                      { value: 'light', label: 'Light' },
-                      { value: 'dark', label: 'Dark' },
-                      { value: 'system', label: 'System' }
-                    ]}
-                  />
-                </div>
+        {activeTab === 'appearance' && (
+          <Card className={`${cardBg} p-3 sm:p-4 md:p-6`}>
+            <h2 className={`text-lg sm:text-xl font-semibold ${textPrimary} mb-4 sm:mb-6`}>Appearance Settings</h2>
+            <div className="space-y-4 sm:space-y-6">
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Theme</label>
+                <Select
+                  value={settings.appearance.theme}
+                  onChange={(value) => handleSettingsUpdate('appearance', 'theme', value)}
+                  options={[
+                    { value: 'light', label: 'Light' },
+                    { value: 'dark', label: 'Dark' },
+                    { value: 'system', label: 'System' }
+                  ]}
+                  className="text-sm"
+                />
+              </div>
 
-                <div>
-                  <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Language</label>
-                  <Select
-                    value={settings.appearance.language}
-                    onChange={(value) => handleSettingsUpdate('appearance', 'language', value)}
-                    options={[
-                      { value: 'en', label: 'English' },
-                      { value: 'es', label: 'Español' },
-                      { value: 'fr', label: 'Français' }
-                    ]}
-                  />
-                </div>
+              <div>
+                <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Language</label>
+                <Select
+                  value={settings.appearance.language}
+                  onChange={(value) => handleSettingsUpdate('appearance', 'language', value)}
+                  options={[
+                    { value: 'en', label: 'English' },
+                    { value: 'es', label: 'Español' },
+                    { value: 'fr', label: 'Français' }
+                  ]}
+                  className="text-sm"
+                />
+              </div>
               </div>
             </Card>
           )}
@@ -997,8 +1009,7 @@ export default function SettingsPage() {
               </div>
             </Modal>
           )}
-        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

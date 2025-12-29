@@ -482,29 +482,29 @@ export default function QRAttendancePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+          <div className="flex items-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">QR Code Attendance</h1>
-              <p className="text-gray-600 mt-1">Generate QR codes for quick check-in</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">QR Code Attendance</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1 hidden sm:block">Generate QR codes for quick check-in</p>
             </div>
           </div>
         </div>
 
         {!currentSession ? (
           /* Create New Session */
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Create QR Check-in Session</h2>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Create QR Check-in Session</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Session Name</label>
                 <input
@@ -512,7 +512,7 @@ export default function QRAttendancePage() {
                   value={sessionName}
                   onChange={(e) => setSessionName(e.target.value)}
                   placeholder="e.g., Sunday Morning Service"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -522,7 +522,7 @@ export default function QRAttendancePage() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -531,7 +531,7 @@ export default function QRAttendancePage() {
                 <select
                   value={attendanceType}
                   onChange={(e) => setAttendanceType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="sunday_service">Sunday Service</option>
                   <option value="midweek_fellowship">Midweek Fellowship</option>
@@ -546,7 +546,7 @@ export default function QRAttendancePage() {
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Departments</option>
                     {departments.map(dept => (
@@ -563,7 +563,7 @@ export default function QRAttendancePage() {
                 <select
                   value={expirationHours}
                   onChange={(e) => setExpirationHours(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value={2}>2 Hours</option>
                   <option value={4}>4 Hours</option>
@@ -581,18 +581,18 @@ export default function QRAttendancePage() {
                   value={eventId}
                   onChange={(e) => setEventId(e.target.value)}
                   placeholder="Link to specific event"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <button
                 onClick={createQRSession}
                 disabled={creating || !user?.id}
-                className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
-                <QrCode className="w-5 h-5" />
+                <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>
                   {creating 
                     ? 'Creating...' 
@@ -606,138 +606,138 @@ export default function QRAttendancePage() {
           </div>
         ) : (
           /* Active Session */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* QR Code Display */}
-            <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Active QR Session</h2>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    isSessionExpired(currentSession.session_info.expires_at)
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-green-100 text-green-700'
-                  }`}>
-                    {isSessionExpired(currentSession.session_info.expires_at) ? 'Inactive (Expired)' : 'Active'}
-                  </span>
-                  <button
-                    onClick={closeSession}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Close Session"
-                  >
-                    <StopCircle className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Session Info */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-2">{currentSession.session_info.session_name}</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                  <div>
-                    <strong>Date:</strong> {new Date(currentSession.session_info.date).toLocaleDateString()}
-                  </div>
-                  <div>
-                    <strong>Type:</strong> {formatAttendanceType(currentSession.session_info.attendance_type)}
-                  </div>
-                  <div>
-                    <strong>Expires:</strong> {new Date(currentSession.session_info.expires_at).toLocaleString()}
-                  </div>
-                  <div>
-                    <strong>Session ID:</strong> {currentSession.session_id.slice(-8)}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Mobile: Stack vertically, Desktop: 2/3 and 1/3 grid */}
+            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
+              {/* QR Code Display */}
+              <div className="lg:col-span-2 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Active QR Session</h2>
+                  <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3">
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                      isSessionExpired(currentSession.session_info.expires_at)
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}>
+                      {isSessionExpired(currentSession.session_info.expires_at) ? 'Inactive' : 'Active'}
+                    </span>
+                    <button
+                      onClick={closeSession}
+                      className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Close Session"
+                    >
+                      <StopCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* QR Code */}
-              <div className="text-center">
-                {isSessionExpired(currentSession.session_info.expires_at) && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-700 text-sm font-medium">
-                      ⚠️ QR Code is inactive - Members cannot check in using this QR code
-                    </p>
+                {/* Session Info */}
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base truncate">{currentSession.session_info.session_name}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                    <div>
+                      <strong>Date:</strong> {new Date(currentSession.session_info.date).toLocaleDateString()}
+                    </div>
+                    <div>
+                      <strong>Type:</strong> {formatAttendanceType(currentSession.session_info.attendance_type)}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <strong>Expires:</strong> {new Date(currentSession.session_info.expires_at).toLocaleString()}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <strong>Session ID:</strong> {currentSession.session_id.slice(-8)}
+                    </div>
                   </div>
-                )}
-                <div className={`inline-block p-6 bg-white border-2 rounded-lg relative ${
-                  isSessionExpired(currentSession.session_info.expires_at)
-                    ? 'border-red-200 opacity-60'
-                    : 'border-gray-200'
-                }`}>
-                  <img 
-                    src={currentSession.qr_code} 
-                    alt="QR Code for attendance" 
-                    className="w-64 h-64 mx-auto"
-                  />
+                </div>
+
+                {/* QR Code */}
+                <div className="text-center">
                   {isSessionExpired(currentSession.session_info.expires_at) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-20 rounded-lg">
-                      <span className="text-red-700 font-bold text-lg">INACTIVE</span>
+                    <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-red-700 text-xs sm:text-sm font-medium">
+                        ⚠️ QR Code is inactive - Members cannot check in using this QR code
+                      </p>
                     </div>
                   )}
-                </div>
-                
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm text-gray-600">
-                    Scan this QR code to check in
-                  </p>
-                  <div className="flex items-center justify-center space-x-3">
-                    <button
-                      onClick={() => copyToClipboard(currentSession.check_in_url)}
-                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <Copy className="w-4 h-4" />
-                      <span>Copy Link</span>
-                    </button>
-                    <button
-                      onClick={downloadQR}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </button>
-                    <button
-                      onClick={() => window.print()}
-                      className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                    >
-                      <Printer className="w-4 h-4" />
-                      <span>Print</span>
-                    </button>
+                  <div className={`inline-block p-3 sm:p-4 md:p-6 bg-white border-2 rounded-lg relative ${
+                    isSessionExpired(currentSession.session_info.expires_at)
+                      ? 'border-red-200 opacity-60'
+                      : 'border-gray-200'
+                  }`}>
+                    <img 
+                      src={currentSession.qr_code} 
+                      alt="QR Code for attendance" 
+                      className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto"
+                    />
+                    {isSessionExpired(currentSession.session_info.expires_at) && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-20 rounded-lg">
+                        <span className="text-red-700 font-bold text-sm sm:text-base md:text-lg">INACTIVE</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      Scan this QR code to check in
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                      <button
+                        onClick={() => copyToClipboard(currentSession.check_in_url)}
+                        className="w-full sm:w-auto flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs sm:text-sm"
+                      >
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>Copy Link</span>
+                      </button>
+                      <button
+                        onClick={downloadQR}
+                        className="w-full sm:w-auto flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
+                      >
+                        <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>Download</span>
+                      </button>
+                      <button
+                        onClick={() => window.print()}
+                        className="w-full sm:w-auto flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-xs sm:text-sm"
+                      >
+                        <Printer className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>Print</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
             </div>
 
-            {/* Session Statistics */}
-            <div className="space-y-6">
-              {/* Stats Cards */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Live Statistics</h3>
+              {/* Session Statistics */}
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Live Statistics</h3>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center space-x-3">
-                      <UserCheck className="w-5 h-5 text-green-600" />
-                      <span className="text-sm text-green-700">Total Check-ins</span>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-green-700 truncate">Total Check-ins</span>
                     </div>
-                    <span className="text-lg font-bold text-green-600">
+                    <span className="text-sm sm:text-lg font-bold text-green-600">
                       {sessionStats.total_checkins}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center space-x-3">
-                      <QrCode className="w-5 h-5 text-blue-600" />
-                      <span className="text-sm text-blue-700">QR Check-ins</span>
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <QrCode className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-blue-700 truncate">QR Check-ins</span>
                     </div>
-                    <span className="text-lg font-bold text-blue-600">
+                    <span className="text-sm sm:text-lg font-bold text-blue-600">
                       {sessionStats.qr_checkins}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center space-x-3">
-                      <Users className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm text-gray-700">Manual Check-ins</span>
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-gray-700 truncate">Manual Check-ins</span>
                     </div>
-                    <span className="text-lg font-bold text-gray-600">
+                    <span className="text-sm sm:text-lg font-bold text-gray-600">
                       {sessionStats.total_checkins - sessionStats.qr_checkins}
                     </span>
                   </div>
@@ -745,9 +745,9 @@ export default function QRAttendancePage() {
 
                 <button
                   onClick={loadSessionStats}
-                  className="w-full mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2"
+                  className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2 text-xs sm:text-sm"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Refresh</span>
                 </button>
               </div>

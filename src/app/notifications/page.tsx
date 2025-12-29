@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { EmptyState, Button, Card, Badge, Modal, Input, Select } from '@/components/ui';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import { 
   Bell, 
   Calendar, 
@@ -302,47 +302,55 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-                <p className="text-gray-600 mt-1">
-                  {unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
-                </p>
-              </div>
-          <div className="flex gap-3">
-            {unreadCount > 0 && (
-              <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={markAllAsRead}>
-                <CheckCheck className="w-4 h-4 mr-2" />
-                Mark All Read
-              </Button>
-            )}
-            <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={() => setShowSettings(true)}>
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+    <MainLayout
+      title="Notifications"
+      subtitle={unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
+    >
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6 justify-end">
+          {unreadCount > 0 && (
+            <Button 
+              className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200 text-xs sm:text-sm" 
+              onClick={markAllAsRead}
+              size="sm"
+            >
+              <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Mark All Read</span>
+              <span className="sm:hidden">Read All</span>
             </Button>
-            {notifications.length > 0 && (
-              <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={clearAllNotifications}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear All
-              </Button>
-            )}
-          </div>
+          )}
+          <Button 
+            className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200 text-xs sm:text-sm" 
+            onClick={() => setShowSettings(true)}
+            size="sm"
+          >
+            <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sm:hidden">Config</span>
+          </Button>
+          {notifications.length > 0 && (
+            <Button 
+              className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200 text-xs sm:text-sm" 
+              onClick={clearAllNotifications}
+              size="sm"
+            >
+              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Clear All</span>
+              <span className="sm:hidden">Clear</span>
+            </Button>
+          )}
         </div>
 
         {/* Department Access Notification */}
         {isDepartmentLeader && departmentName && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <Bell className="h-5 w-5 text-yellow-600 mr-3" />
-              <div>
-                <h3 className="font-medium text-yellow-900">Department Notifications: {departmentName}</h3>
-                <p className="text-yellow-700 text-sm mt-1">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex items-start sm:items-center">
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mr-2 sm:mr-3 mt-0.5 sm:mt-0 flex-shrink-0" />
+              <div className="min-w-0">
+                <h3 className="font-medium text-yellow-900 text-sm sm:text-base">Department Notifications: {departmentName}</h3>
+                <p className="text-yellow-700 text-xs sm:text-sm mt-1">
                   You'll receive notifications related to your department activities and system-wide announcements.
                 </p>
               </div>
@@ -351,55 +359,57 @@ export default function NotificationsPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-[200px]">
+        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-500 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Input
                   type="text"
                   placeholder="Search notifications..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-red-300 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-red-50 focus:outline-none"
+                  className="pl-8 sm:pl-10 border-red-300 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-red-50 focus:outline-none text-sm"
                 />
               </div>
             </div>
-            <Select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as 'all' | 'unread' | 'read')}
-              options={[
-                { value: "all", label: "All Notifications" },
-                { value: "unread", label: "Unread Only" },
-                { value: "read", label: "Read Only" }
-              ]}
-              className="border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50"
-            />
-            <Select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              options={[
-                { value: "all", label: "All Types" },
-                { value: "announcement", label: "Announcements" },
-                { value: "event", label: "Events" },
-                { value: "finance", label: "Finance" },
-                { value: "member", label: "Members" },
-                { value: "document", label: "Documents" },
-                { value: "system", label: "System" }
-              ]}
-              className="border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50"
-            />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as 'all' | 'unread' | 'read')}
+                options={[
+                  { value: "all", label: "All Notifications" },
+                  { value: "unread", label: "Unread Only" },
+                  { value: "read", label: "Read Only" }
+                ]}
+                className="border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50 text-sm"
+              />
+              <Select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                options={[
+                  { value: "all", label: "All Types" },
+                  { value: "announcement", label: "Announcements" },
+                  { value: "event", label: "Events" },
+                  { value: "finance", label: "Finance" },
+                  { value: "member", label: "Members" },
+                  { value: "document", label: "Documents" },
+                  { value: "system", label: "System" }
+                ]}
+                className="border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50 text-sm"
+              />
+            </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm p-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fcc-blue-600 mx-auto"></div>
+          <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 md:p-12">
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-fcc-blue-600 mx-auto"></div>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12">
+          <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 md:p-12">
             <EmptyState
-              icon={<Bell className="h-16 w-16 text-gray-400" />}
+              icon={<Bell className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />}
               title="No Notifications"
               description={searchTerm || filter !== 'all' || typeFilter !== 'all' 
                 ? "No notifications match your current filters." 
@@ -407,42 +417,46 @@ export default function NotificationsPage() {
             />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredNotifications.map((notification) => (
-              <Card key={notification.id} className={`p-6 transition-all duration-200 ${
+              <Card key={notification.id} className={`p-3 sm:p-4 md:p-6 transition-all duration-200 ${
                 !notification.read ? 'bg-blue-50 border-blue-200' : 'hover:shadow-md'
               }`}>
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className={`p-2 rounded-full ${
+                  <div className="flex items-start space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
+                    <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${
                       !notification.read ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
                     }`}>
-                      {getTypeIcon(notification.type)}
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5">
+                        {getTypeIcon(notification.type)}
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className={`font-semibold ${
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                        <h3 className={`font-semibold text-sm sm:text-base truncate ${
                           !notification.read ? 'text-gray-900' : 'text-gray-700'
                         }`}>
                           {notification.title}
                         </h3>
-                        <Badge className={getPriorityColor(notification.priority)}>
-                          {notification.priority}
-                        </Badge>
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                        )}
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <Badge className={`text-xs ${getPriorityColor(notification.priority)}`}>
+                            {notification.priority}
+                          </Badge>
+                          {!notification.read && (
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-gray-600 mb-3">{notification.message}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">
+                      <p className="text-gray-600 mb-2 sm:mb-3 text-xs sm:text-sm leading-relaxed">{notification.message}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-500">
                           {formatTimeAgo(notification.created_at)}
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           {notification.action_url && (
                             <Button 
                               size="sm"
-                              className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200"
+                              className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                               onClick={() => {
                                 if (!notification.read) {
                                   markAsRead(notification.id);
@@ -450,7 +464,8 @@ export default function NotificationsPage() {
                                 window.location.href = notification.action_url!;
                               }}
                             >
-                              View Details
+                              <span className="hidden sm:inline">View Details</span>
+                              <span className="sm:hidden">View</span>
                             </Button>
                           )}
                           {!notification.read && (
@@ -458,17 +473,18 @@ export default function NotificationsPage() {
                               variant="ghost" 
                               size="sm"
                               onClick={() => markAsRead(notification.id)}
+                              className="p-1 sm:p-2"
                             >
-                              <Check className="w-4 h-4" />
+                              <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           )}
                           <Button 
                             variant="ghost" 
                             size="sm"
                             onClick={() => deleteNotification(notification.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 p-1 sm:p-2"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         </div>
                       </div>
@@ -482,14 +498,14 @@ export default function NotificationsPage() {
 
         {/* Settings Modal */}
         <Modal isOpen={showSettings} onClose={() => setShowSettings(false)}>
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-6">Notification Settings</h2>
+          <div className="p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Notification Settings</h2>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-4">Delivery Methods</h3>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3">
+                <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Delivery Methods</h3>
+                <div className="space-y-2 sm:space-y-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.email_notifications}
@@ -500,11 +516,11 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <Volume2 className="w-4 h-4 text-gray-500" />
-                      <span>Email Notifications</span>
+                      <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Email Notifications</span>
                     </div>
                   </label>
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.push_notifications}
@@ -515,17 +531,17 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <Bell className="w-4 h-4 text-gray-500" />
-                      <span>Push Notifications</span>
+                      <Bell className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Push Notifications</span>
                     </div>
                   </label>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium mb-4">Notification Types</h3>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3">
+                <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Notification Types</h3>
+                <div className="space-y-2 sm:space-y-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.announcement_notifications}
@@ -536,11 +552,11 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <MessageSquare className="w-4 h-4 text-gray-500" />
-                      <span>Announcements</span>
+                      <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Announcements</span>
                     </div>
                   </label>
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.event_notifications}
@@ -551,11 +567,11 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span>Events</span>
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Events</span>
                     </div>
                   </label>
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.finance_notifications}
@@ -566,11 +582,11 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <DollarSign className="w-4 h-4 text-gray-500" />
-                      <span>Finance</span>
+                      <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Finance</span>
                     </div>
                   </label>
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.member_notifications}
@@ -581,11 +597,11 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-gray-500" />
-                      <span>Member Updates</span>
+                      <Users className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Member Updates</span>
                     </div>
                   </label>
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.document_notifications}
@@ -596,11 +612,11 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <span>Documents</span>
+                      <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">Documents</span>
                     </div>
                   </label>
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-2 sm:space-x-3">
                     <input
                       type="checkbox"
                       checked={preferences.system_notifications}
@@ -611,27 +627,34 @@ export default function NotificationsPage() {
                       className="rounded border-gray-300 text-fcc-blue-600 focus:ring-fcc-blue-500"
                     />
                     <div className="flex items-center space-x-2">
-                      <Settings className="w-4 h-4 text-gray-500" />
-                      <span>System Updates</span>
+                      <Settings className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                      <span className="text-sm sm:text-base">System Updates</span>
                     </div>
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 mt-8">
-              <Button variant="outline" onClick={() => setShowSettings(false)}>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 sm:mt-8">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSettings(false)}
+                className="text-sm sm:text-base"
+                size="sm"
+              >
                 Cancel
               </Button>
-              <Button className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200" onClick={updatePreferences}>
+              <Button 
+                className="bg-red-100 border border-red-600 text-red-700 hover:bg-red-200 text-sm sm:text-base" 
+                onClick={updatePreferences}
+                size="sm"
+              >
                 Save Settings
               </Button>
             </div>
           </div>
         </Modal>
-          </div>
-        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

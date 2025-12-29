@@ -270,82 +270,86 @@ export default function AttendanceReportsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+          <div className="flex items-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Attendance Reports</h1>
-              <p className="text-gray-600 mt-1">Analytics and insights for church attendance</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">Attendance Reports</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1 hidden sm:block">Analytics and insights for church attendance</p>
             </div>
           </div>
           
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="weekly">This Week</option>
-                <option value="monthly">This Month</option>
-                <option value="quarterly">This Quarter</option>
-                <option value="yearly">This Year</option>
-              </select>
-            </div>
-
-            {!isDepartmentLeader && (
+          <div className="space-y-3 sm:space-y-4">
+            {/* Mobile: Stack filters vertically */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
                 <select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="all">All Departments</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
+                  <option value="weekly">This Week</option>
+                  <option value="monthly">This Month</option>
+                  <option value="quarterly">This Quarter</option>
+                  <option value="yearly">This Year</option>
                 </select>
               </div>
-            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Services</option>
-                <option value="sunday_service">Sunday Service</option>
-                <option value="midweek_fellowship">Midweek Fellowship</option>
-                <option value="special_event">Special Event</option>
-                <option value="department_meeting">Department Meeting</option>
-              </select>
+              {!isDepartmentLeader && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                  <select
+                    value={selectedDepartment}
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Services</option>
+                  <option value="sunday_service">Sunday Service</option>
+                  <option value="midweek_fellowship">Midweek Fellowship</option>
+                  <option value="special_event">Special Event</option>
+                  <option value="department_meeting">Department Meeting</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex items-end space-x-2">
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:justify-end">
               <button
                 onClick={loadAttendanceStats}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Refresh</span>
               </button>
               <button
                 onClick={exportReport}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <Download className="w-4 h-4" />
                 <span>Export</span>
@@ -357,124 +361,135 @@ export default function AttendanceReportsPage() {
         {stats ? (
           <>
             {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Members</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.overview.totalMembers}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Members</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.overview.totalMembers}</p>
                   </div>
-                  <Users className="w-8 h-8 text-blue-600" />
+                  <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Present</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.overview.presentCount}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Present</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{stats.overview.presentCount}</p>
                   </div>
-                  <UserCheck className="w-8 h-8 text-green-600" />
+                  <div className="bg-green-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Absent</p>
-                    <p className="text-2xl font-bold text-red-600">{stats.overview.absentCount}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Absent</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 mt-0.5 sm:mt-1">{stats.overview.absentCount}</p>
                   </div>
-                  <UserX className="w-8 h-8 text-red-600" />
+                  <div className="bg-red-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                    <UserX className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-red-600" />
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
-                    <p className={`text-2xl font-bold ${getAttendanceColor(stats.overview.attendanceRate)}`}>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Attendance Rate</p>
+                    <p className={`text-lg sm:text-xl md:text-2xl font-bold ${getAttendanceColor(stats.overview.attendanceRate)} mt-0.5 sm:mt-1`}>
                       {stats.overview.attendanceRate.toFixed(1)}%
                     </p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-blue-600" />
+                  <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Attendance Trend Chart */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Attendance Trend</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={stats.dateStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip 
-                      labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                      formatter={(value, name) => [
-                        name === 'percentage' ? `${value}%` : value,
-                        name === 'percentage' ? 'Attendance Rate' : name === 'present' ? 'Present' : 'Absent'
-                      ]}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="percentage" 
-                      stroke={COLORS.primary} 
-                      strokeWidth={2}
-                      dot={{ fill: COLORS.primary, strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+            <div className="space-y-4 sm:space-y-6">
+              {/* Mobile: Stack charts vertically */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Attendance Trend Chart */}
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Attendance Trend</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={stats.dateStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip 
+                        labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                        formatter={(value, name) => [
+                          name === 'percentage' ? `${value}%` : value,
+                          name === 'percentage' ? 'Attendance Rate' : name === 'present' ? 'Present' : 'Absent'
+                        ]}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="percentage" 
+                        stroke={COLORS.primary} 
+                        strokeWidth={2}
+                        dot={{ fill: COLORS.primary, strokeWidth: 2, r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Service Type Distribution */}
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Service Types</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <RechartsPieChart>
+                      <Pie
+                        dataKey="total"
+                        data={stats.typeStats.map((stat, index) => ({
+                          ...stat,
+                          name: formatAttendanceType(stat.type)
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={70}
+                        label={false}
+                      >
+                        {stats.typeStats.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
-              {/* Service Type Distribution */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Attendance by Service Type</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsPieChart>
-                    <Pie
-                      dataKey="total"
-                      data={stats.typeStats.map((stat, index) => ({
-                        ...stat,
-                        name: formatAttendanceType(stat.type)
-                      }))}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ name, percentage }) => `${name}: ${(percentage as number).toFixed(1)}%`}
-                    >
-                      {stats.typeStats.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Daily Attendance Bars */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-2">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Attendance Breakdown</h3>
-                <ResponsiveContainer width="100%" height={300}>
+              {/* Daily Attendance Bars - Full Width */}
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Daily Attendance Breakdown</h3>
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={stats.dateStats}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="date" 
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 10 }}
                       tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip 
                       labelFormatter={(date) => new Date(date).toLocaleDateString()}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
                     <Bar dataKey="present" stackId="attendance" fill={COLORS.secondary} name="Present" />
                     <Bar dataKey="absent" stackId="attendance" fill={COLORS.danger} name="Absent" />
                   </BarChart>
@@ -483,51 +498,51 @@ export default function AttendanceReportsPage() {
             </div>
 
             {/* Top Attendees */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Top Attendees</h3>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Top Attendees</h3>
               </div>
               
               {stats.topAttendees.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No attendance data</h3>
-                  <p className="text-gray-500">Start recording attendance to see top attendees.</p>
+                <div className="text-center py-8 sm:py-12 px-3 sm:px-6">
+                  <Users className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No attendance data</h3>
+                  <p className="text-sm sm:text-base text-gray-500">Start recording attendance to see top attendees.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
                   {stats.topAttendees.map((member, index) => (
-                    <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
+                    <div key={member.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between space-x-3">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <div className="flex-shrink-0">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-white ${
                               index < 3 ? 'bg-yellow-500' : 'bg-gray-500'
                             }`}>
                               {index + 1}
                             </div>
                           </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-900">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm sm:text-base font-medium text-gray-900 truncate">
                               {member.first_name} {member.last_name}
                             </h4>
-                            <p className="text-sm text-gray-600">#{member.member_number}</p>
+                            <p className="text-xs sm:text-sm text-gray-600">#{member.member_number}</p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-3 sm:space-x-6 flex-shrink-0">
                           <div className="text-right">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900">
                               {member.present_count} / {member.total_sessions}
                             </p>
-                            <p className="text-xs text-gray-600">Sessions</p>
+                            <p className="text-[10px] sm:text-xs text-gray-600">Sessions</p>
                           </div>
                           
                           <div className="text-right">
-                            <p className={`text-sm font-medium ${getAttendanceColor(member.attendance_rate)}`}>
+                            <p className={`text-xs sm:text-sm font-medium ${getAttendanceColor(member.attendance_rate)}`}>
                               {member.attendance_rate.toFixed(1)}%
                             </p>
-                            <p className="text-xs text-gray-600">Rate</p>
+                            <p className="text-[10px] sm:text-xs text-gray-600">Rate</p>
                           </div>
                         </div>
                       </div>
@@ -538,13 +553,13 @@ export default function AttendanceReportsPage() {
             </div>
           </>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Attendance Data</h3>
-            <p className="text-gray-500 mb-4">There's no attendance data for the selected filters.</p>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 md:p-12 text-center">
+            <FileText className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Attendance Data</h3>
+            <p className="text-sm sm:text-base text-gray-500 mb-4">There's no attendance data for the selected filters.</p>
             <button
               onClick={() => router.push('/attendance/record')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               Record Attendance
             </button>

@@ -339,31 +339,31 @@ export default function RecordAttendancePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+          <div className="flex items-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Record Attendance</h1>
-              <p className="text-gray-600 mt-1">Mark attendance for church service or event</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">Record Attendance</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1 hidden sm:block">Mark attendance for church service or event</p>
             </div>
           </div>
 
           {/* Session Configuration */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -372,7 +372,7 @@ export default function RecordAttendancePage() {
               <select
                 value={attendanceType}
                 onChange={(e) => setAttendanceType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="sunday_service">Sunday Service</option>
                 <option value="midweek_fellowship">Midweek Fellowship</option>
@@ -387,7 +387,7 @@ export default function RecordAttendancePage() {
                 <select
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Departments</option>
                   {departments.map(dept => (
@@ -406,49 +406,53 @@ export default function RecordAttendancePage() {
                 value={eventId}
                 onChange={(e) => setEventId(e.target.value)}
                 placeholder="Link to event"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
         </div>
 
         {/* Stats and Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            <div className="grid grid-cols-3 gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{presentCount}</p>
-                <p className="text-sm text-gray-600">Present</p>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+          <div className="space-y-4">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+              <div className="text-center bg-green-50 rounded-lg p-3 sm:p-4">
+                <p className="text-base sm:text-lg md:text-xl font-bold text-green-600">{presentCount}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Present</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">{totalCount - presentCount}</p>
-                <p className="text-sm text-gray-600">Absent</p>
+              <div className="text-center bg-red-50 rounded-lg p-3 sm:p-4">
+                <p className="text-base sm:text-lg md:text-xl font-bold text-red-600">{totalCount - presentCount}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Absent</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">
+              <div className="text-center bg-blue-50 rounded-lg p-3 sm:p-4">
+                <p className="text-base sm:text-lg md:text-xl font-bold text-blue-600">
                   {totalCount > 0 ? ((presentCount / totalCount) * 100).toFixed(1) : 0}%
                 </p>
-                <p className="text-sm text-gray-600">Attendance</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Rate</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => handleBulkAction('present')}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
               >
-                Mark All Present
+                <span className="hidden sm:inline">Mark All Present</span>
+                <span className="sm:hidden">All Present</span>
               </button>
               <button
                 onClick={() => handleBulkAction('absent')}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
               >
-                Mark All Absent
+                <span className="hidden sm:inline">Mark All Absent</span>
+                <span className="sm:hidden">All Absent</span>
               </button>
               <button
                 onClick={saveAttendance}
                 disabled={saving || totalCount === 0}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center space-x-2"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <Save className="w-4 h-4" />
                 <span>{saving ? 'Saving...' : 'Save Attendance'}</span>
@@ -458,102 +462,104 @@ export default function RecordAttendancePage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div className="flex-1 relative">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search members..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <label className="flex items-center space-x-2 text-sm sm:text-base">
                 <input
                   type="checkbox"
                   checked={showPresent}
                   onChange={(e) => setShowPresent(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Show Present</span>
+                <span className="text-gray-700">Show Present</span>
               </label>
-              <label className="flex items-center space-x-2">
+              <label className="flex items-center space-x-2 text-sm sm:text-base">
                 <input
                   type="checkbox"
                   checked={showAbsent}
                   onChange={(e) => setShowAbsent(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Show Absent</span>
+                <span className="text-gray-700">Show Absent</span>
               </label>
             </div>
           </div>
         </div>
 
         {/* Members List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
               Members ({filteredMembers.length} of {totalCount})
             </h2>
           </div>
 
           {filteredMembers.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No members found</h3>
-              <p className="text-gray-500">Try adjusting your search or filters.</p>
+            <div className="text-center py-8 sm:py-12 px-3 sm:px-6">
+              <Users className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No members found</h3>
+              <p className="text-sm sm:text-base text-gray-500">Try adjusting your search or filters.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {filteredMembers.map(member => {
                 const record = attendanceRecords[member.id];
                 return (
-                  <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                  <div key={member.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4">
+                      {/* Member Info */}
+                      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
                         <div className="flex-shrink-0">
                           {member.photo_url ? (
                             <img
                               src={member.photo_url}
                               alt={`${member.first_name} ${member.last_name}`}
-                              className="w-10 h-10 rounded-full object-cover"
+                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                              <User className="w-5 h-5 text-gray-400" />
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                             </div>
                           )}
                         </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">
                             {member.first_name} {member.last_name}
                           </h3>
-                          <p className="text-sm text-gray-500">#{member.member_number}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">#{member.member_number}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
+                      {/* Controls */}
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 flex-shrink-0">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
                           <button
                             onClick={() => toggleAttendance(member.id)}
-                            className={`p-2 rounded-lg transition-colors ${
+                            className={`p-1.5 sm:p-2 rounded-lg transition-colors touch-manipulation ${
                               record?.present
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'bg-red-100 text-red-700 hover:bg-red-200'
                             }`}
                           >
                             {record?.present ? (
-                              <CheckCircle className="w-5 h-5" />
+                              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                             ) : (
-                              <XCircle className="w-5 h-5" />
+                              <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                             )}
                           </button>
-                          <span className={`text-sm font-medium ${
+                          <span className={`text-xs sm:text-sm font-medium ${
                             record?.present ? 'text-green-700' : 'text-red-700'
                           }`}>
                             {record?.present ? 'Present' : 'Absent'}
@@ -565,7 +571,7 @@ export default function RecordAttendancePage() {
                           placeholder="Notes..."
                           value={record?.notes || ''}
                           onChange={(e) => updateNotes(member.id, e.target.value)}
-                          className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent w-32"
+                          className="w-full sm:w-32 px-2 sm:px-3 py-1 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                     </div>

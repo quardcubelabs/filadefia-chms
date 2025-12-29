@@ -666,87 +666,61 @@ export default function FinancePage() {
 
             {/* Financial Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-              <Card padding="sm" rounded="xl">
-                <CardBody>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Income</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 truncate">
-                        {formatCurrency(summary.totalIncome)}
-                      </p>
-                    </div>
-                    <div className="p-2 sm:p-3 bg-green-100 rounded-full flex-shrink-0 ml-2">
-                      <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
-                    </div>
-                  </div>
-                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 truncate">
-                    This month: {formatCurrency(summary.monthlyIncome)}
-                  </p>
-                </CardBody>
-              </Card>
+              {/* Total Income Card */}
+              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Income</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {formatCurrency(summary.totalIncome)}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  This month: {formatCurrency(summary.monthlyIncome)}
+                </p>
+              </div>
 
-              <Card padding="sm" rounded="xl">
-                <CardBody>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Expenses</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 truncate">
-                        {formatCurrency(summary.totalExpenses)}
-                      </p>
-                    </div>
-                    <div className="p-2 sm:p-3 bg-red-100 rounded-full flex-shrink-0 ml-2">
-                      <TrendingDown className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
-                    </div>
-                  </div>
-                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 truncate">
-                    This month: {formatCurrency(summary.monthlyExpenses)}
-                  </p>
-                </CardBody>
-              </Card>
+              {/* Total Expenses Card */}
+              <div className="bg-gradient-to-br from-red-100 to-red-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Expenses</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {formatCurrency(summary.totalExpenses)}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  This month: {formatCurrency(summary.monthlyExpenses)}
+                </p>
+              </div>
 
-              <Card padding="sm" rounded="xl">
-                <CardBody>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Net Amount</p>
-                      <p className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${
-                        summary.netAmount >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {formatCurrency(summary.netAmount)}
-                      </p>
-                    </div>
-                    <div className={`p-2 sm:p-3 rounded-full flex-shrink-0 ml-2 ${
-                      summary.netAmount >= 0 ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      <DollarSign className={`h-4 w-4 sm:h-6 sm:w-6 ${
-                        summary.netAmount >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`} />
-                    </div>
-                  </div>
-                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 truncate">
-                    Monthly: {formatCurrency(summary.monthlyIncome - summary.monthlyExpenses)}
-                  </p>
-                </CardBody>
-              </Card>
+              {/* Net Amount Card */}
+              <div className={`${summary.netAmount >= 0 ? 'bg-gradient-to-br from-blue-100 to-blue-50' : 'bg-gradient-to-br from-orange-100 to-orange-50'} rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0`}>
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <DollarSign className={`h-4 w-4 sm:h-5 sm:w-5 ${summary.netAmount >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Net Amount</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {formatCurrency(summary.netAmount)}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Monthly: {formatCurrency(summary.monthlyIncome - summary.monthlyExpenses)}
+                </p>
+              </div>
 
-              <Card padding="sm" rounded="xl">
-                <CardBody>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Recent Activity</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
-                        {summary.recentTransactions}
-                      </p>
-                    </div>
-                    <div className="p-2 sm:p-3 bg-blue-100 rounded-full flex-shrink-0 ml-2">
-                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
-                    </div>
-                  </div>
-                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">
-                    {summary.unverifiedCount} unverified
-                  </p>
-                </CardBody>
-              </Card>
+              {/* Recent Activity Card */}
+              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Recent Activity</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {summary.recentTransactions}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  {summary.unverifiedCount} unverified
+                </p>
+              </div>
             </div>
 
             {/* Action Buttons */}

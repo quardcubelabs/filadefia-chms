@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
+  console.log('Members API called:', request.url);
   try {
     // Check environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      console.error('NEXT_PUBLIC_SUPABASE_URL is not configured');
       return NextResponse.json({ 
         error: 'NEXT_PUBLIC_SUPABASE_URL is not configured' 
       }, { status: 500 });
     }
     
     if (!process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured');
       return NextResponse.json({ 
         error: 'NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured' 
       }, { status: 500 });
@@ -23,12 +26,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'active';
     const departmentId = searchParams.get('department_id');
+    const includeAttendanceStats = searchParams.get('include_attendance_stats') === 'true';
+    
+    console.log('API Parameters:', { status, departmentId, includeAttendanceStats });
 
     let query = supabase
       .from('members')
-      .select('id, first_name, last_name, member_number, photo_url')
-      .eq('status', status)
-      .order('first_name', { ascending: true });
+      .select('id, first_name, last_name, member_number, phone, email, photo_url, status');
+    
+    // Only filter by status if it's provided and not 'all'
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+    
+    query = query.order('first_name', { ascending: true });
 
     if (departmentId) {
       // First get the member IDs from department_members
@@ -56,13 +67,25 @@ export async function GET(request: NextRequest) {
     }
 
     let { data, error } = await query;
+    
+    console.log('Initial query result:', { 
+      dataLength: data?.length, 
+      error: error?.message, 
+      errorCode: error?.code 
+    });
 
     // If RLS blocks direct access, try RPC function
     if (error && (error.message.includes('policy') || error.code === 'PGRST301' || error.message.includes('JWT'))) {
       console.log('Direct member access failed, trying RPC function...');
-      const rpcResult = await supabase.rpc('get_members', departmentId ? { dept_id: departmentId } : {});
-      data = rpcResult.data;
-      error = rpcResult.error;
+      try {
+        const rpcParams = departmentId ? { dept_id: departmentId } : {};
+        const rpcResult = await supabase.rpc('get_members', rpcParams);
+        data = rpcResult.data;
+        error = rpcResult.error;
+      } catch (rpcError) {
+        console.error('RPC function also failed:', rpcError);
+        error = rpcError;
+      }
     }
 
     if (error) {
@@ -88,7 +111,121 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data || [] });
+    let membersWithStats = data || [];
+
+    // If attendance stats are requested, fetch them for each member
+    if (includeAttendanceStats && membersWithStats.length > 0) {
+      console.log('Fetching attendance stats for', membersWithStats.length, 'members');
+      try {
+        const memberIds = membersWithStats.map(m => m.id);
+        
+        // Get attendance stats for all members
+        const { data: attendanceStats, error: statsError } = await supabase
+          .from('attendance_records')
+          .select(`
+            member_id,
+            present,
+            date,
+            attendance_type
+          `)
+          .in('member_id', memberIds)
+          .order('date', { ascending: false });
+        
+        console.log('Attendance records found:', attendanceStats?.length, 'Error:', statsError?.message);
+
+        if (statsError) {
+          console.log('Attendance stats error:', statsError.message);
+          // If attendance_records table doesn't exist, continue without stats
+          if (statsError.message.includes('attendance_records') && statsError.message.includes('not find')) {
+            console.log('attendance_records table not found, returning members without stats');
+          }
+        } else if (attendanceStats) {
+          // Calculate stats for each member
+          const memberStatsMap = new Map();
+          
+          attendanceStats.forEach(record => {
+            if (!memberStatsMap.has(record.member_id)) {
+              memberStatsMap.set(record.member_id, {
+                total_sessions: 0,
+                present_count: 0,
+                absent_count: 0,
+                last_attendance_date: null,
+                streak: { current: 0, type: 'absent' },
+                recent_records: []
+              });
+            }
+            
+            const stats = memberStatsMap.get(record.member_id);
+            stats.total_sessions++;
+            
+            if (record.present) {
+              stats.present_count++;
+            } else {
+              stats.absent_count++;
+            }
+            
+            // Track last attendance date
+            if (!stats.last_attendance_date || new Date(record.date) > new Date(stats.last_attendance_date)) {
+              stats.last_attendance_date = record.date;
+            }
+            
+            // Add to recent records for streak calculation
+            stats.recent_records.push({
+              date: record.date,
+              present: record.present
+            });
+          });
+
+          // Calculate final stats and streaks for each member
+          memberStatsMap.forEach((stats, memberId) => {
+            // Calculate attendance rate
+            stats.attendance_rate = stats.total_sessions > 0 
+              ? (stats.present_count / stats.total_sessions) * 100 
+              : 0;
+
+            // Calculate current streak
+            stats.recent_records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            
+            if (stats.recent_records.length > 0) {
+              const latestRecord = stats.recent_records[0];
+              stats.streak.type = latestRecord.present ? 'present' : 'absent';
+              stats.streak.current = 1;
+              
+              // Count consecutive records of the same type
+              for (let i = 1; i < stats.recent_records.length; i++) {
+                if (stats.recent_records[i].present === latestRecord.present) {
+                  stats.streak.current++;
+                } else {
+                  break;
+                }
+              }
+            }
+
+            // Clean up temporary data
+            delete stats.recent_records;
+          });
+
+          // Attach stats to members
+          membersWithStats = membersWithStats.map(member => ({
+            ...member,
+            stats: memberStatsMap.get(member.id) || {
+              total_sessions: 0,
+              present_count: 0,
+              absent_count: 0,
+              attendance_rate: 0,
+              last_attendance_date: null,
+              streak: { current: 0, type: 'absent' }
+            }
+          }));
+        }
+      } catch (statsError) {
+        console.error('Error calculating attendance stats:', statsError);
+        // Continue without stats if there's an error
+      }
+    }
+
+    console.log('Returning', membersWithStats.length, 'members with stats');
+    return NextResponse.json({ data: membersWithStats });
   } catch (error: any) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

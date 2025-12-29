@@ -102,29 +102,49 @@ export default function ProfilePage() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-3 sm:p-6 md:p-8">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-                <p className="text-gray-600 mt-1">Manage your personal information and account settings</p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8">
+              <div className="mb-4 sm:mb-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Profile</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base hidden sm:block">Manage your personal information and account settings</p>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex space-x-2 sm:space-x-3">
                 {!isEditing ? (
-                  <Button onClick={() => setIsEditing(true)} icon={<Edit className="h-4 w-4" />}>
-                    Edit Profile
+                  <Button 
+                    onClick={() => setIsEditing(true)} 
+                    icon={<Edit className="h-4 w-4" />}
+                    size="sm"
+                    className="text-sm"
+                  >
+                    <span className="hidden sm:inline">Edit Profile</span>
+                    <span className="sm:hidden">Edit</span>
                   </Button>
                 ) : (
                   <div className="flex space-x-2">
-                    <Button variant="outline" onClick={() => setIsEditing(false)} icon={<X className="h-4 w-4" />}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsEditing(false)} 
+                      icon={<X className="h-4 w-4" />}
+                      size="sm"
+                      className="text-sm"
+                    >
                       Cancel
                     </Button>
-                    <Button onClick={handleProfileUpdate} loading={loading} icon={<Save className="h-4 w-4" />}>
-                      Save Changes
+                    <Button 
+                      onClick={handleProfileUpdate} 
+                      loading={loading} 
+                      icon={<Save className="h-4 w-4" />}
+                      size="sm"
+                      className="text-sm"
+                    >
+                      Save
                     </Button>
                   </div>
                 )}
@@ -132,28 +152,29 @@ export default function ProfilePage() {
             </div>
 
             {message && (
-              <Alert variant={message.type} className="mb-6">
+              <Alert variant={message.type} className="mb-4 sm:mb-6">
                 {message.text}
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
               {/* Profile Picture Card */}
               <Card>
-                <CardBody className="text-center">
-                  <div className="w-32 h-32 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-4xl font-bold mx-auto mb-4">
+                <CardBody className="text-center p-4 sm:p-6">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl sm:text-4xl font-bold mx-auto mb-3 sm:mb-4">
                     {profileForm.first_name?.charAt(0)}{profileForm.last_name?.charAt(0)}
                   </div>
-                  <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1 sm:mb-2">
                     {profileForm.first_name} {profileForm.last_name}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4 capitalize">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 capitalize">
                     {user.profile.role?.replace('_', ' ')}
                   </p>
                   {isEditing && (
-                    <Button variant="outline" size="sm">
-                      <Camera className="h-4 w-4 mr-2" />
-                      Change Photo
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                      <Camera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Change Photo</span>
+                      <span className="sm:hidden">Photo</span>
                     </Button>
                   )}
                 </CardBody>
@@ -162,36 +183,38 @@ export default function ProfilePage() {
               {/* Profile Information Card */}
               <div className="lg:col-span-2">
                 <Card>
-                  <CardBody>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h3>
+                  <CardBody className="p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Personal Information</h3>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                       {/* Name */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">First Name</label>
                           {isEditing ? (
                             <Input
                               value={profileForm.first_name}
                               onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
                               required
+                              className="text-sm"
                             />
                           ) : (
-                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md text-sm">
                               {profileForm.first_name || 'Not provided'}
                             </p>
                           )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Last Name</label>
                           {isEditing ? (
                             <Input
                               value={profileForm.last_name}
                               onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
                               required
+                              className="text-sm"
                             />
                           ) : (
-                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md text-sm">
                               {profileForm.last_name || 'Not provided'}
                             </p>
                           )}
@@ -200,10 +223,10 @@ export default function ProfilePage() {
 
                       {/* Contact Information */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Email Address</label>
                         <div className="flex items-center space-x-2">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex-1">
+                          <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                          <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex-1 text-sm">
                             {profileForm.email || 'Not provided'}
                           </p>
                         </div>
@@ -211,7 +234,7 @@ export default function ProfilePage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                         {isEditing ? (
                           <Input
                             type="tel"
@@ -219,11 +242,12 @@ export default function ProfilePage() {
                             onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                             placeholder="+255 XXX XXX XXX"
                             icon={<Phone className="h-4 w-4" />}
+                            className="text-sm"
                           />
                         ) : (
                           <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex-1">
+                            <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex-1 text-sm">
                               {profileForm.phone || 'Not provided'}
                             </p>
                           </div>
@@ -231,18 +255,19 @@ export default function ProfilePage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Address</label>
                         {isEditing ? (
                           <Input
                             value={profileForm.address}
                             onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
                             placeholder="Your address"
                             icon={<MapPin className="h-4 w-4" />}
+                            className="text-sm"
                           />
                         ) : (
                           <div className="flex items-center space-x-2">
-                            <MapPin className="h-4 w-4 text-gray-400" />
-                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex-1">
+                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                            <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex-1 text-sm">
                               {profileForm.address || 'Not provided'}
                             </p>
                           </div>
