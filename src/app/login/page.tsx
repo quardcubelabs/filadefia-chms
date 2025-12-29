@@ -13,6 +13,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hasRedirected, setHasRedirected] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, status } = useAuth();
@@ -23,8 +24,12 @@ function LoginForm() {
     console.log('Login page auth state:', { status, user: !!user, loading: status === AuthStatus.LOADING });
     if (status === AuthStatus.AUTHENTICATED && user) {
       const redirect = searchParams.get('redirect') || '/dashboard';
-      console.log('Login page: redirecting to:', redirect);
+      console.log('Login page useEffect: redirecting authenticated user to:', redirect);
       router.replace(redirect);
+    } else if (status === AuthStatus.UNAUTHENTICATED) {
+      console.log('Login page: User is unauthenticated, staying on login page');
+    } else if (status === AuthStatus.LOADING) {
+      console.log('Login page: Auth status is loading, waiting...');
     }
   }, [status, user, router, searchParams]);
 
@@ -99,7 +104,7 @@ function LoginForm() {
       if (profileError) {
         console.log('Profile not found, will be created. Redirecting to dashboard...');
         // Profile will be created by AuthContext, redirect to dashboard
-        window.location.href = '/dashboard';
+        router.replace('/dashboard');
         return;
       }
 
@@ -125,14 +130,16 @@ function LoginForm() {
         }
 
         if (departmentId) {
-          window.location.href = `/departments/${departmentId}`;
+          console.log('Login: Redirecting department leader to:', `/departments/${departmentId}`);
+          router.replace(`/departments/${departmentId}`);
           return;
         }
       }
 
       // Default redirect for admins, pastors, or leaders without departments
       const redirect = searchParams.get('redirect') || '/dashboard';
-      window.location.href = redirect;
+      console.log('Login: Redirecting user to:', redirect);
+      router.replace(redirect);
     } catch (error: any) {
       console.error('Login exception:', error);
       if (error?.message?.includes('Failed to fetch')) {
