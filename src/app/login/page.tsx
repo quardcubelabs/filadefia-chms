@@ -20,7 +20,7 @@ function LoginForm() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log('Login page auth state:', { status, user: !!user, authLoading });
+    console.log('Login page auth state:', { status, user: !!user, loading: status === AuthStatus.LOADING });
     if (status === AuthStatus.AUTHENTICATED && user) {
       const redirect = searchParams.get('redirect') || '/dashboard';
       console.log('Login page: redirecting to:', redirect);
