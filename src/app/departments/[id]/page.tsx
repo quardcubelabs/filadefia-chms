@@ -69,11 +69,27 @@ export default function DepartmentDashboardPage() {
   // Wait for auth and department access to be ready before fetching data
   useEffect(() => {
     if (!authLoading && !deptAccessLoading && user && !isInitialized) {
+      console.log('Department: Initializing data fetch for department:', params.id);
       setIsInitialized(true);
       fetchDepartmentData();
       fetchFinancialData();
     }
   }, [authLoading, deptAccessLoading, user, isInitialized, params.id]);
+
+  // Add additional fallback initialization in case the first one fails
+  useEffect(() => {
+    // If we've been loading for too long without initialization, force init
+    const timer = setTimeout(() => {
+      if (!isInitialized && user && !authLoading && !deptAccessLoading) {
+        console.log('Department: Force initializing after timeout');
+        setIsInitialized(true);
+        fetchDepartmentData();
+        fetchFinancialData();
+      }
+    }, 3000); // 3 second timeout
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const fetchDepartmentData = async () => {
     try {

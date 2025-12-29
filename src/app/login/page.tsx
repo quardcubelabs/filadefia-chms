@@ -20,11 +20,22 @@ function LoginForm() {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Login page auth state:', { status, user: !!user, authLoading });
     if (status === AuthStatus.AUTHENTICATED && user) {
       const redirect = searchParams.get('redirect') || '/dashboard';
+      console.log('Login page: redirecting to:', redirect);
       router.replace(redirect);
     }
   }, [status, user, router, searchParams]);
+
+  // Check if forced logout is needed (for Firefox session issues)
+  useEffect(() => {
+    const forceLogout = searchParams.get('force_logout');
+    if (forceLogout === 'true' && supabase) {
+      console.log('Login page: forcing logout to clear session');
+      supabase.auth.signOut();
+    }
+  }, [searchParams, supabase]);
 
   // Handle OAuth error from callback
   useEffect(() => {
