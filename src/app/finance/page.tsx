@@ -640,45 +640,7 @@ export default function FinancePage() {
           </Alert>
         )}
 
-        {/* Department Quick Actions */}
-        {isDepartmentLeader && departmentName && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <DollarSign className="h-5 w-5 text-green-600 mr-3" />
-                <div>
-                  <h3 className="font-medium text-green-900">Quick Actions for {departmentName}</h3>
-                  <p className="text-green-700 text-sm mt-1">
-                    Manage your department's financial activities efficiently
-                  </p>
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="bg-white border-green-300 text-green-700 hover:bg-green-50"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Income
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddModalOpen(true);
-                    setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
-                  }}
-                  className="bg-white border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Expense
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+
 
             {/* Alerts */}
             {error && (
@@ -787,43 +749,50 @@ export default function FinancePage() {
               </Card>
             </div>
 
-            {/* Main Admin Quick Actions */}
-            {!isDepartmentLeader && (
-              <div className="mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center">
-                    <DollarSign className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-medium text-blue-900">Financial Management</h3>
-                      <p className="text-blue-700 text-sm mt-1">
-                        Manage church financial transactions and records
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <Button
-                      onClick={() => setIsAddModalOpen(true)}
-                      className="!bg-blue-700 !hover:bg-blue-800 !text-white !border-blue-700 px-4 py-2 text-sm font-medium flex items-center justify-center"
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Transaction
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setIsAddModalOpen(true);
-                        setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
-                      }}
-                      className="!bg-red-600 !hover:bg-red-700 !text-white !border-red-600 px-4 py-2 text-sm font-medium flex items-center justify-center"
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Expense
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3 mb-6 justify-end">
+              {isDepartmentLeader ? (
+                <>
+                  <Button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-pink-200 hover:bg-pink-300 text-pink-800 border-pink-200"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Income
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsAddModalOpen(true);
+                      setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Expense
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-pink-200 hover:bg-pink-300 text-pink-800 border-pink-200"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Transaction
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsAddModalOpen(true);
+                      setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Expense
+                  </Button>
+                </>
+              )}
+            </div>
 
             {/* Search and Filters */}
             <Card className="mb-4 sm:mb-6" padding="sm" rounded="xl">
