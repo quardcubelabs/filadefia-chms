@@ -21,7 +21,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     
     const variants = {
       default: 'bg-white border border-gray-200 shadow-sm',
-      gradient: 'bg-gradient-to-br from-red-50 via-white to-yellow-50 border border-gray-200 shadow-md',
+      gradient: 'bg-gradient-to-br from-red-50 via-white to-blue-50 border border-gray-200 shadow-md',
       bordered: 'bg-white border-2 border-red-200',
       elevated: 'bg-white shadow-lg border border-gray-100',
     };

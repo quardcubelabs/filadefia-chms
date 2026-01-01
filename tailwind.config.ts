@@ -25,19 +25,19 @@ const config: Config = {
             900: '#7f1d1d',
             950: '#450a0a'
           },
-          // Yellow/Gold from TAG logo
+          // Green (replaced yellow/gold for better visibility)
           yellow: {
-            50: '#fefce8',
-            100: '#fef9c3',
-            200: '#fef08a',
-            300: '#fde047',
-            400: '#facc15',
-            500: '#ffd700', // TAG Primary Yellow/Gold
-            600: '#eab308',
-            700: '#ca8a04',
-            800: '#a16207',
-            900: '#854d0e',
-            950: '#713f12'
+            50: '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e', // Green instead of yellow
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d',
+            950: '#052e16'
           },
           // Dark Blue (added as requested)
           blue: {
@@ -102,17 +102,17 @@ const config: Config = {
             950: '#450a0a'
           },
           yellow: {
-            50: '#fefce8',
-            100: '#fef9c3',
-            200: '#fef08a',
-            300: '#fde047',
-            400: '#facc15',
-            500: '#ffd700',
-            600: '#eab308',
-            700: '#ca8a04',
-            800: '#a16207',
-            900: '#854d0e',
-            950: '#713f12'
+            50: '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d',
+            950: '#052e16'
           },
           blue: {
             50: '#eff6ff',
@@ -128,17 +128,17 @@ const config: Config = {
             950: '#0f172a'
           },
           gold: {
-            50: '#fefce8',
-            100: '#fef9c3',
-            200: '#fef08a',
-            300: '#fde047',
-            400: '#facc15',
-            500: '#ffd700',
-            600: '#eab308',
-            700: '#ca8a04',
-            800: '#a16207',
-            900: '#854d0e',
-            950: '#713f12'
+            50: '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d',
+            950: '#052e16'
           },
         },
         background: "hsl(var(--background))",
@@ -174,6 +174,15 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        // Override default focus ring to use blue, not yellow
+        ringColor: {
+          DEFAULT: 'rgb(37 99 235)', // Blue-600
+          transparent: 'transparent',
+        },
+        // Override outline colors
+        outlineColor: {
+          DEFAULT: 'transparent',
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -199,6 +208,10 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      // Disable default outline/ring that could cause yellow borders
+      outline: {
+        none: ['2px solid transparent', '2px'],
       },
     },
   },

@@ -258,7 +258,7 @@ export default function NotificationsPage() {
     switch (priority) {
       case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
       case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'medium': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'low': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -345,12 +345,12 @@ export default function NotificationsPage() {
 
         {/* Department Access Notification */}
         {isDepartmentLeader && departmentName && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex items-start sm:items-center">
-              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mr-2 sm:mr-3 mt-0.5 sm:mt-0 flex-shrink-0" />
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-2 sm:mr-3 mt-0.5 sm:mt-0 flex-shrink-0" />
               <div className="min-w-0">
-                <h3 className="font-medium text-yellow-900 text-sm sm:text-base">Department Notifications: {departmentName}</h3>
-                <p className="text-yellow-700 text-xs sm:text-sm mt-1">
+                <h3 className="font-medium text-blue-900 text-sm sm:text-base">Department Notifications: {departmentName}</h3>
+                <p className="text-blue-700 text-xs sm:text-sm mt-1">
                   You'll receive notifications related to your department activities and system-wide announcements.
                 </p>
               </div>

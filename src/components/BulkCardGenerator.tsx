@@ -87,7 +87,7 @@ export default function BulkCardGenerator({ members, onClose }: BulkCardGenerato
   const drawMemberCard = async (pdf: jsPDF, member: Member, x: number, y: number) => {
     // Colors
     const tagRed: [number, number, number] = [227, 30, 36];
-    const tagYellow: [number, number, number] = [255, 215, 0];
+    const tagBlue: [number, number, number] = [59, 130, 246];
 
     // Save state
     pdf.saveGraphicsState();
@@ -113,8 +113,8 @@ export default function BulkCardGenerator({ members, onClose }: BulkCardGenerato
     pdf.setFontSize(6);
     pdf.text('MEMBER IDENTIFICATION CARD', x + 42.8, y + 14, { align: 'center' });
 
-    // Yellow line
-    pdf.setFillColor(...tagYellow);
+    // Blue line
+    pdf.setFillColor(...tagBlue);
     pdf.rect(x, y + 18, 85.6, 1, 'F');
 
     // Photo placeholder

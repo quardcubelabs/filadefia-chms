@@ -19,7 +19,7 @@ export const Badge: React.FC<BadgeProps> = ({
   const variants = {
     default: 'bg-tag-gray-100 text-tag-gray-800 border-tag-gray-200',
     primary: 'bg-tag-red-100 text-tag-red-800 border-tag-red-200',
-    success: 'bg-tag-yellow-100 text-tag-yellow-800 border-tag-yellow-300',
+    success: 'bg-tag-green-100 text-tag-green-800 border-tag-green-300',
     warning: 'bg-orange-100 text-orange-800 border-orange-200',
     danger: 'bg-tag-red-100 text-tag-red-800 border-tag-red-300',
     info: 'bg-tag-blue-100 text-tag-blue-800 border-tag-blue-200',
@@ -34,7 +34,7 @@ export const Badge: React.FC<BadgeProps> = ({
   const dotColors = {
     default: 'bg-tag-gray-600',
     primary: 'bg-tag-red-600',
-    success: 'bg-tag-yellow-600',
+    success: 'bg-tag-green-600',
     warning: 'bg-orange-600',
     danger: 'bg-tag-red-600',
     info: 'bg-tag-blue-700',

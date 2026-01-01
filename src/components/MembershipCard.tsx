@@ -42,7 +42,7 @@ export default function MembershipCard({ member, className = '' }: MembershipCar
 
       // Colors
       const tagRed = '#E31E24';
-      const tagYellow = '#FFD700';
+      const tagBlue = '#3B82F6'; // Blue instead of yellow
       const tagBlack = '#000000';
       const tagWhite = '#FFFFFF';
       const tagGray = '#6B7280';
@@ -70,8 +70,8 @@ export default function MembershipCard({ member, className = '' }: MembershipCar
       pdf.setFontSize(6);
       pdf.text('MEMBER IDENTIFICATION CARD', 42.8, 14, { align: 'center' });
 
-      // Yellow accent line
-      pdf.setFillColor(255, 215, 0); // TAG Yellow
+      // Blue accent line
+      pdf.setFillColor(59, 130, 246); // Blue
       pdf.rect(0, 18, 85.6, 1, 'F');
 
       // Member photo placeholder (if photo exists, we'll add it)

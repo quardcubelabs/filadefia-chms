@@ -542,7 +542,7 @@ export default function FinancePage() {
       offering: 'bg-blue-100 text-blue-800',
       donation: 'bg-purple-100 text-purple-800',
       project: 'bg-indigo-100 text-indigo-800',
-      pledge: 'bg-yellow-100 text-yellow-800',
+      pledge: 'bg-cyan-100 text-cyan-800',
       mission: 'bg-pink-100 text-pink-800',
       welfare: 'bg-orange-100 text-orange-800',
       expense: 'bg-red-100 text-red-800'

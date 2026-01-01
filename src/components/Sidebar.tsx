@@ -256,7 +256,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                     {item.icon}
                   </div>
                   {item.badge && item.badge > 0 && !mobileOpen && !isExpanded && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 lg:h-6 lg:w-6 bg-yellow-400 text-gray-900 text-xs lg:text-sm rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md">
+                    <span className="absolute -top-1 -right-1 h-5 w-5 lg:h-6 lg:w-6 bg-blue-500 text-white text-xs lg:text-sm rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md">
                       {item.badge > 9 ? '9+' : item.badge}
                     </span>
                   )}
@@ -273,7 +273,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                     <span className={`px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full text-xs lg:text-sm font-bold ${
                       active 
                         ? 'bg-white text-red-600' 
-                        : 'bg-yellow-400 text-gray-900'
+                        : 'bg-blue-500 text-white'
                     }`}>
                       {item.badge > 9 ? '9+' : item.badge}
                     </span>

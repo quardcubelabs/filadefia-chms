@@ -1164,7 +1164,7 @@ export default function DepartmentDashboardPage() {
                   <Card variant="default" className="">
                     <CardBody className="p-6">
                       <h2 className="text-xl font-bold text-tag-gray-900 mb-6 flex items-center">
-                        <Crown className="h-6 w-6 mr-2 text-tag-yellow-600" />
+                        <Crown className="h-6 w-6 mr-2 text-tag-blue-600" />
                         Leadership Team
                       </h2>
 

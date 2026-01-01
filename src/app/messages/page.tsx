@@ -483,7 +483,7 @@ export default function MessagesPage() {
   const getPriorityColor = (priority: string) => {
     const colors = {
       low: 'bg-blue-100 text-blue-800',
-      medium: 'bg-yellow-100 text-yellow-800',
+      medium: 'bg-blue-100 text-blue-800',
       high: 'bg-red-100 text-red-800'
     };
     return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
@@ -500,7 +500,7 @@ export default function MessagesPage() {
 
   const getDeliveryStatusColor = (status: string) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
+      pending: 'bg-cyan-100 text-cyan-800',
       sent: 'bg-blue-100 text-blue-800',
       delivered: 'bg-green-100 text-green-800',
       failed: 'bg-red-100 text-red-800'
@@ -751,7 +751,7 @@ export default function MessagesPage() {
                                     </span>
                                     {announcement.expires_at && (
                                       <span className={`flex items-center space-x-1 ${
-                                        new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-yellow-600'
+                                        new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-orange-600'
                                       }`}>
                                         <Calendar className="h-4 w-4" />
                                         <span>
@@ -847,7 +847,7 @@ export default function MessagesPage() {
                           
                           {announcement.expires_at && (
                             <div className={`text-[10px] mb-2 flex items-center space-x-1 ${
-                              new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-yellow-600'
+                              new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-orange-600'
                             }`}>
                               <Calendar className="h-3 w-3" />
                               <span>Expires: {formatDate(announcement.expires_at)}</span>

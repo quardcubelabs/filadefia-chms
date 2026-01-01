@@ -23,9 +23,9 @@ export const Alert: React.FC<AlertProps> = ({
       title: 'text-tag-blue-900',
     },
     success: {
-      container: 'bg-tag-yellow-50 border-tag-yellow-300 text-tag-yellow-800',
-      icon: <CheckCircle className="h-5 w-5 text-tag-yellow-600" />,
-      title: 'text-tag-yellow-900',
+      container: 'bg-tag-green-50 border-tag-green-300 text-tag-green-800',
+      icon: <CheckCircle className="h-5 w-5 text-tag-green-600" />,
+      title: 'text-tag-green-900',
     },
     warning: {
       container: 'bg-orange-50 border-orange-200 text-orange-800',

@@ -265,6 +265,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!supabase || isInitialized) return;
 
     let mounted = true;
+    
+    // Safety timeout - don't stay in loading state forever (max 10 seconds)
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && status === AuthStatus.LOADING) {
+        console.warn('Auth initialization timed out after 10s, setting unauthenticated');
+        clearAuthState();
+        setIsInitialized(true);
+      }
+    }, 10000);
 
     const initializeAuth = async () => {
       try {
@@ -281,12 +290,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (refreshedSession?.user) {
               await setAuthenticatedUser(refreshedSession.user, refreshedSession);
               setIsInitialized(true);
+              clearTimeout(safetyTimeout);
               return;
             }
           }
           console.error('Error getting initial session:', error);
           clearAuthState();
           setIsInitialized(true);
+          clearTimeout(safetyTimeout);
           return;
         }
 
@@ -297,6 +308,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         
         setIsInitialized(true);
+        clearTimeout(safetyTimeout);
       } catch (error: any) {
         console.error('Exception initializing auth:', error);
         if (mounted) {
@@ -307,6 +319,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               if (refreshedSession?.user) {
                 await setAuthenticatedUser(refreshedSession.user, refreshedSession);
                 setIsInitialized(true);
+                clearTimeout(safetyTimeout);
                 return;
               }
             } catch {
@@ -315,6 +328,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
           clearAuthState();
           setIsInitialized(true);
+          clearTimeout(safetyTimeout);
         }
       }
     };
@@ -323,37 +337,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimeout);
     };
   }, [supabase, setAuthenticatedUser, clearAuthState, isInitialized]);
 
   // Set up auth state change listener (separate from initialization)
   // Uses refs to avoid re-creating the listener when callbacks change
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !isInitialized) return; // Wait for initialization to complete
 
     let mounted = true;
-
-    console.log('Setting up auth state change listener');
+    let isProcessing = false; // Prevent concurrent processing
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
-        if (!mounted) return;
+        if (!mounted || isProcessing) return;
+        
+        // Skip INITIAL_SESSION as it's already handled in initializeAuth
+        if (event === 'INITIAL_SESSION') return;
 
-        console.log('Auth state change event:', event, 'Session:', !!currentSession);
+        isProcessing = true;
 
         // Handle different auth events
         switch (event) {
           case 'SIGNED_IN':
-          case 'TOKEN_REFRESHED':
-            if (currentSession?.user && setAuthenticatedUserRef.current) {
-              console.log('SIGNED_IN/TOKEN_REFRESHED: Setting authenticated user');
+            // Only process if we don't already have a user
+            if (currentSession?.user && setAuthenticatedUserRef.current && !user) {
               await setAuthenticatedUserRef.current(currentSession.user, currentSession);
             }
             break;
 
+          case 'TOKEN_REFRESHED':
+            // Just update the session, don't re-fetch profile
+            if (currentSession) {
+              setSession(currentSession);
+            }
+            break;
+
           case 'SIGNED_OUT':
-            console.log('SIGNED_OUT: Clearing auth state');
             if (clearAuthStateRef.current) {
               clearAuthStateRef.current();
             }
@@ -365,35 +387,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
             break;
 
-          case 'INITIAL_SESSION':
-            // Already handled in initializeAuth
-            break;
-
           default:
-            // For any other events, sync state with session
-            if (currentSession?.user && setAuthenticatedUserRef.current) {
+            // For any other events, only sync if there's a mismatch
+            if (currentSession?.user && !user && setAuthenticatedUserRef.current) {
               await setAuthenticatedUserRef.current(currentSession.user, currentSession);
-            } else if (clearAuthStateRef.current) {
+            } else if (!currentSession && user && clearAuthStateRef.current) {
               clearAuthStateRef.current();
             }
         }
+        
+        isProcessing = false;
       }
     );
 
     return () => {
-      console.log('Cleaning up auth state change listener');
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]); // Only depends on supabase - uses refs for callbacks
+  }, [supabase, isInitialized, user]); // Added user to prevent duplicate SIGNED_IN handling
 
-  // Proactive token refresh and visibility handlers
+  // Proactive token refresh (minimal - let Supabase handle most of it)
   useEffect(() => {
     if (!supabase || !isInitialized) return;
 
     let mounted = true;
+    let lastRefresh = Date.now();
 
-    // Aggressive proactive token refresh - check every 30 seconds
+    // Proactive token refresh - check every 5 minutes
     const refreshInterval = setInterval(async () => {
       if (!mounted) return;
 
@@ -403,70 +423,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (currentSession?.expires_at) {
           const timeUntilExpiry = (currentSession.expires_at * 1000) - Date.now();
           
-          // Refresh if expiring within 10 minutes (aggressive refresh)
-          if (timeUntilExpiry < 10 * 60 * 1000 && timeUntilExpiry > 0) {
-            console.log('Proactively refreshing token, expires in:', Math.round(timeUntilExpiry / 1000), 'seconds');
+          // Only refresh if expiring within 5 minutes
+          if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
             await supabase.auth.refreshSession();
           }
-        } else if (currentSession) {
-          // No expiry info but session exists - refresh anyway to be safe
-          await supabase.auth.refreshSession();
         }
       } catch (error) {
-        // Silent fail - don't disrupt user experience
+        // Silent fail
       }
-    }, 30 * 1000); // Every 30 seconds
+    }, 5 * 60 * 1000); // Every 5 minutes
 
-    // Handle visibility change - refresh on tab focus
+    // Handle visibility change - only refresh if been away for a while
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && mounted) {
-        try {
-          // Always refresh on tab focus to ensure fresh token
-          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-          
-          if (refreshedSession?.user) {
-            // Session refreshed successfully
-            if (!user || user.id !== refreshedSession.user.id) {
-              await setAuthenticatedUser(refreshedSession.user, refreshedSession);
-            } else {
-              // Just update the session
-              setSession(refreshedSession);
-            }
-          } else if (user) {
-            // No session but we have user state - try getSession first
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            if (!currentSession) {
-              clearAuthState();
-            }
+        const timeSinceLastRefresh = Date.now() - lastRefresh;
+        
+        // Only refresh if we've been away for more than 1 minute
+        if (timeSinceLastRefresh > 60 * 1000) {
+          try {
+            await supabase.auth.refreshSession();
+            lastRefresh = Date.now();
+          } catch (error) {
+            // Silent fail
           }
-        } catch (error) {
-          // Silent fail on visibility change
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Also refresh on window focus (backup for visibility change)
-    const handleWindowFocus = async () => {
-      if (mounted && user) {
-        try {
-          await supabase.auth.refreshSession();
-        } catch {
-          // Silent fail
-        }
-      }
-    };
-
-    window.addEventListener('focus', handleWindowFocus);
-
     return () => {
       mounted = false;
       clearInterval(refreshInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [supabase, isInitialized, setAuthenticatedUser, clearAuthState, user]);
+  }, [supabase, isInitialized]);
 
   // Role checking functions
   const hasRole = useCallback((requiredRoles: UserRole[]): boolean => {

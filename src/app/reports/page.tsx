@@ -156,7 +156,7 @@ interface ReportData {
   departmentStats: DepartmentData[];
 }
 
-type ReportType = 'membership' | 'financial' | 'attendance' | 'jumuiya' | 'comprehensive';
+type ReportType = 'membership' | 'financial' | 'attendance' | 'events' | 'jumuiya' | 'comprehensive';
 type ReportPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
 
 // Additional type definitions for data structures
@@ -340,6 +340,12 @@ export default function ReportsPage() {
         console.log('📅 Fetching events data...');
         eventsData = await fetchEventsData();
         eventStats = await fetchEventStats();
+      }
+
+      if (reportType === 'events' || reportType === 'comprehensive') {
+        console.log('📅 Fetching events data...');
+        if (!eventsData) eventsData = await fetchEventsData();
+        if (!eventStats) eventStats = await fetchEventStats();
       }
 
       if (reportType === 'attendance' || reportType === 'comprehensive') {
@@ -1549,7 +1555,7 @@ export default function ReportsPage() {
     }
 
     // Event Statistics
-    if (reportType === 'attendance' || reportType === 'comprehensive') {
+    if (reportType === 'events' || reportType === 'attendance' || reportType === 'comprehensive') {
       csvContent += `EVENT STATISTICS\n`;
       csvContent += `Total Events,${reportData.eventStats.totalEvents}\n`;
       csvContent += `Upcoming Events,${reportData.eventStats.upcomingEvents}\n`;
@@ -1562,6 +1568,16 @@ export default function ReportsPage() {
         csvContent += `Type,Count\n`;
         reportData.eventStats.eventsByType.forEach(item => {
           csvContent += `"${item.type}",${item.count}\n`;
+        });
+        csvContent += '\n';
+      }
+
+      // Events List
+      if (reportData.events && reportData.events.length > 0) {
+        csvContent += `EVENTS LIST\n`;
+        csvContent += `Title,Date,Location,Department\n`;
+        reportData.events.forEach(event => {
+          csvContent += `"${event.title}","${event.date}","${event.location}","${event.department_name}"\n`;
         });
         csvContent += '\n';
       }
@@ -1671,6 +1687,9 @@ export default function ReportsPage() {
                     </option>
                     <option value="attendance">
                       {isDepartmentLeader ? `${departmentName} - Attendance` : 'Attendance'}
+                    </option>
+                    <option value="events">
+                      {isDepartmentLeader ? `${departmentName} - Events` : 'Events'}
                     </option>
                     <option value="jumuiya">
                       {isDepartmentLeader ? `${departmentName} - Department` : 'Jumuiya'}
@@ -2169,7 +2188,7 @@ export default function ReportsPage() {
                                   <div className="w-20 h-2 bg-gray-200 rounded-full">
                                     <div
                                       className={`h-2 rounded-full ${
-                                        item.rate >= 80 ? 'bg-green-600' : item.rate >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                                        item.rate >= 80 ? 'bg-green-600' : item.rate >= 50 ? 'bg-blue-600' : 'bg-red-600'
                                       }`}
                                       style={{ width: `${item.rate}%` }}
                                     />
@@ -2219,14 +2238,14 @@ export default function ReportsPage() {
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
                                       <span className={`text-sm font-medium mr-2 ${
-                                        session.rate >= 80 ? 'text-green-600' : session.rate >= 50 ? 'text-yellow-600' : 'text-red-600'
+                                        session.rate >= 80 ? 'text-green-600' : session.rate >= 50 ? 'text-blue-600' : 'text-red-600'
                                       }`}>
                                         {session.rate}%
                                       </span>
                                       <div className="w-16 bg-gray-200 rounded-full h-2">
                                         <div
                                           className={`h-2 rounded-full ${
-                                            session.rate >= 80 ? 'bg-green-600' : session.rate >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                                            session.rate >= 80 ? 'bg-green-600' : session.rate >= 50 ? 'bg-blue-600' : 'bg-red-600'
                                           }`}
                                           style={{ width: `${session.rate}%` }}
                                         ></div>

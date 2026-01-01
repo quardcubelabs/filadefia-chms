@@ -329,7 +329,7 @@ export default function DepartmentDashboardPage() {
               className={`p-2 rounded-lg ${inputBg} hover:opacity-80 transition-opacity`}
             >
               {darkMode ? (
-                <Sun className="h-5 w-5 text-yellow-400" />
+                <Sun className="h-5 w-5 text-orange-400" />
               ) : (
                 <Moon className="h-5 w-5 text-gray-600" />
               )}
@@ -446,7 +446,7 @@ export default function DepartmentDashboardPage() {
           <>
             {/* Department Header */}
             <Card variant="gradient" className="mb-6">
-              <div className="h-24 bg-gradient-to-r from-tag-red-500 via-tag-red-600 to-tag-yellow-500"></div>
+              <div className="h-24 bg-gradient-to-r from-tag-red-500 via-tag-red-600 to-tag-blue-500"></div>
               <CardBody className="p-6 -mt-12 relative">
                 <div className="flex items-end gap-4">
                   <div className="h-20 w-20 bg-white rounded-lg shadow-xl flex items-center justify-center border-4 border-white">
@@ -705,7 +705,7 @@ export default function DepartmentDashboardPage() {
                   <Card variant="default">
                     <CardBody className="p-6">
                       <h2 className="text-xl font-bold text-tag-gray-900 mb-6 flex items-center">
-                        <Crown className="h-6 w-6 mr-2 text-tag-yellow-600" />
+                        <Crown className="h-6 w-6 mr-2 text-tag-blue-600" />
                         Leadership Team
                       </h2>
 

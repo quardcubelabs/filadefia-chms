@@ -23,14 +23,14 @@
   --primary: 37 99 235; /* FCC Blue */
   --primary-foreground: 255 255 255;
   
-  --secondary: 245 158 11; /* FCC Gold */
-  --secondary-foreground: 17 24 39;
+  --secondary: 59 130 246; /* Blue instead of gold */
+  --secondary-foreground: 255 255 255;
   
   --muted: 243 244 246;
   --muted-foreground: 107 114 128;
   
-  --accent: 245 158 11; /* FCC Gold */
-  --accent-foreground: 17 24 39;
+  --accent: 59 130 246; /* Blue instead of gold */
+  --accent-foreground: 255 255 255;
   
   --destructive: 239 68 68;
   --destructive-foreground: 255 255 255;
@@ -42,14 +42,14 @@
   --radius: 0.5rem;
   
   --chart-1: 37 99 235; /* FCC Blue */
-  --chart-2: 245 158 11; /* FCC Gold */
+  --chart-2: 34 197 94; /* Green instead of gold */
   --chart-3: 16 185 129;
   --chart-4: 249 115 22;
   --chart-5: 139 92 246;
   
   /* Custom FCC Variables */
   --fcc-blue-primary: 37 99 235;
-  --fcc-gold-primary: 245 158 11;
+  --fcc-gold-primary: 59 130 246; /* Blue instead of gold */
   --fcc-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
 }
 
@@ -67,13 +67,13 @@
     --primary: 59 130 246; /* Lighter FCC Blue for dark mode */
     --primary-foreground: 3 7 18;
     
-    --secondary: 251 191 36; /* Lighter FCC Gold for dark mode */
+    --secondary: 96 165 250; /* Lighter blue for dark mode */
     --secondary-foreground: 3 7 18;
     
     --muted: 30 41 59;
     --muted-foreground: 148 163 184;
     
-    --accent: 251 191 36; /* Lighter FCC Gold for dark mode */
+    --accent: 96 165 250; /* Lighter blue for dark mode */
     --accent-foreground: 3 7 18;
     
     --destructive: 220 38 38;
@@ -98,6 +98,8 @@ body {
   color: hsl(var(--foreground));
   font-family: 'Inter', system-ui, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  /* Prevent FOUC (Flash of Unstyled Content) */
+  opacity: 1;
 }
 
 /* Custom FCC Styling */
@@ -132,12 +134,12 @@ body {
 
 .fcc-button-secondary {
   background: rgb(var(--fcc-gold-primary));
-  color: rgb(17 24 39);
+  color: white;
   transition: all 0.2s ease-in-out;
 }
 
 .fcc-button-secondary:hover {
-  background: rgb(217 119 6);
+  background: rgb(37 99 235);
   transform: translateY(-1px);
 }
 

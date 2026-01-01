@@ -3,7 +3,7 @@
 import { useAuthContext, AuthStatus } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 
 interface ProtectedLayoutProps {
   children: ReactNode;
@@ -25,12 +25,6 @@ function DefaultLoadingFallback() {
 
 /**
  * ProtectedLayout - Wraps content that requires authentication
- * 
- * Features:
- * - Shows loading state during auth check (prevents blank pages)
- * - Redirects to login if unauthenticated
- * - Checks role permissions if requiredRole is provided
- * - Prevents premature redirects during token refresh
  */
 export function ProtectedLayout({ 
   children, 
@@ -39,10 +33,39 @@ export function ProtectedLayout({
 }: ProtectedLayoutProps) {
   const router = useRouter();
   const { user, status, canAccess } = useAuthContext();
+  const [timedOut, setTimedOut] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
+
+  // Delay showing loading spinner to prevent flicker on fast auth
+  useEffect(() => {
+    if (status === AuthStatus.LOADING) {
+      const timer = setTimeout(() => setShowLoading(true), 200); // 200ms delay
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoading(false);
+    }
+  }, [status]);
+
+  // Safety timeout - redirect to login if stuck loading for too long
+  useEffect(() => {
+    if (status !== AuthStatus.LOADING) return;
+
+    const timeout = setTimeout(() => {
+      setTimedOut(true);
+    }, 12000);
+
+    return () => clearTimeout(timeout);
+  }, [status]);
 
   useEffect(() => {
     // Don't redirect while loading - prevents blank pages and premature redirects
-    if (status === AuthStatus.LOADING) return;
+    if (status === AuthStatus.LOADING && !timedOut) return;
+
+    // Timed out waiting for auth - redirect to login
+    if (timedOut && status === AuthStatus.LOADING) {
+      router.replace('/login');
+      return;
+    }
 
     // Not authenticated - redirect to login
     if (status === AuthStatus.UNAUTHENTICATED) {
@@ -55,11 +78,16 @@ export function ProtectedLayout({
       router.replace('/unauthorized');
       return;
     }
-  }, [status, user, requiredRole, canAccess, router]);
+  }, [status, user, requiredRole, canAccess, router, timedOut]);
 
-  // Show loading state during auth check
-  if (status === AuthStatus.LOADING) {
+  // Show loading state during auth check (with delay to prevent flicker)
+  if (status === AuthStatus.LOADING && showLoading) {
     return <>{fallback}</>;
+  }
+  
+  // Still loading but not showing spinner yet - render nothing briefly
+  if (status === AuthStatus.LOADING) {
+    return null;
   }
 
   // Show loading while redirecting

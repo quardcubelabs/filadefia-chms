@@ -135,7 +135,7 @@ export default function ZonesPage() {
       'from-teal-500 to-teal-700',
       'from-indigo-500 to-indigo-700',
       'from-red-500 to-red-700',
-      'from-yellow-500 to-yellow-700',
+      'from-emerald-500 to-emerald-700',
       'from-cyan-500 to-cyan-700',
     ];
     return colors[index % colors.length];

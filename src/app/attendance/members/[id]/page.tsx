@@ -244,7 +244,7 @@ export default function MemberAttendancePage() {
 
   const getAttendanceColor = (rate: number) => {
     if (rate >= 80) return 'text-green-600';
-    if (rate >= 60) return 'text-yellow-600';
+    if (rate >= 60) return 'text-blue-600';
     return 'text-red-600';
   };
 
@@ -465,8 +465,8 @@ export default function MemberAttendancePage() {
                   </p>
                   <p className="text-xs sm:text-sm text-gray-600 capitalize mt-0.5">{stats.streak.type}</p>
                 </div>
-                <div className="bg-yellow-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
-                  <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-yellow-600" />
+                <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
                 </div>
               </div>
             </div>

@@ -208,7 +208,7 @@ export default function CSVImport({ onImport, onClose }: CSVImportProps) {
                         <td className="px-4 py-3 text-sm text-tag-gray-600">{member.phone || '-'}</td>
                         <td className="px-4 py-3 text-sm text-tag-gray-600">{member.email || '-'}</td>
                         <td className="px-4 py-3 text-sm">
-                          <span className="px-2 py-1 bg-tag-yellow-100 text-tag-yellow-800 rounded-full text-xs font-semibold">
+                          <span className="px-2 py-1 bg-tag-green-100 text-tag-green-800 rounded-full text-xs font-semibold">
                             {member.status || 'active'}
                           </span>
                         </td>
@@ -249,8 +249,8 @@ export default function CSVImport({ onImport, onClose }: CSVImportProps) {
                 <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
             ) : (
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-tag-yellow-100 rounded-full mb-4">
-                <AlertCircle className="h-10 w-10 text-tag-yellow-600" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
+                <AlertCircle className="h-10 w-10 text-orange-600" />
               </div>
             )}
             <h3 className="text-2xl font-bold text-tag-gray-900 mb-2">Import Complete</h3>

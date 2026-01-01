@@ -73,10 +73,20 @@ export default function DashboardPage() {
     // User is authenticated admin - load data if not already loaded
     if (user && !isDataLoaded && !isDepartmentLeader) {
       setIsDataLoaded(true);
-      fetchDashboardData();
-      fetchFinancialData();
-      fetchDepartmentLeaders();
-      fetchUserProfile();
+      
+      // Safety timeout - prevent infinite loading (max 15 seconds)
+      const loadingTimeout = setTimeout(() => {
+        setLoading(false);
+      }, 15000);
+      
+      Promise.all([
+        fetchDashboardData(),
+        fetchFinancialData(),
+        fetchDepartmentLeaders(),
+        fetchUserProfile()
+      ]).finally(() => {
+        clearTimeout(loadingTimeout);
+      });
     }
   }, [user, authLoading, status, isDataLoaded, isDepartmentLeader, departmentId, deptAccessLoading]);
 
@@ -728,7 +738,7 @@ export default function DashboardPage() {
                         <p className={`text-[10px] ${textSecondary} truncate`}>{leader.departmentName}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <div className="flex text-yellow-400 text-[8px]">
+                        <div className="flex text-blue-400 text-[8px]">
                           {'★★★★★'}
                         </div>
                         <span className={`text-[8px] ${textSecondary}`}>5.0</span>
@@ -1164,7 +1174,7 @@ export default function DashboardPage() {
                             <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
                             <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
                             <div className="flex items-center mt-1">
-                              <div className="flex text-yellow-400 text-xs">
+                              <div className="flex text-blue-400 text-xs">
                                 {'★'.repeat(5)}
                               </div>
                               <span className={`text-xs ${textSecondary} ml-2`}>{leader.departmentName}</span>

@@ -966,7 +966,7 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
                   <Card variant="default">
                     <CardBody className="p-3 sm:p-6">
                       <h2 className={`text-sm sm:text-xl font-bold ${textPrimary} mb-4 sm:mb-6 flex items-center`}>
-                        <Crown className="h-4 w-4 sm:h-6 sm:w-6 mr-2 text-yellow-600" />
+                        <Crown className="h-4 w-4 sm:h-6 sm:w-6 mr-2 text-blue-600" />
                         Zone Leadership
                       </h2>
 

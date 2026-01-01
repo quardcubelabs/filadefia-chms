@@ -554,7 +554,7 @@ export default function EventDetailPage() {
       crusade: 'bg-red-100 text-red-800',
       seminar: 'bg-blue-100 text-blue-800',
       prayer_night: 'bg-green-100 text-green-800',
-      workshop: 'bg-yellow-100 text-yellow-800',
+      workshop: 'bg-cyan-100 text-cyan-800',
       fellowship: 'bg-indigo-100 text-indigo-800'
     };
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
@@ -562,7 +562,7 @@ export default function EventDetailPage() {
 
   const getPaymentStatusColor = (status: string) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
+      pending: 'bg-cyan-100 text-cyan-800',
       paid: 'bg-green-100 text-green-800',
       partial: 'bg-orange-100 text-orange-800',
       waived: 'bg-blue-100 text-blue-800'
@@ -847,7 +847,7 @@ GRANT ALL ON event_registrations TO authenticated, anon, service_role;`;
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Pending Payment</span>
-                        <span className="font-semibold text-yellow-600">{stats.pendingPayments}</span>
+                        <span className="font-semibold text-orange-600">{stats.pendingPayments}</span>
                       </div>
                       {event.max_attendees && (
                         <div className="flex justify-between items-center pt-2 border-t">

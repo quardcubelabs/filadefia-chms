@@ -19,9 +19,9 @@ export default function SetupPage() {
             The FCC Church Management System needs to be configured with Supabase to function properly.
           </p>
           
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-yellow-800 mb-2">Configuration Steps:</h3>
-            <ol className="text-left text-yellow-700 space-y-2">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-800 mb-2">Configuration Steps:</h3>
+            <ol className="text-left text-blue-700 space-y-2">
               <li>1. Create a Supabase project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="underline">supabase.com</a></li>
               <li>2. Run the database schema from <code>/database/schema.sql</code></li>
               <li>3. Set environment variables in Vercel/deployment platform</li>

@@ -83,13 +83,13 @@ export default function AttendanceCard({
 
   const getAttendanceColor = (rate: number) => {
     if (rate >= 80) return 'text-green-600';
-    if (rate >= 60) return 'text-yellow-600';
+    if (rate >= 60) return 'text-blue-600';
     return 'text-red-600';
   };
 
   const getAttendanceBackground = (rate: number) => {
     if (rate >= 80) return 'bg-green-50 border-green-200';
-    if (rate >= 60) return 'bg-yellow-50 border-yellow-200';
+    if (rate >= 60) return 'bg-blue-50 border-blue-200';
     return 'bg-red-50 border-red-200';
   };
 
@@ -303,7 +303,7 @@ export default function AttendanceCard({
                 attendanceRate >= 80 
                   ? 'bg-green-500' 
                   : attendanceRate >= 60 
-                    ? 'bg-yellow-500' 
+                    ? 'bg-blue-500' 
                     : 'bg-red-500'
               }`}
               style={{ width: `${Math.min(attendanceRate, 100)}%` }}

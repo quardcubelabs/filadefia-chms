@@ -185,7 +185,7 @@ export default function AttendanceReportsPage() {
 
   const getAttendanceColor = (rate: number) => {
     if (rate >= 80) return 'text-green-600';
-    if (rate >= 60) return 'text-yellow-600';
+    if (rate >= 60) return 'text-blue-600';
     return 'text-red-600';
   };
 
@@ -517,7 +517,7 @@ export default function AttendanceReportsPage() {
                         <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <div className="flex-shrink-0">
                             <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-white ${
-                              index < 3 ? 'bg-yellow-500' : 'bg-gray-500'
+                              index < 3 ? 'bg-blue-500' : 'bg-gray-500'
                             }`}>
                               {index + 1}
                             </div>

@@ -363,7 +363,7 @@ export default function MemberProfilePage() {
           <>
             {/* Profile Header Card */}
             <Card variant="gradient" className="mb-6 overflow-hidden">
-              <div className="h-32 bg-gradient-to-r from-tag-red-500 via-tag-red-600 to-tag-yellow-500"></div>
+              <div className="h-32 bg-gradient-to-r from-tag-red-500 via-tag-red-600 to-tag-blue-500"></div>
               <CardBody className="p-6 -mt-16 relative">
                 <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
                   <div className="relative w-36 h-36 overflow-visible">
@@ -510,7 +510,7 @@ export default function MemberProfilePage() {
                   <Card variant="default">
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <DollarSign className="h-8 w-8 text-tag-yellow-600" />
+                        <DollarSign className="h-8 w-8 text-tag-green-600" />
                         <span className="text-3xl font-bold text-tag-gray-900">
                           {formatContribution(totalContributions)}
                         </span>
@@ -731,7 +731,7 @@ export default function MemberProfilePage() {
                   
                   <Card variant="default">
                     <CardBody className="p-6 text-center">
-                      <div className="text-3xl font-bold text-yellow-600 mb-2">
+                      <div className="text-3xl font-bold text-green-600 mb-2">
                         {formatContribution(contributionStats.averageAmount)}
                       </div>
                       <p className="text-sm font-semibold text-gray-600">Average Amount</p>
