@@ -61,6 +61,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const refreshingRef = useRef(false);
   const lastRefreshRef = useRef<number>(0);
+  
+  // Refs to hold callback functions for use in effects without causing re-runs
+  const setAuthenticatedUserRef = useRef<((authUser: User, currentSession: Session) => Promise<void>) | null>(null);
+  const clearAuthStateRef = useRef<(() => void) | null>(null);
 
   // Create supabase client once with memoization
   const supabase = useMemo(() => {
@@ -234,6 +238,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setStatus(AuthStatus.UNAUTHENTICATED);
   }, []);
 
+  // Keep refs updated with latest callback functions
+  useEffect(() => {
+    setAuthenticatedUserRef.current = setAuthenticatedUser;
+    clearAuthStateRef.current = clearAuthState;
+  }, [setAuthenticatedUser, clearAuthState]);
+
   // Sign out
   const signOut = useCallback(async () => {
     if (!supabase) {
@@ -250,7 +260,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [supabase, clearAuthState]);
 
-  // Initialize auth state
+  // Initialize auth state (runs once)
   useEffect(() => {
     if (!supabase || isInitialized) return;
 
@@ -311,27 +321,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initializeAuth();
 
+    return () => {
+      mounted = false;
+    };
+  }, [supabase, setAuthenticatedUser, clearAuthState, isInitialized]);
+
+  // Set up auth state change listener (separate from initialization)
+  // Uses refs to avoid re-creating the listener when callbacks change
+  useEffect(() => {
+    if (!supabase) return;
+
+    let mounted = true;
+
+    console.log('Setting up auth state change listener');
+
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
         if (!mounted) return;
 
+        console.log('Auth state change event:', event, 'Session:', !!currentSession);
+
         // Handle different auth events
         switch (event) {
           case 'SIGNED_IN':
           case 'TOKEN_REFRESHED':
-            if (currentSession?.user) {
-              await setAuthenticatedUser(currentSession.user, currentSession);
+            if (currentSession?.user && setAuthenticatedUserRef.current) {
+              console.log('SIGNED_IN/TOKEN_REFRESHED: Setting authenticated user');
+              await setAuthenticatedUserRef.current(currentSession.user, currentSession);
             }
             break;
 
           case 'SIGNED_OUT':
-            clearAuthState();
+            console.log('SIGNED_OUT: Clearing auth state');
+            if (clearAuthStateRef.current) {
+              clearAuthStateRef.current();
+            }
             break;
 
           case 'USER_UPDATED':
-            if (currentSession?.user) {
-              await setAuthenticatedUser(currentSession.user, currentSession);
+            if (currentSession?.user && setAuthenticatedUserRef.current) {
+              await setAuthenticatedUserRef.current(currentSession.user, currentSession);
             }
             break;
 
@@ -341,17 +371,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           default:
             // For any other events, sync state with session
-            if (currentSession?.user) {
-              await setAuthenticatedUser(currentSession.user, currentSession);
-            } else if (isInitialized) {
-              clearAuthState();
+            if (currentSession?.user && setAuthenticatedUserRef.current) {
+              await setAuthenticatedUserRef.current(currentSession.user, currentSession);
+            } else if (clearAuthStateRef.current) {
+              clearAuthStateRef.current();
             }
         }
       }
     );
 
+    return () => {
+      console.log('Cleaning up auth state change listener');
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]); // Only depends on supabase - uses refs for callbacks
+
+  // Proactive token refresh and visibility handlers
+  useEffect(() => {
+    if (!supabase || !isInitialized) return;
+
+    let mounted = true;
+
     // Aggressive proactive token refresh - check every 30 seconds
-    // This ensures token is always fresh and prevents JWT expiration
     const refreshInterval = setInterval(async () => {
       if (!mounted) return;
 
@@ -420,7 +462,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
       clearInterval(refreshInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleWindowFocus);

@@ -133,6 +133,26 @@ interface ReportData {
       count: number;
     }>;
   };
+  attendanceStats: {
+    totalSessions: number;
+    totalPresent: number;
+    totalAbsent: number;
+    averageAttendanceRate: number;
+    attendanceByType: Array<{
+      type: string;
+      sessions: number;
+      presentCount: number;
+      rate: number;
+    }>;
+    recentSessions: Array<{
+      id: string;
+      date: string;
+      type: string;
+      presentCount: number;
+      totalMembers: number;
+      rate: number;
+    }>;
+  };
   departmentStats: DepartmentData[];
 }
 
@@ -298,6 +318,7 @@ export default function ReportsPage() {
       let membershipStats = null;
       let financialStats = null;
       let eventStats = null;
+      let attendanceStats = null;
       let departmentStats = null;
 
       console.log(`🔍 Fetching data for report type: ${reportType}`);
@@ -323,7 +344,7 @@ export default function ReportsPage() {
 
       if (reportType === 'attendance' || reportType === 'comprehensive') {
         console.log('📅 Fetching attendance data...');
-        // attendanceData = await fetchAttendanceData();
+        attendanceStats = await fetchAttendanceStats();
         if (!eventStats) {
           eventStats = await fetchEventStats();
         }
@@ -398,11 +419,23 @@ export default function ReportsPage() {
         department_name: event.department_name || 'General'
       })) : [];
 
+      const defaultAttendanceStats = {
+        totalSessions: 0,
+        totalPresent: 0,
+        totalAbsent: 0,
+        averageAttendanceRate: 0,
+        attendanceByType: [],
+        recentSessions: []
+      };
+
+      const finalAttendanceStats = attendanceStats || defaultAttendanceStats;
+
       const reportData = {
         jumuiyas: jumuiyasData || [],
         membershipStats: finalMembershipStats,
         financialStats: finalFinancialStats,
         eventStats: finalEventStats,
+        attendanceStats: finalAttendanceStats,
         departmentStats: departmentStats || [],
         // Raw data arrays for PDF rendering
         members: membersArray,
@@ -618,9 +651,10 @@ export default function ReportsPage() {
         .order('start_date', { ascending: false });
 
       // Apply department filtering for department leaders
+      // Include events that are specifically for this department OR general events (null department_id)
       if (isDepartmentLeader && departmentId) {
         console.log(`🔒 Applying department filter for events data: ${departmentId}`);
-        query = query.eq('department_id', departmentId);
+        query = query.or(`department_id.eq.${departmentId},department_id.is.null`);
       }
 
       const { data: events, error } = await query;
@@ -630,7 +664,7 @@ export default function ReportsPage() {
         return null;
       }
 
-      console.log('Events found:', events?.length || 0);
+      console.log('Events found:', events?.length || 0, events);
 
       if (!events || events.length === 0) {
         return [];
@@ -919,8 +953,11 @@ export default function ReportsPage() {
     try {
       console.log('Fetching event statistics...');
       console.log('Date range for events:', { startDate, endDate });
+      console.log('Department context:', { isDepartmentLeader, departmentId, departmentName });
       
       if (!supabase) return null;
+      
+      // First fetch all events in date range to debug
       let query = supabase
         .from('events')
         .select('id, event_type, start_date, department_id, event_registrations(id)')
@@ -928,9 +965,11 @@ export default function ReportsPage() {
         .lte('start_date', endDate);
 
       // Apply department filtering for department leaders
+      // Include events that are specifically for this department OR general events (null department_id)
       if (isDepartmentLeader && departmentId) {
         console.log(`🔒 Applying department filter for event stats: ${departmentId}`);
-        query = query.eq('department_id', departmentId);
+        // Use 'or' to include both department-specific events and general events
+        query = query.or(`department_id.eq.${departmentId},department_id.is.null`);
       }
 
       const { data: events, error } = await query;
@@ -991,6 +1030,125 @@ export default function ReportsPage() {
         completedEvents: 0,
         averageAttendance: 0,
         eventsByType: []
+      };
+    }
+  };
+
+  const fetchAttendanceStats = async () => {
+    try {
+      console.log('Fetching attendance statistics...');
+      console.log('Date range for attendance:', { startDate, endDate });
+      
+      if (!supabase) return null;
+
+      // Fetch attendance sessions with department filtering
+      let sessionsQuery = supabase
+        .from('attendance_sessions')
+        .select('id, date, attendance_type, session_name, present_count, total_members, attendance_rate, department_id')
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: false });
+
+      // Apply department filtering for department leaders
+      if (isDepartmentLeader && departmentId) {
+        console.log(`🔒 Applying department filter for attendance stats: ${departmentId}`);
+        sessionsQuery = sessionsQuery.eq('department_id', departmentId);
+      }
+
+      const { data: sessions, error: sessionsError } = await sessionsQuery;
+
+      if (sessionsError) {
+        console.error('Error fetching attendance sessions:', sessionsError);
+      }
+
+      // Also fetch individual attendance records
+      let attendanceQuery = supabase
+        .from('attendance')
+        .select('id, date, attendance_type, present, member_id, event_id')
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      // For department leaders, we need to filter by members in their department
+      if (isDepartmentLeader && departmentId) {
+        // Get members in this department first
+        const { data: deptMembers } = await supabase
+          .from('department_members')
+          .select('member_id')
+          .eq('department_id', departmentId);
+        
+        if (deptMembers && deptMembers.length > 0) {
+          const memberIds = deptMembers.map(m => m.member_id);
+          attendanceQuery = attendanceQuery.in('member_id', memberIds);
+        }
+      }
+
+      const { data: attendance, error: attendanceError } = await attendanceQuery;
+
+      if (attendanceError) {
+        console.error('Error fetching attendance records:', attendanceError);
+      }
+
+      console.log('📊 Attendance data fetched:', {
+        sessions: sessions?.length || 0,
+        records: attendance?.length || 0,
+        departmentFilter: isDepartmentLeader ? departmentId : 'none'
+      });
+
+      // Calculate statistics from sessions
+      const totalSessions = sessions?.length || 0;
+      const totalPresent = sessions?.reduce((sum, s) => sum + (s.present_count || 0), 0) || 0;
+      const totalMembers = sessions?.reduce((sum, s) => sum + (s.total_members || 0), 0) || 0;
+      const totalAbsent = totalMembers - totalPresent;
+      const averageAttendanceRate = totalSessions > 0 && totalMembers > 0
+        ? Math.round((totalPresent / totalMembers) * 100)
+        : 0;
+
+      // Group by type
+      const typeMap: { [key: string]: { sessions: number; presentCount: number; totalMembers: number } } = {};
+      sessions?.forEach(s => {
+        const type = s.attendance_type || 'Other';
+        if (!typeMap[type]) {
+          typeMap[type] = { sessions: 0, presentCount: 0, totalMembers: 0 };
+        }
+        typeMap[type].sessions += 1;
+        typeMap[type].presentCount += s.present_count || 0;
+        typeMap[type].totalMembers += s.total_members || 0;
+      });
+
+      const attendanceByType = Object.entries(typeMap).map(([type, data]) => ({
+        type: type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        sessions: data.sessions,
+        presentCount: data.presentCount,
+        rate: data.totalMembers > 0 ? Math.round((data.presentCount / data.totalMembers) * 100) : 0
+      }));
+
+      // Get recent sessions (last 10)
+      const recentSessions = (sessions || []).slice(0, 10).map(s => ({
+        id: s.id,
+        date: s.date,
+        type: (s.attendance_type || 'Other').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        presentCount: s.present_count || 0,
+        totalMembers: s.total_members || 0,
+        rate: s.attendance_rate || 0
+      }));
+
+      return {
+        totalSessions,
+        totalPresent,
+        totalAbsent,
+        averageAttendanceRate,
+        attendanceByType,
+        recentSessions
+      };
+    } catch (err) {
+      console.error('Error in fetchAttendanceStats:', err);
+      return {
+        totalSessions: 0,
+        totalPresent: 0,
+        totalAbsent: 0,
+        averageAttendanceRate: 0,
+        attendanceByType: [],
+        recentSessions: []
       };
     }
   };
@@ -1580,40 +1738,6 @@ export default function ReportsPage() {
                   )}
                 </button>
 
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    console.log('🔍 Testing database connectivity...');
-                    try {
-                      if (!supabase) {
-                        console.log('Supabase client not available');
-                        return;
-                      }
-                      // Test basic table access
-                      const { data: membersTest, error: membersError } = await supabase.from('members').select('count(*)').single();
-                      console.log('Members table test:', { data: membersTest, error: membersError });
-                      
-                      const { data: deptTest, error: deptError } = await supabase.from('departments').select('count(*)').single();
-                      console.log('Departments table test:', { data: deptTest, error: deptError });
-                      
-                      const { data: finTest, error: finError } = await supabase.from('financial_transactions').select('count(*)').single();
-                      console.log('Financial transactions test:', { data: finTest, error: finError });
-                      
-                      const { data: eventsTest, error: eventsError } = await supabase.from('events').select('count(*)').single();
-                      console.log('Events table test:', { data: eventsTest, error: eventsError });
-                      
-                      setSuccess('Database connectivity test completed. Check console for details.');
-                    } catch (err) {
-                      console.error('Database test error:', err);
-                      setError('Database connectivity test failed. Check console for details.');
-                    }
-                  }}
-                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100 text-xs md:text-sm px-3 md:px-4"
-                >
-                  <span className="hidden md:inline">Test DB Connection</span>
-                  <span className="md:hidden">Test DB</span>
-                </Button>
-
                 {reportData && (
                   <>
                     <Button
@@ -1671,7 +1795,7 @@ export default function ReportsPage() {
                     { id: 'membership', label: 'Membership', icon: Users },
                     { id: 'finance', label: 'Finance', icon: DollarSign },
                     { id: 'events', label: 'Events', icon: Calendar },
-                    { id: 'departments', label: 'Departments', icon: Building2 }
+                    { id: 'attendance', label: 'Attendance', icon: UserCheck }
                   ].map((tab) => {
                     const IconComponent = tab.icon;
                     return (
@@ -1993,131 +2117,129 @@ export default function ReportsPage() {
                 </div>
               )}
 
-              {/* Departments Tab */}
-              {activeTab === 'departments' && (
+              {/* Attendance Tab */}
+              {activeTab === 'attendance' && (
                 <div className="space-y-6">
-                  {/* Department Summary Cards */}
+                  {/* Attendance Summary Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <Card>
                       <CardBody className="text-center">
-                        <Building2 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Total Departments</p>
-                        <p className="text-2xl font-bold text-gray-900">{reportData?.departmentStats?.length || 0}</p>
+                        <Calendar className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Total Sessions</p>
+                        <p className="text-2xl font-bold text-gray-900">{reportData?.attendanceStats?.totalSessions || 0}</p>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody className="text-center">
-                        <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Total Members</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {(reportData?.departmentStats || []).reduce((sum: number, dept: DepartmentData) => sum + dept.memberCount, 0)}
-                        </p>
+                        <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Total Present</p>
+                        <p className="text-2xl font-bold text-gray-900">{reportData?.attendanceStats?.totalPresent || 0}</p>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody className="text-center">
-                        <DollarSign className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Total Income</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {formatCurrency((reportData?.departmentStats || []).reduce((sum: number, dept: DepartmentData) => sum + (dept.totalIncome || 0), 0))}
-                        </p>
+                        <Users className="h-8 w-8 text-red-600 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Total Absent</p>
+                        <p className="text-2xl font-bold text-gray-900">{reportData?.attendanceStats?.totalAbsent || 0}</p>
                       </CardBody>
                     </Card>
                     <Card>
                       <CardBody className="text-center">
-                        <UserCheck className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">With Leaders</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {(reportData?.departmentStats || []).filter((dept: DepartmentData) => dept.leader).length}
-                        </p>
+                        <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Avg. Attendance Rate</p>
+                        <p className="text-2xl font-bold text-gray-900">{reportData?.attendanceStats?.averageAttendanceRate || 0}%</p>
                       </CardBody>
                     </Card>
                   </div>
 
-                  {/* Department Performance Table */}
+                  {/* Attendance by Type */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Attendance by Type</h3>
+                      <div className="space-y-3">
+                        {(reportData?.attendanceStats?.attendanceByType || []).length > 0 ? (
+                          reportData?.attendanceStats?.attendanceByType.map((item) => (
+                            <div key={item.type} className="flex justify-between items-center">
+                              <span className="text-gray-600">{item.type}</span>
+                              <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-500">{item.sessions} sessions</span>
+                                <span className="font-medium">{item.presentCount} present</span>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium">{item.rate}%</span>
+                                  <div className="w-20 h-2 bg-gray-200 rounded-full">
+                                    <div
+                                      className={`h-2 rounded-full ${
+                                        item.rate >= 80 ? 'bg-green-600' : item.rate >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                                      }`}
+                                      style={{ width: `${item.rate}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">No attendance data available for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+
+                  {/* Recent Sessions Table */}
                   <Card className="mt-8">
                     <CardBody>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Department Performance Summary</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Attendance Sessions</h3>
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leader</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active %</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {(reportData?.departmentStats || [])
-                              .sort((a: DepartmentData, b: DepartmentData) => (b.totalIncome || 0) - (a.totalIncome || 0))
-                              .map((dept: DepartmentData) => (
-                              <tr key={dept.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">{dept.name}</div>
-                                  {dept.swahiliName && (
-                                    <div className="text-sm text-gray-500">{dept.swahiliName}</div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {dept.leader?.name || (
-                                    <span className="text-red-600 font-medium">No Leader</span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <div>{dept.memberCount}</div>
-                                  <div className="text-xs text-gray-500">({dept.activeMembers} active)</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <span className="text-sm text-gray-900 mr-2">
-                                      {dept.memberCount > 0 ? Math.round((dept.activeMembers / dept.memberCount) * 100) : 0}%
-                                    </span>
-                                    <div className="w-16 bg-gray-200 rounded-full h-2">
-                                      <div
-                                        className={`h-2 rounded-full ${
-                                          dept.memberCount > 0
-                                            ? (dept.activeMembers / dept.memberCount) >= 0.8
-                                              ? 'bg-green-600'
-                                              : (dept.activeMembers / dept.memberCount) >= 0.5
-                                                ? 'bg-yellow-600'
-                                                : 'bg-red-600'
-                                            : 'bg-gray-400'
-                                        }`}
-                                        style={{
-                                          width: dept.memberCount > 0
-                                            ? `${(dept.activeMembers / dept.memberCount) * 100}%`
-                                            : '0%'
-                                        }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
-                                  {formatCurrency(dept.totalIncome || 0)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
-                                  {formatCurrency(dept.totalExpenses || 0)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`text-sm font-medium ${
-                                    (dept.netAmount || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                                  }`}>
-                                    {formatCurrency(dept.netAmount || 0)}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <div>Events: {dept.recentEvents}</div>
-                                  <div>Transactions: {dept.recentTransactions || 0}</div>
-                                </td>
+                        {(reportData?.attendanceStats?.recentSessions || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Present</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {reportData?.attendanceStats?.recentSessions.map((session) => (
+                                <tr key={session.id} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {new Date(session.date).toLocaleDateString()}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {session.type}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                    {session.presentCount}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {session.totalMembers}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <span className={`text-sm font-medium mr-2 ${
+                                        session.rate >= 80 ? 'text-green-600' : session.rate >= 50 ? 'text-yellow-600' : 'text-red-600'
+                                      }`}>
+                                        {session.rate}%
+                                      </span>
+                                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className={`h-2 rounded-full ${
+                                            session.rate >= 80 ? 'bg-green-600' : session.rate >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                                          }`}
+                                          style={{ width: `${session.rate}%` }}
+                                        ></div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No attendance sessions recorded for this period</p>
+                        )}
                       </div>
                     </CardBody>
                   </Card>

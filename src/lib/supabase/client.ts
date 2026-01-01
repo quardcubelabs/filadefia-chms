@@ -27,8 +27,6 @@ export function createClient(): SupabaseClient | null {
         autoRefreshToken: true,
         detectSessionInUrl: true,
         flowType: 'pkce',
-        // Storage key for consistent session across tabs
-        storageKey: 'fcc-chms-auth',
       },
       global: {
         headers: {

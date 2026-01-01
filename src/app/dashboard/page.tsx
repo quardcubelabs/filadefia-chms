@@ -506,16 +506,13 @@ export default function DashboardPage() {
     return <DashboardLoading />;
   }
 
-  // If unauthenticated, redirect to login instead of showing loading
+  // If unauthenticated, show loading while useEffect handles redirect
   if (!user && status === AuthStatus.UNAUTHENTICATED) {
-    router.replace('/login');
     return <DashboardLoading />;
   }
 
-  // Show loading only briefly while department leader is being redirected
+  // Show loading while department leader is being redirected (useEffect handles the redirect)
   if (isDepartmentLeader && departmentId && !deptAccessLoading) {
-    // Force redirect if it hasn't happened yet
-    router.replace(`/departments/${departmentId}`);
     return <DashboardLoading />;
   }
 

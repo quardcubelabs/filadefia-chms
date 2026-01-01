@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ===================================
+   GLOBAL OUTLINE/FOCUS RESET
+   Prevent Chrome yellow focus rings
+   =================================== */
+*, *::before, *::after {
+  outline-color: transparent !important;
+}
+
 :root {
   /* FCC Church Theme Colors */
   --background: 255 255 255;
@@ -172,13 +180,44 @@ body {
   display: none;  /* Chrome, Safari and Opera */
 }
 
+/* ===========================================
+   COMPREHENSIVE BROWSER FOCUS STYLE RESET
+   Removes yellow/orange outlines in Chrome
+   =========================================== */
+
+/* Reset ALL focus styles globally */
+*:focus {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
 /* Override browser default form focus styles */
 input:focus,
 select:focus,
 textarea:focus,
-button:focus {
+button:focus,
+a:focus,
+div:focus,
+[tabindex]:focus {
   outline: none !important;
+  outline-color: transparent !important;
   box-shadow: none !important;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+div:focus-visible,
+[tabindex]:focus-visible {
+  outline: none !important;
+  outline-color: transparent !important;
 }
 
 /* Ensure consistent blue focus for all form elements */
@@ -189,11 +228,29 @@ input[type="search"]:focus,
 input[type="url"]:focus,
 input[type="tel"]:focus,
 input[type="number"]:focus,
+input[type="date"]:focus,
 select:focus,
 textarea:focus {
   outline: none !important;
+  outline-color: transparent !important;
   border-color: rgb(37 99 235) !important; /* Blue-600 */
   box-shadow: 0 0 0 2px rgb(37 99 235 / 0.2) !important; /* Blue focus ring */
+}
+
+/* Remove Chrome's default yellow focus ring on buttons */
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible {
+  outline: none !important;
+  outline-color: transparent !important;
+}
+
+/* Remove focus styles on interactive elements */
+summary:focus,
+details:focus,
+[contenteditable]:focus {
+  outline: none !important;
 }
 
 /* Remove any yellow/brown autocomplete styles in Chrome */

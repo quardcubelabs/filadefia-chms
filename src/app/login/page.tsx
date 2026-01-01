@@ -21,17 +21,23 @@ function LoginForm() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log('Login page auth state:', { status, user: !!user, loading: status === AuthStatus.LOADING });
-    if (status === AuthStatus.AUTHENTICATED && user) {
+    console.log('Login page auth state:', { status, user: !!user, loading: status === AuthStatus.LOADING, hasRedirected });
+    
+    // Only redirect once and only when fully authenticated
+    if (!hasRedirected && status === AuthStatus.AUTHENTICATED && user) {
+      setHasRedirected(true);
       const redirect = searchParams.get('redirect') || '/dashboard';
       console.log('Login page useEffect: redirecting authenticated user to:', redirect);
-      router.replace(redirect);
+      // Small delay to ensure session cookies are set
+      setTimeout(() => {
+        router.replace(redirect);
+      }, 100);
     } else if (status === AuthStatus.UNAUTHENTICATED) {
       console.log('Login page: User is unauthenticated, staying on login page');
     } else if (status === AuthStatus.LOADING) {
       console.log('Login page: Auth status is loading, waiting...');
     }
-  }, [status, user, router, searchParams]);
+  }, [status, user, router, searchParams, hasRedirected]);
 
   // Check if forced logout is needed (for Firefox session issues)
   useEffect(() => {
@@ -91,55 +97,20 @@ function LoginForm() {
 
       console.log('Login successful, user:', data.user.id);
 
-      // Wait a moment for session to be established
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Get user profile to determine role and department
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, department_id, first_name, last_name')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (profileError) {
-        console.log('Profile not found, will be created. Redirecting to dashboard...');
-        // Profile will be created by AuthContext, redirect to dashboard
-        router.replace('/dashboard');
-        return;
-      }
-
-      console.log('User profile:', profile);
-
-      // REDIRECT BASED ON ROLE
-      if (profile.role === 'department_leader') {
-        // Check if they have a department assigned
-        let departmentId = profile.department_id;
-        
-        // If no department_id in profile, check departments table
-        if (!departmentId && supabase) {
-          const { data: deptData, error: deptError } = await supabase
-            .from('departments')
-            .select('id, name')
-            .eq('leader_user_id', data.user.id)
-            .eq('is_active', true)
-            .single();
-
-          if (deptData && !deptError) {
-            departmentId = deptData.id;
-          }
+      // Let AuthContext handle the state change via onAuthStateChange
+      // The useEffect above will handle the redirect once status becomes AUTHENTICATED
+      // Keep loading state until AuthContext updates
+      console.log('Waiting for AuthContext to update...');
+      
+      // The redirect will happen automatically via the useEffect when status changes to AUTHENTICATED
+      // Safety timeout: if redirect doesn't happen in 5 seconds, manually redirect
+      setTimeout(() => {
+        if (!hasRedirected) {
+          console.log('Safety timeout: forcing redirect to dashboard');
+          const redirect = searchParams.get('redirect') || '/dashboard';
+          router.replace(redirect);
         }
-
-        if (departmentId) {
-          console.log('Login: Redirecting department leader to:', `/departments/${departmentId}`);
-          router.replace(`/departments/${departmentId}`);
-          return;
-        }
-      }
-
-      // Default redirect for admins, pastors, or leaders without departments
-      const redirect = searchParams.get('redirect') || '/dashboard';
-      console.log('Login: Redirecting user to:', redirect);
-      router.replace(redirect);
+      }, 5000);
     } catch (error: any) {
       console.error('Login exception:', error);
       if (error?.message?.includes('Failed to fetch')) {
