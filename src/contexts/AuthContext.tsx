@@ -286,14 +286,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     let mounted = true;
     
-    // Safety timeout - don't stay in loading state forever (max 10 seconds)
+    // Safety timeout - don't stay in loading state forever (reduced to 5 seconds for better mobile experience)
     const safetyTimeout = setTimeout(() => {
       if (mounted && status === AuthStatus.LOADING) {
-        console.warn('Auth initialization timed out after 10s, setting unauthenticated');
+        console.warn('Auth initialization timed out after 5s, setting unauthenticated');
         clearAuthState();
         setIsInitialized(true);
       }
-    }, 10000);
+    }, 5000);
 
     const initializeAuth = async () => {
       try {

@@ -687,7 +687,7 @@ export default function MembersPage() {
 
         {/* Members Table */}
         <Card variant="default">
-          <CardBody className="p-6">
+          <CardBody className="p-3 sm:p-6">
             {loading ? (
               <Loading />
             ) : filteredMembers.length === 0 ? (
@@ -702,55 +702,56 @@ export default function MembersPage() {
                 }}
               />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                <table className="min-w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Member #</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Phone</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Joined</th>
-                      <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Member #</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Name</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">Phone</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap hidden md:table-cell">Joined</th>
+                      <th className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredMembers.map(member => (
                       <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4">
-                          <span className="font-mono text-sm text-gray-900">{member.member_number}</span>
+                        <td className="py-2 sm:py-4 px-2 sm:px-4">
+                          <span className="font-mono text-xs sm:text-sm text-gray-900">{member.member_number}</span>
                         </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center space-x-3">
+                        <td className="py-2 sm:py-4 px-2 sm:px-4">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
                             <Avatar
                               src={member.photo_url}
                               alt={`${member.first_name} ${member.last_name}`}
-                              size="md"
+                              size="sm"
                             />
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {member.first_name} {member.middle_name && `${member.middle_name} `}{member.last_name}
+                            <div className="min-w-0">
+                              <p className="font-medium text-xs sm:text-sm text-gray-900 truncate">
+                                {member.first_name} {member.last_name}
                               </p>
                               {member.email && (
-                                <p className="text-sm text-gray-500">{member.email}</p>
+                                <p className="text-xs text-gray-500 truncate hidden sm:block">{member.email}</p>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                            {member.phone}
+                        <td className="py-2 sm:py-4 px-2 sm:px-4 hidden sm:table-cell">
+                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                            <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-gray-400" />
+                            <span className="truncate">{member.phone}</span>
                           </div>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-2 sm:py-4 px-2 sm:px-4">
                           {getStatusBadge(member.status)}
                         </td>
-                        <td className="py-4 px-4 text-sm text-gray-600">
+                        <td className="py-2 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">
                           {new Date(member.membership_date).toLocaleDateString()}
                         </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center justify-end space-x-2">
+                        <td className="py-2 sm:py-4 px-2 sm:px-4">
+                          <div className="flex items-center justify-end space-x-1 sm:space-x-2">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -786,6 +787,7 @@ export default function MembersPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </CardBody>

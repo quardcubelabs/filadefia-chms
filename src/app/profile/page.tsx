@@ -276,16 +276,17 @@ export default function ProfilePage() {
 
                       {/* Bio */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Bio</label>
                         {isEditing ? (
                           <TextArea
                             value={profileForm.bio}
                             onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
                             placeholder="Tell us about yourself..."
                             rows={4}
+                            className="text-sm"
                           />
                         ) : (
-                          <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md min-h-[100px]">
+                          <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md min-h-[80px] sm:min-h-[100px] text-sm">
                             {profileForm.bio || 'No bio provided'}
                           </p>
                         )}
@@ -295,9 +296,9 @@ export default function ProfilePage() {
                 </Card>
 
                 {/* Account Information Card */}
-                <Card className="mt-6">
-                  <CardBody>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Account Information</h3>
+                <Card className="mt-4 sm:mt-6">
+                  <CardBody className="p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Account Information</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="flex items-center space-x-3">

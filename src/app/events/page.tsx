@@ -924,7 +924,7 @@ export default function EventsPage() {
           )}
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:space-x-3 mt-4 sm:mt-6">
           <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
             Cancel
           </Button>
@@ -958,7 +958,7 @@ export default function EventsPage() {
             rows={3}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Event Type"
               value={formData.event_type}
@@ -999,7 +999,7 @@ export default function EventsPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="Start Date & Time"
               type="datetime-local"
@@ -1024,7 +1024,7 @@ export default function EventsPage() {
             required
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="Max Attendees (Optional)"
               type="number"
@@ -1064,7 +1064,7 @@ export default function EventsPage() {
           )}
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:space-x-3 mt-6">
           <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
             Cancel
           </Button>

@@ -149,17 +149,17 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       {/* Photo Upload */}
-      <div className="flex items-center space-x-6">
-        <div className="h-24 w-24 rounded-full bg-gradient-to-br from-fcc-blue-500 to-fcc-blue-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-center sm:space-x-6 space-y-4 sm:space-y-0">
+        <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-fcc-blue-500 to-fcc-blue-600 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold overflow-hidden flex-shrink-0">
           {formData.photo_url ? (
             <img src={formData.photo_url} alt="Member" className="h-full w-full object-cover" />
           ) : (
-            <User className="h-12 w-12" />
+            <User className="h-10 w-10 sm:h-12 sm:w-12" />
           )}
         </div>
-        <div>
+        <div className="text-center sm:text-left">
           <label className="block">
             <span className="sr-only">Choose photo</span>
             <input
@@ -167,9 +167,9 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
               accept="image/*"
               onChange={handlePhotoUpload}
               className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
+                file:mr-3 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4
                 file:rounded-lg file:border-0
-                file:text-sm file:font-semibold
+                file:text-xs sm:file:text-sm file:font-semibold
                 file:bg-fcc-blue-50 file:text-fcc-blue-700
                 hover:file:bg-fcc-blue-100
                 cursor-pointer"
@@ -181,11 +181,11 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
 
       {/* Personal Information */}
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <User className="h-5 w-5 mr-2 text-fcc-blue-600" />
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Personal Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <Input
             label="First Name"
             name="first_name"
@@ -211,7 +211,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-3 sm:mt-4">
           <Select
             label="Gender"
             name="gender"
@@ -255,11 +255,11 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
 
       {/* Contact Information */}
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Phone className="h-5 w-5 mr-2 text-fcc-blue-600" />
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <Phone className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Contact Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <Input
             label="Phone Number"
             name="phone"
@@ -283,7 +283,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
           />
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           <TextArea
             label="Physical Address"
             name="address"
@@ -299,11 +299,11 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
 
       {/* Employment Information */}
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Briefcase className="h-5 w-5 mr-2 text-fcc-blue-600" />
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Employment Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <Input
             label="Occupation"
             name="occupation"
@@ -325,11 +325,11 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
 
       {/* Emergency Contact */}
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <UsersIcon className="h-5 w-5 mr-2 text-fcc-blue-600" />
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Emergency Contact
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <Input
             label="Contact Name"
             name="emergency_contact_name"
@@ -355,11 +355,11 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
 
       {/* Membership Information */}
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Calendar className="h-5 w-5 mr-2 text-fcc-blue-600" />
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Membership Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <Input
             label="Baptism Date"
             name="baptism_date"
@@ -397,14 +397,14 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
 
       {/* Department Assignment */}
       <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <Building2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
           Department Assignment
         </h3>
         
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Department Selection */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="flex-1">
               <Select
                 label="Select Department"
@@ -421,7 +421,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
                 fullWidth
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end sm:mt-0 mt-0">
               <Button
                 type="button"
                 variant="outline"
@@ -494,7 +494,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Form Actions */}
-      <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
         <Button
           type="button"
           variant="ghost"

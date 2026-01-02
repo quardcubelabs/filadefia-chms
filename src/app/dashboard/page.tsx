@@ -506,23 +506,34 @@ export default function DashboardPage() {
   const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
   const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
 
-  // Show loading screen while authenticating or checking department access - prevents blank pages and flickering
-  if (authLoading || status === AuthStatus.LOADING || deptAccessLoading) {
+  // Show loading screen ONLY while auth is initializing (not when unauthenticated)
+  if (authLoading || status === AuthStatus.LOADING) {
     return <DashboardLoading />;
   }
 
-  // Show loading while waiting for redirect (user is null but status might not be updated yet)
-  if (!user && status === AuthStatus.AUTHENTICATED) {
-    return <DashboardLoading />;
+  // If definitively unauthenticated, redirect immediately (don't show loading)
+  if (status === AuthStatus.UNAUTHENTICATED || !user) {
+    // Trigger redirect via useEffect, but show minimal loading
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
+          <p className="mt-3 text-gray-600 text-sm">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
-  // If unauthenticated, show loading while useEffect handles redirect
-  if (!user && status === AuthStatus.UNAUTHENTICATED) {
+  // Wait for department access check only if authenticated
+  if (deptAccessLoading) {
     return <DashboardLoading />;
   }
 
   // Show loading while department leader is being redirected (useEffect handles the redirect)
-  if (isDepartmentLeader && departmentId && !deptAccessLoading) {
+  if (isDepartmentLeader && departmentId) {
     return <DashboardLoading />;
   }
 

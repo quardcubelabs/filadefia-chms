@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from './useAuth';
+import { useAuth, AuthStatus } from './useAuth';
 import { useState, useEffect, useRef } from 'react';
 
 export interface DepartmentAccess {
@@ -13,7 +13,7 @@ export interface DepartmentAccess {
 }
 
 export function useDepartmentAccess(): DepartmentAccess {
-  const { user, supabase } = useAuth();
+  const { user, supabase, status } = useAuth();
   const [departmentInfo, setDepartmentInfo] = useState<{
     id: string | null;
     name: string | null;
@@ -25,6 +25,12 @@ export function useDepartmentAccess(): DepartmentAccess {
   const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // If auth status is definitively unauthenticated, stop loading immediately
+    if (status === AuthStatus.UNAUTHENTICATED) {
+      setLoading(false);
+      return;
+    }
+
     const loadDepartmentAccess = async () => {
       // Skip if no user or supabase
       if (!user || !supabase) {
@@ -32,10 +38,15 @@ export function useDepartmentAccess(): DepartmentAccess {
         return;
       }
       
-      // If profile is still loading (null but user exists), keep loading state
+      // If profile is still loading (null but user exists), wait a bit then proceed
+      // This prevents infinite loading on slow networks
       if (!user.profile) {
-        // Don't set loading to false yet - profile might still be loading
-        return;
+        // Set a timeout to stop waiting for profile after 5 seconds
+        const timeoutId = setTimeout(() => {
+          setLoading(false);
+        }, 5000);
+        
+        return () => clearTimeout(timeoutId);
       }
       
       // Prevent duplicate fetches for same user

@@ -871,78 +871,78 @@ export default function DepartmentDashboardPage() {
                 {/* Stats Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {/* Total Members Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <Users className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2.5 sm:p-4 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-xl sm:rounded-2xl mb-3 sm:mb-4`}>
+                      <Users className={`h-5 w-5 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-2`}>Total Members</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-xs sm:text-sm ${darkMode ? 'text-blue-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Total Members</p>
+                    <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {members.length}
                     </h3>
                   </div>
 
                   {/* Leadership Team Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <Crown className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2.5 sm:p-4 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-xl sm:rounded-2xl mb-3 sm:mb-4`}>
+                      <Crown className={`h-5 w-5 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-2`}>Leadership</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-xs sm:text-sm ${darkMode ? 'text-purple-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Leadership</p>
+                    <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {leadershipMembers.length}
                     </h3>
                   </div>
 
                   {/* Active Members Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <UserCheck className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-green-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2.5 sm:p-4 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-xl sm:rounded-2xl mb-3 sm:mb-4`}>
+                      <UserCheck className={`h-5 w-5 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-green-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-2`}>Active Members</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-xs sm:text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Active Members</p>
+                    <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {members.filter(m => m.member && m.member.status === 'active').length}
                     </h3>
                   </div>
 
                   {/* Department Income Card */}
-                  <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-3xl p-6 shadow-sm`}>
-                    <div className={`inline-flex p-4 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-2xl mb-4`}>
-                      <DollarSign className={`h-7 w-7 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
+                  <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm`}>
+                    <div className={`inline-flex p-2.5 sm:p-4 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-xl sm:rounded-2xl mb-3 sm:mb-4`}>
+                      <DollarSign className={`h-5 w-5 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
                     </div>
-                    <p className={`text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-2`}>Total Income</p>
-                    <h3 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-xs sm:text-sm ${darkMode ? 'text-cyan-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Total Income</p>
+                    <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {`TZS ${(financialData.totalDepartmentIncome / 1000000).toFixed(1)}M`}
                     </h3>
                   </div>
                 </div>
 
                 {/* Members by Age Distribution Chart */}
-                <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>Members by Age</h3>
-                    <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
+                <div className={`${cardBg} rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border ${borderColor} shadow-sm`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6 md:mb-8">
+                    <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${textPrimary}`}>Members by Age</h3>
+                    <select className={`px-4 sm:px-6 py-2 sm:py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
                       <option>All Time</option>
                       <option>This Year</option>
                     </select>
                   </div>
 
-                  <div className="flex items-center justify-between gap-8">
+                  <div className="flex flex-col lg:flex-row items-center lg:items-center justify-between gap-4 sm:gap-6 lg:gap-8">
                     {/* Left side - Total Members */}
-                    <div className="flex-shrink-0">
-                      <p className={`text-sm ${textSecondary} mb-3`}>Total Members</p>
-                      <p className={`text-4xl font-bold ${textPrimary}`}>
+                    <div className="flex-shrink-0 text-center lg:text-left w-full lg:w-auto">
+                      <p className={`text-xs sm:text-sm ${textSecondary} mb-2 sm:mb-3`}>Total Members</p>
+                      <p className={`text-2xl sm:text-3xl md:text-4xl font-bold ${textPrimary}`}>
                         {`${members.length.toLocaleString()} People`}
                       </p>
                     </div>
 
                     {/* Right side - Donut Chart and Legend */}
-                    <div className="flex items-center gap-12">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 lg:gap-12 w-full lg:w-auto">
                       {/* Donut Chart */}
                       <div className="relative flex items-center justify-center flex-shrink-0">
                         {(() => {
                           const totalMembers = members.length;
                           if (totalMembers === 0) {
                             return (
-                              <div className="w-[200px] h-[200px] flex items-center justify-center">
+                              <div className="w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px] flex items-center justify-center">
                                 <p className={textSecondary}>No data</p>
                               </div>
                             );
@@ -957,7 +957,7 @@ export default function DepartmentDashboardPage() {
                           const seniorsRatio = membersByAge.seniors / totalMembers;
 
                           return (
-                            <svg className="transform -rotate-90" width="200" height="200" viewBox="0 0 200 200">
+                            <svg className="transform -rotate-90 w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px]" viewBox="0 0 200 200">
                               <defs>
                                 <linearGradient id="deptMemberGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
@@ -1032,37 +1032,37 @@ export default function DepartmentDashboardPage() {
                         
                         {/* Center text */}
                         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                          <p className={`text-xs ${textSecondary} mb-1`}>Active</p>
-                          <p className="text-3xl font-bold text-blue-600">100%</p>
+                          <p className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>Active</p>
+                          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600">100%</p>
                         </div>
                       </div>
 
                       {/* Legend */}
-                      <div className="flex flex-col space-y-4">
-                        <div className="flex items-center justify-between space-x-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 rounded-sm bg-cyan-400 flex-shrink-0"></div>
-                            <span className={`text-sm ${textSecondary}`}>Youth (15-35)</span>
+                      <div className="flex flex-col space-y-2 sm:space-y-3 md:space-y-4">
+                        <div className="flex items-center justify-between gap-3 sm:gap-4 md:space-x-6">
+                          <div className="flex items-center gap-2 sm:space-x-3">
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-cyan-400 flex-shrink-0"></div>
+                            <span className={`text-xs sm:text-sm ${textSecondary}`}>Youth (15-35)</span>
                           </div>
-                          <span className={`text-sm font-semibold ${textPrimary}`}>
+                          <span className={`text-xs sm:text-sm font-semibold ${textPrimary}`}>
                             {`${membersByAge.youth} (${members.length > 0 ? Math.round((membersByAge.youth / members.length) * 100) : 0}%)`}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between space-x-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                            <span className={`text-sm ${textSecondary}`}>Adults (36-60)</span>
+                        <div className="flex items-center justify-between gap-3 sm:gap-4 md:space-x-6">
+                          <div className="flex items-center gap-2 sm:space-x-3">
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-blue-600 flex-shrink-0"></div>
+                            <span className={`text-xs sm:text-sm ${textSecondary}`}>Adults (36-60)</span>
                           </div>
-                          <span className={`text-sm font-semibold ${textPrimary}`}>
+                          <span className={`text-xs sm:text-sm font-semibold ${textPrimary}`}>
                             {`${membersByAge.adults} (${members.length > 0 ? Math.round((membersByAge.adults / members.length) * 100) : 0}%)`}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between space-x-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 rounded-sm bg-red-500 flex-shrink-0"></div>
-                            <span className={`text-sm ${textSecondary}`}>Seniors (61+)</span>
+                        <div className="flex items-center justify-between gap-3 sm:gap-4 md:space-x-6">
+                          <div className="flex items-center gap-2 sm:space-x-3">
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-red-500 flex-shrink-0"></div>
+                            <span className={`text-xs sm:text-sm ${textSecondary}`}>Seniors (61+)</span>
                           </div>
-                          <span className={`text-sm font-semibold ${textPrimary}`}>
+                          <span className={`text-xs sm:text-sm font-semibold ${textPrimary}`}>
                             {`${membersByAge.seniors} (${members.length > 0 ? Math.round((membersByAge.seniors / members.length) * 100) : 0}%)`}
                           </span>
                         </div>
@@ -1072,10 +1072,10 @@ export default function DepartmentDashboardPage() {
                 </div>
 
                 {/* Finances Chart */}
-                <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
+                <div className={`${cardBg} rounded-2xl sm:rounded-3xl p-4 sm:p-6 border ${borderColor} shadow-sm`}>
                   {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className={`text-xl font-bold ${textPrimary}`}>Finances</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+                    <h3 className={`text-lg sm:text-xl font-bold ${textPrimary}`}>Finances</h3>
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <div className="w-2.5 h-2.5 rounded-sm bg-blue-600"></div>
@@ -1089,31 +1089,31 @@ export default function DepartmentDashboardPage() {
                   </div>
 
                   {/* Stats Row */}
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <p className={`text-xs ${textSecondary} mb-1`}>Total Income</p>
-                      <p className={`text-2xl font-bold ${textPrimary}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
+                    <div className="text-center sm:text-left">
+                      <p className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>Total Income</p>
+                      <p className={`text-lg sm:text-xl md:text-2xl font-bold ${textPrimary}`}>
                         {`TZS ${(financialData.totalDepartmentIncome / 1000).toFixed(0)}k`}
                       </p>
                     </div>
-                    <div>
-                      <p className={`text-xs ${textSecondary} mb-1`}>Total Expenses</p>
-                      <p className={`text-2xl font-bold ${textPrimary}`}>
+                    <div className="text-center">
+                      <p className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>Total Expenses</p>
+                      <p className={`text-lg sm:text-xl md:text-2xl font-bold ${textPrimary}`}>
                         {`TZS ${(financialData.totalDepartmentExpenses / 1000).toFixed(0)}k`}
                       </p>
                     </div>
-                    <div>
-                      <p className={`text-xs ${textSecondary} mb-1`}>Net Balance</p>
-                      <p className={`text-2xl font-bold ${(financialData.totalDepartmentIncome - financialData.totalDepartmentExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className="text-center sm:text-right">
+                      <p className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>Net Balance</p>
+                      <p className={`text-lg sm:text-xl md:text-2xl font-bold ${(financialData.totalDepartmentIncome - financialData.totalDepartmentExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {`TZS ${((financialData.totalDepartmentIncome - financialData.totalDepartmentExpenses) / 1000).toFixed(0)}k`}
                       </p>
                     </div>
                   </div>
 
                   {/* Bar Chart */}
-                  <div className="relative" style={{ height: '180px' }}>
+                  <div className="relative h-32 sm:h-40 md:h-[180px]">
                     {/* Bar Chart Container */}
-                    <div className="h-full flex items-end justify-between gap-4">
+                    <div className="h-full flex items-end justify-between gap-1 sm:gap-2 md:gap-4">
                       {(financialData.weeklyFinances.length > 0 ? financialData.weeklyFinances : [
                         { week: 'W1', income: 0, expenses: 0, label: '01' },
                         { week: 'W2', income: 0, expenses: 0, label: '02' },

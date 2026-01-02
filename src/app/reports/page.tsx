@@ -1655,15 +1655,15 @@ export default function ReportsPage() {
       <div className="max-w-7xl">
         {/* Department Leader Access Notification */}
         {isDepartmentLeader && departmentName && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <Building2 className="h-5 w-5 text-red-600 mr-2" />
+          <div className="mb-4 sm:mb-8 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start sm:items-center">
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
               <div>
-                <h3 className="text-sm font-medium text-red-800">
+                <h3 className="text-xs sm:text-sm font-medium text-red-800">
                   Department Access: {departmentName}
                 </h3>
-                <p className="text-sm text-red-700">
-                  You have access to reports for your department only. Select "Comprehensive" to view all available data for your department.
+                <p className="text-xs sm:text-sm text-red-700 mt-0.5">
+                  You have access to reports for your department only.
                 </p>
               </div>
             </div>
