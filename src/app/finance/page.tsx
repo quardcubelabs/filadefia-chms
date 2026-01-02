@@ -41,8 +41,21 @@ import {
   BarChart3,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 interface FinancialTransaction {
   id: string;
@@ -119,6 +132,7 @@ export default function FinancePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // Track if initial data has been loaded
   
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,6 +142,10 @@ export default function FinancePage() {
   const [filterVerified, setFilterVerified] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  
+  // Chart period filters
+  const [trendChartPeriod, setTrendChartPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+  const [incomeChartPeriod, setIncomeChartPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -158,19 +176,16 @@ export default function FinancePage() {
       return;
     }
     
-    // Only load data once both auth and department access are resolved
-    if (user && !authLoading && !departmentLoading) {
-      console.log('🔄 Loading finance data - auth and department ready');
-      console.log('  - User:', user.email);
-      console.log('  - isDepartmentLeader:', isDepartmentLeader);
-      console.log('  - departmentId:', departmentId);
-      console.log('  - departmentName:', departmentName);
-      
+    // Only load data once when both auth and department access are resolved
+    // And only if we haven't already loaded the data
+    // Also wait for profile to be loaded (user.profile not null)
+    if (user && user.profile && !authLoading && !departmentLoading && !dataLoaded) {
+      setDataLoaded(true); // Mark as loaded to prevent re-runs
       loadTransactions();
       loadDepartments();
       loadMembers();
     }
-  }, [user, authLoading, departmentLoading]); // Removed isDepartmentLeader and departmentId to prevent re-loading
+  }, [user, authLoading, departmentLoading, dataLoaded]); // Added dataLoaded to dependencies
 
   const loadTransactions = async () => {
     if (!supabase || !user) {
@@ -181,11 +196,6 @@ export default function FinancePage() {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('Loading financial transactions...');
-      console.log('User role:', user.profile?.role);
-      console.log('Is Department Leader:', isDepartmentLeader);
-      console.log('Department:', departmentName);
       
       // Build query - filter by department if user is a department leader
       let query = supabase
@@ -198,7 +208,6 @@ export default function FinancePage() {
 
       // If user is a department leader, filter by their department
       if (isDepartmentLeader && departmentId) {
-        console.log('Filtering by department ID:', departmentId);
         query = query.eq('department_id', departmentId);
       }
 
@@ -209,7 +218,6 @@ export default function FinancePage() {
         throw error;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} transactions (filtered by RLS)`);
       setTransactions(data || []);
       calculateSummary(data || []);
       
@@ -853,6 +861,561 @@ export default function FinancePage() {
                 </div>
               </CardBody>
             </Card>
+
+            {/* Financial Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Income vs Expense Line Chart */}
+              <div className="bg-[#F1F5F9] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-6">
+                    <h3 className="text-xl font-semibold text-gray-900">Financial Trend</h3>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-[#22D3EE]"></div>
+                        <span className="text-sm text-gray-600">Income</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-[#2563EB]"></div>
+                        <span className="text-sm text-gray-600">Expense</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <select 
+                      value={trendChartPeriod}
+                      onChange={(e) => setTrendChartPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
+                      className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={(() => {
+                        const incomeTypes = ['tithe', 'offering', 'donation', 'project', 'pledge', 'mission'];
+                        const expenseTypes = ['expense', 'welfare'];
+                        
+                        if (trendChartPeriod === 'weekly') {
+                          // Weekly: Show data for each day of the current week
+                          const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                          const weekData = days.map((day, index) => {
+                            const today = new Date();
+                            const dayOfWeek = today.getDay();
+                            const diff = index - dayOfWeek;
+                            const targetDate = new Date(today);
+                            targetDate.setDate(today.getDate() + diff);
+                            const dateStr = targetDate.toISOString().split('T')[0];
+                            
+                            const dayIncome = transactions
+                              .filter(t => t.date === dateStr && incomeTypes.includes(t.transaction_type))
+                              .reduce((sum, t) => sum + Number(t.amount), 0);
+                            
+                            const dayExpense = transactions
+                              .filter(t => t.date === dateStr && expenseTypes.includes(t.transaction_type))
+                              .reduce((sum, t) => sum + Number(t.amount), 0);
+                            
+                            return {
+                              name: day,
+                              income: dayIncome / 1000,
+                              expense: dayExpense / 1000
+                            };
+                          });
+                          
+                          const hasData = weekData.some(d => d.income > 0 || d.expense > 0);
+                          if (!hasData) {
+                            return [
+                              { name: 'Sun', income: 450, expense: 320 },
+                              { name: 'Mon', income: 280, expense: 180 },
+                              { name: 'Tue', income: 520, expense: 420 },
+                              { name: 'Wed', income: 380, expense: 280 },
+                              { name: 'Thu', income: 650, expense: 350 },
+                              { name: 'Fri', income: 420, expense: 520 },
+                              { name: 'Sat', income: 580, expense: 380 }
+                            ];
+                          }
+                          return weekData;
+                        } else if (trendChartPeriod === 'monthly') {
+                          // Monthly: Show data for each week of the current month
+                          const today = new Date();
+                          const currentMonth = today.getMonth();
+                          const currentYear = today.getFullYear();
+                          const weeksInMonth = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                          
+                          const monthData = weeksInMonth.map((week, weekIndex) => {
+                            const weekStart = new Date(currentYear, currentMonth, 1 + (weekIndex * 7));
+                            const weekEnd = new Date(currentYear, currentMonth, Math.min(7 + (weekIndex * 7), new Date(currentYear, currentMonth + 1, 0).getDate()));
+                            
+                            const weekIncome = transactions
+                              .filter(t => {
+                                const tDate = new Date(t.date);
+                                return tDate >= weekStart && tDate <= weekEnd && incomeTypes.includes(t.transaction_type);
+                              })
+                              .reduce((sum, t) => sum + Number(t.amount), 0);
+                            
+                            const weekExpense = transactions
+                              .filter(t => {
+                                const tDate = new Date(t.date);
+                                return tDate >= weekStart && tDate <= weekEnd && expenseTypes.includes(t.transaction_type);
+                              })
+                              .reduce((sum, t) => sum + Number(t.amount), 0);
+                            
+                            return {
+                              name: week,
+                              income: weekIncome / 1000,
+                              expense: weekExpense / 1000
+                            };
+                          });
+                          
+                          const hasData = monthData.some(d => d.income > 0 || d.expense > 0);
+                          if (!hasData) {
+                            return [
+                              { name: 'Week 1', income: 1200, expense: 800 },
+                              { name: 'Week 2', income: 1500, expense: 1100 },
+                              { name: 'Week 3', income: 1800, expense: 1200 },
+                              { name: 'Week 4', income: 1400, expense: 900 }
+                            ];
+                          }
+                          return monthData;
+                        } else {
+                          // Yearly: Show data for each month of the current year
+                          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                          const currentYear = new Date().getFullYear();
+                          
+                          const yearData = months.map((month, monthIndex) => {
+                            const monthIncome = transactions
+                              .filter(t => {
+                                const tDate = new Date(t.date);
+                                return tDate.getFullYear() === currentYear && tDate.getMonth() === monthIndex && incomeTypes.includes(t.transaction_type);
+                              })
+                              .reduce((sum, t) => sum + Number(t.amount), 0);
+                            
+                            const monthExpense = transactions
+                              .filter(t => {
+                                const tDate = new Date(t.date);
+                                return tDate.getFullYear() === currentYear && tDate.getMonth() === monthIndex && expenseTypes.includes(t.transaction_type);
+                              })
+                              .reduce((sum, t) => sum + Number(t.amount), 0);
+                            
+                            return {
+                              name: month,
+                              income: monthIncome / 1000000, // Convert to millions for yearly
+                              expense: monthExpense / 1000000
+                            };
+                          });
+                          
+                          const hasData = yearData.some(d => d.income > 0 || d.expense > 0);
+                          if (!hasData) {
+                            return [
+                              { name: 'Jan', income: 4.5, expense: 3.2 },
+                              { name: 'Feb', income: 5.2, expense: 3.8 },
+                              { name: 'Mar', income: 4.8, expense: 3.5 },
+                              { name: 'Apr', income: 6.1, expense: 4.2 },
+                              { name: 'May', income: 5.5, expense: 3.9 },
+                              { name: 'Jun', income: 6.8, expense: 4.5 },
+                              { name: 'Jul', income: 5.9, expense: 4.1 },
+                              { name: 'Aug', income: 6.2, expense: 4.3 },
+                              { name: 'Sep', income: 5.7, expense: 3.8 },
+                              { name: 'Oct', income: 6.5, expense: 4.6 },
+                              { name: 'Nov', income: 7.2, expense: 5.1 },
+                              { name: 'Dec', income: 8.5, expense: 6.2 }
+                            ];
+                          }
+                          return yearData;
+                        }
+                      })()}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                      />
+                      <YAxis hide />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 12px'
+                        }}
+                        labelStyle={{ color: '#9CA3AF', fontSize: 12 }}
+                        itemStyle={{ color: '#fff', fontSize: 14 }}
+                        formatter={(value: number, name: string) => [
+                          trendChartPeriod === 'yearly' 
+                            ? `TZS ${(value * 1000000).toLocaleString()}`
+                            : `TZS ${(value * 1000).toLocaleString()}`,
+                          name === 'income' ? 'Income' : 'Expense'
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="income"
+                        stroke="#22D3EE"
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6, fill: '#22D3EE', stroke: '#fff', strokeWidth: 2 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="expense"
+                        stroke="#2563EB"
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6, fill: '#2563EB', stroke: '#fff', strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Income Breakdown Donut Chart */}
+              <div className="bg-[#F1F5F9] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">Income (%)</h3>
+                  <div className="relative">
+                    <select 
+                      value={incomeChartPeriod}
+                      onChange={(e) => setIncomeChartPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
+                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 pr-7 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Total Income - Top */}
+                <div className="mb-3">
+                  <p className="text-[10px] sm:text-xs text-gray-500">Total Income ({incomeChartPeriod === 'weekly' ? 'This Week' : incomeChartPeriod === 'monthly' ? 'This Month' : 'This Year'})</p>
+                  <p className="text-base sm:text-lg font-bold text-gray-900">
+                    {(() => {
+                      const now = new Date();
+                      let startDate: Date;
+                      
+                      if (incomeChartPeriod === 'weekly') {
+                        const dayOfWeek = now.getDay();
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - dayOfWeek);
+                        startDate.setHours(0, 0, 0, 0);
+                      } else if (incomeChartPeriod === 'monthly') {
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                      } else {
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                      }
+                      
+                      const periodTransactions = transactions.filter(t => {
+                        const tDate = new Date(t.date);
+                        return tDate >= startDate && tDate <= now && t.transaction_type !== 'expense';
+                      });
+                      
+                      const periodTotal = periodTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+                      return `TZS ${periodTotal.toLocaleString()}`;
+                    })()}
+                  </p>
+                </div>
+
+                {/* Chart and Legend Row */}
+                <div className="flex items-center justify-center gap-4">
+                  {/* Donut Chart */}
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    {(() => {
+                      // Filter transactions by period
+                      const now = new Date();
+                      let startDate: Date;
+                      
+                      if (incomeChartPeriod === 'weekly') {
+                        const dayOfWeek = now.getDay();
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - dayOfWeek);
+                        startDate.setHours(0, 0, 0, 0);
+                      } else if (incomeChartPeriod === 'monthly') {
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                      } else {
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                      }
+                      
+                      const periodTransactions = transactions.filter(t => {
+                        const tDate = new Date(t.date);
+                        return tDate >= startDate && tDate <= now;
+                      });
+                      
+                      const offerings = periodTransactions
+                        .filter(t => t.transaction_type === 'offering')
+                        .reduce((sum, t) => sum + Number(t.amount), 0);
+                      const tithes = periodTransactions
+                        .filter(t => t.transaction_type === 'tithe')
+                        .reduce((sum, t) => sum + Number(t.amount), 0);
+                      const contributions = periodTransactions
+                        .filter(t => ['donation', 'project', 'pledge', 'mission'].includes(t.transaction_type))
+                        .reduce((sum, t) => sum + Number(t.amount), 0);
+                      
+                      const total = offerings + tithes + contributions;
+                      
+                      // Use sample data if no transactions
+                      const offeringsRatio = total === 0 ? 0.35 : offerings / total;
+                      const tithesRatio = total === 0 ? 0.45 : tithes / total;
+                      const contributionsRatio = total === 0 ? 0.20 : contributions / total;
+
+                      return (
+                        <svg className="transform -rotate-90 w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]" viewBox="0 0 200 200">
+                          <defs>
+                            <linearGradient id="incomeGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
+                              <stop offset="100%" style={{ stopColor: '#06b6d4', stopOpacity: 1 }} />
+                            </linearGradient>
+                            <linearGradient id="incomeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                              <stop offset="100%" style={{ stopColor: '#1d4ed8', stopOpacity: 1 }} />
+                            </linearGradient>
+                            <linearGradient id="incomeGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" style={{ stopColor: '#ec4899', stopOpacity: 1 }} />
+                              <stop offset="100%" style={{ stopColor: '#db2777', stopOpacity: 1 }} />
+                            </linearGradient>
+                          </defs>
+                          
+                          {/* Background circle */}
+                          <circle
+                            cx="100"
+                            cy="100"
+                            r="75"
+                            fill="none"
+                            stroke="#f5f5f5"
+                            strokeWidth="28"
+                          />
+                          
+                          {/* Offerings segment (Cyan) */}
+                          {offeringsRatio > 0 && (
+                            <circle
+                              cx="100"
+                              cy="100"
+                              r="80"
+                              fill="none"
+                              stroke="url(#incomeGradient1)"
+                              strokeWidth="32"
+                              strokeDasharray={`${2 * Math.PI * 80 * offeringsRatio} ${2 * Math.PI * 80 * (1 - offeringsRatio)}`}
+                              strokeLinecap="butt"
+                            />
+                          )}
+                          
+                          {/* Tithes segment (Blue) */}
+                          {tithesRatio > 0 && (
+                            <circle
+                              cx="100"
+                              cy="100"
+                              r="72"
+                              fill="none"
+                              stroke="url(#incomeGradient2)"
+                              strokeWidth="20"
+                              strokeDasharray={`${2 * Math.PI * 72 * tithesRatio} ${2 * Math.PI * 72 * (1 - tithesRatio)}`}
+                              strokeDashoffset={`${-2 * Math.PI * 72 * offeringsRatio}`}
+                              strokeLinecap="butt"
+                            />
+                          )}
+                          
+                          {/* Contributions segment (Pink) */}
+                          {contributionsRatio > 0 && (
+                            <circle
+                              cx="100"
+                              cy="100"
+                              r="76"
+                              fill="none"
+                              stroke="url(#incomeGradient3)"
+                              strokeWidth="28"
+                              strokeDasharray={`${2 * Math.PI * 76 * contributionsRatio} ${2 * Math.PI * 76 * (1 - contributionsRatio)}`}
+                              strokeDashoffset={`${-2 * Math.PI * 76 * (offeringsRatio + tithesRatio)}`}
+                              strokeLinecap="butt"
+                            />
+                          )}
+                        </svg>
+                      );
+                    })()}
+                    
+                    {/* Center text */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                      <p className="text-[9px] sm:text-[10px] text-gray-500">Tithes</p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                        {(() => {
+                          // Filter transactions by period
+                          const now = new Date();
+                          let startDate: Date;
+                          
+                          if (incomeChartPeriod === 'weekly') {
+                            const dayOfWeek = now.getDay();
+                            startDate = new Date(now);
+                            startDate.setDate(now.getDate() - dayOfWeek);
+                            startDate.setHours(0, 0, 0, 0);
+                          } else if (incomeChartPeriod === 'monthly') {
+                            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                          } else {
+                            startDate = new Date(now.getFullYear(), 0, 1);
+                          }
+                          
+                          const periodTransactions = transactions.filter(t => {
+                            const tDate = new Date(t.date);
+                            return tDate >= startDate && tDate <= now;
+                          });
+                          
+                          const offerings = periodTransactions
+                            .filter(t => t.transaction_type === 'offering')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const tithes = periodTransactions
+                            .filter(t => t.transaction_type === 'tithe')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const contributions = periodTransactions
+                            .filter(t => ['donation', 'project', 'pledge', 'mission'].includes(t.transaction_type))
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          
+                          const total = offerings + tithes + contributions;
+                          if (total === 0) return '0%';
+                          return `${Math.round((tithes / total) * 100)}%`;
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-cyan-400 flex-shrink-0"></div>
+                        <span className="text-xs text-gray-600">Offerings</span>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900">
+                        {(() => {
+                          // Filter transactions by period
+                          const now = new Date();
+                          let startDate: Date;
+                          
+                          if (incomeChartPeriod === 'weekly') {
+                            const dayOfWeek = now.getDay();
+                            startDate = new Date(now);
+                            startDate.setDate(now.getDate() - dayOfWeek);
+                            startDate.setHours(0, 0, 0, 0);
+                          } else if (incomeChartPeriod === 'monthly') {
+                            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                          } else {
+                            startDate = new Date(now.getFullYear(), 0, 1);
+                          }
+                          
+                          const periodTransactions = transactions.filter(t => {
+                            const tDate = new Date(t.date);
+                            return tDate >= startDate && tDate <= now;
+                          });
+                          
+                          const offerings = periodTransactions
+                            .filter(t => t.transaction_type === 'offering')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const tithes = periodTransactions
+                            .filter(t => t.transaction_type === 'tithe')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const contributions = periodTransactions
+                            .filter(t => ['donation', 'project', 'pledge', 'mission'].includes(t.transaction_type))
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          
+                          const total = offerings + tithes + contributions;
+                          if (total === 0) return '0%';
+                          return `${Math.round((offerings / total) * 100)}%`;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-blue-600 flex-shrink-0"></div>
+                        <span className="text-xs text-gray-600">Tithes</span>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900">
+                        {(() => {
+                          // Filter transactions by period
+                          const now = new Date();
+                          let startDate: Date;
+                          
+                          if (incomeChartPeriod === 'weekly') {
+                            const dayOfWeek = now.getDay();
+                            startDate = new Date(now);
+                            startDate.setDate(now.getDate() - dayOfWeek);
+                            startDate.setHours(0, 0, 0, 0);
+                          } else if (incomeChartPeriod === 'monthly') {
+                            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                          } else {
+                            startDate = new Date(now.getFullYear(), 0, 1);
+                          }
+                          
+                          const periodTransactions = transactions.filter(t => {
+                            const tDate = new Date(t.date);
+                            return tDate >= startDate && tDate <= now;
+                          });
+                          
+                          const offerings = periodTransactions
+                            .filter(t => t.transaction_type === 'offering')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const tithes = periodTransactions
+                            .filter(t => t.transaction_type === 'tithe')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const contributions = periodTransactions
+                            .filter(t => ['donation', 'project', 'pledge', 'mission'].includes(t.transaction_type))
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          
+                          const total = offerings + tithes + contributions;
+                          if (total === 0) return '0%';
+                          return `${Math.round((tithes / total) * 100)}%`;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-pink-500 flex-shrink-0"></div>
+                        <span className="text-xs text-gray-600">Contributions</span>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900">
+                        {(() => {
+                          // Filter transactions by period
+                          const now = new Date();
+                          let startDate: Date;
+                          
+                          if (incomeChartPeriod === 'weekly') {
+                            const dayOfWeek = now.getDay();
+                            startDate = new Date(now);
+                            startDate.setDate(now.getDate() - dayOfWeek);
+                            startDate.setHours(0, 0, 0, 0);
+                          } else if (incomeChartPeriod === 'monthly') {
+                            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                          } else {
+                            startDate = new Date(now.getFullYear(), 0, 1);
+                          }
+                          
+                          const periodTransactions = transactions.filter(t => {
+                            const tDate = new Date(t.date);
+                            return tDate >= startDate && tDate <= now;
+                          });
+                          
+                          const offerings = periodTransactions
+                            .filter(t => t.transaction_type === 'offering')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const tithes = periodTransactions
+                            .filter(t => t.transaction_type === 'tithe')
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          const contributions = periodTransactions
+                            .filter(t => ['donation', 'project', 'pledge', 'mission'].includes(t.transaction_type))
+                            .reduce((sum, t) => sum + Number(t.amount), 0);
+                          
+                          const total = offerings + tithes + contributions;
+                          if (total === 0) return '0%';
+                          return `${Math.round((contributions / total) * 100)}%`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Transactions List */}
             {filteredTransactions.length === 0 ? (

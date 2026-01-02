@@ -61,6 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const refreshingRef = useRef(false);
   const lastRefreshRef = useRef<number>(0);
+  const networkErrorLoggedRef = useRef(false); // Track if we've already logged network error
   
   // Refs to hold callback functions for use in effects without causing re-runs
   const setAuthenticatedUserRef = useRef<((authUser: User, currentSession: Session) => Promise<void>) | null>(null);
@@ -191,16 +192,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         // Don't log JWT expired errors as they're handled
         if (!isJWTExpiredError(error)) {
-          console.error('Error loading profile:', error.message);
+          // Only log network errors once to prevent spam
+          if (error?.message?.includes('NetworkError') || error?.message?.includes('Failed to fetch')) {
+            if (!networkErrorLoggedRef.current) {
+              console.warn('Network error loading profile - check your connection');
+              networkErrorLoggedRef.current = true;
+            }
+          } else {
+            console.error('Error loading profile:', error.message);
+          }
         }
         return null;
       }
 
+      // Reset network error flag on successful load
+      networkErrorLoggedRef.current = false;
       return profile;
     } catch (error: any) {
-      // Handle network errors gracefully
+      // Handle network errors gracefully - only log once
       if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
-        console.warn('Network error loading profile, will retry on reconnect');
+        if (!networkErrorLoggedRef.current) {
+          console.warn('Network error loading profile, will retry on reconnect');
+          networkErrorLoggedRef.current = true;
+        }
         // Return null but don't clear auth - allow retry on network restore
         return null;
       }
@@ -220,7 +234,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const setAuthenticatedUser = useCallback(async (authUser: User, currentSession: Session) => {
     setSession(currentSession);
     
-    const profile = await loadUserProfile(authUser);
+    let profile = await loadUserProfile(authUser);
+    
+    // If profile load failed (likely network error), retry once after a delay
+    if (!profile) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      profile = await loadUserProfile(authUser);
+    }
     
     setUser({
       id: authUser.id,
@@ -450,12 +470,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
+    // Handle network reconnection - reload profile if it was missing
+    const handleOnline = async () => {
+      if (!mounted) return;
+      
+      // If we have a session but no profile, try to reload it
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user && setAuthenticatedUserRef.current) {
+        // Reset network error flag so new errors can be logged
+        networkErrorLoggedRef.current = false;
+        console.log('Network restored, reloading user profile...');
+        await setAuthenticatedUserRef.current(currentSession.user, currentSession);
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
 
     return () => {
       mounted = false;
       clearInterval(refreshInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
     };
   }, [supabase, isInitialized]);
 

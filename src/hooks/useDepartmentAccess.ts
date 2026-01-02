@@ -26,9 +26,15 @@ export function useDepartmentAccess(): DepartmentAccess {
 
   useEffect(() => {
     const loadDepartmentAccess = async () => {
-      // Skip if no user or already fetched for this user
-      if (!user?.profile || !supabase) {
+      // Skip if no user or supabase
+      if (!user || !supabase) {
         setLoading(false);
+        return;
+      }
+      
+      // If profile is still loading (null but user exists), keep loading state
+      if (!user.profile) {
+        // Don't set loading to false yet - profile might still be loading
         return;
       }
       
