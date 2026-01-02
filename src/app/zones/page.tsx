@@ -333,60 +333,46 @@ export default function ZonesPage() {
           <>
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-              {/* Total Zones */}
-              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Zones</p>
-                    <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{zones.length}</p>
-                  </div>
-                  <div className="bg-blue-50 p-2 sm:p-3 rounded-lg ml-2">
-                    <MapPin className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
-                  </div>
+              {/* Total Zones Card */}
+              <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
+                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
+                  <MapPin className="h-5 w-5 sm:h-7 sm:w-7 text-blue-600" />
                 </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Total Zones</p>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+                  {zones.length}
+                </h3>
               </div>
 
-              {/* Total Members */}
-              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Members</p>
-                    <p className="text-lg sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">
-                      {zones.reduce((sum, z) => sum + z.member_count, 0)}
-                    </p>
-                  </div>
-                  <div className="bg-green-50 p-2 sm:p-3 rounded-lg ml-2">
-                    <Users className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
-                  </div>
+              {/* Total Members Card */}
+              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
+                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
+                  <Users className="h-5 w-5 sm:h-7 sm:w-7 text-green-600" />
                 </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Total Members</p>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+                  {zones.reduce((sum, z) => sum + z.member_count, 0)}
+                </h3>
               </div>
 
-              {/* Average Members */}
-              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Avg Members/Zone</p>
-                    <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">
-                      {zones.length > 0 ? Math.round(zones.reduce((sum, z) => sum + z.member_count, 0) / zones.length) : 0}
-                    </p>
-                  </div>
-                  <div className="bg-purple-50 p-2 sm:p-3 rounded-lg ml-2">
-                    <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" />
-                  </div>
+              {/* Average Members Card */}
+              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
+                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
+                  <TrendingUp className="h-5 w-5 sm:h-7 sm:w-7 text-purple-600" />
                 </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Avg Members/Zone</p>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+                  {zones.length > 0 ? Math.round(zones.reduce((sum, z) => sum + z.member_count, 0) / zones.length) : 0}
+                </h3>
               </div>
 
-              {/* Active Status */}
-              <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Status</p>
-                    <p className="text-lg sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">Active</p>
-                  </div>
-                  <div className="bg-green-50 p-2 sm:p-3 rounded-lg ml-2">
-                    <UserCheck className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
-                  </div>
+              {/* Active Status Card */}
+              <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
+                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
+                  <UserCheck className="h-5 w-5 sm:h-7 sm:w-7 text-cyan-600" />
                 </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Status</p>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600">Active</h3>
               </div>
             </div>
 
