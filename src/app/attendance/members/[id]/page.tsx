@@ -21,15 +21,19 @@ import {
   MapPin
 } from 'lucide-react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar
+  RadialBarChart,
+  RadialBar,
+  Legend,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -476,56 +480,146 @@ export default function MemberAttendancePage() {
         {/* Charts */}
         {stats && stats.monthly_stats.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Monthly Attendance Trend */}
+            {/* Monthly Attendance Trend - Area Chart with Gradient */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Monthly Attendance Rate</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Monthly Attendance Rate</h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                  <span className="text-xs text-gray-500">Rate %</span>
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={stats.monthly_stats}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <AreaChart data={stats.monthly_stats}>
+                  <defs>
+                    <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                   <XAxis 
                     dataKey="month" 
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#e5e7eb' }}
                     tickFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' })}
                   />
                   <YAxis 
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    tickLine={false}
+                    axisLine={false}
                     domain={[0, 100]}
                     tickFormatter={(value) => `${value}%`}
                   />
                   <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1f2937', 
+                      border: 'none', 
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    labelStyle={{ color: '#9ca3af', fontSize: 12 }}
+                    itemStyle={{ color: '#fff' }}
                     labelFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                    formatter={(value, name) => [`${value}%`, 'Attendance Rate']}
+                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Attendance Rate']}
                   />
-                  <Line 
+                  <Area 
                     type="monotone" 
                     dataKey="rate" 
-                    stroke="#2563eb" 
-                    strokeWidth={2}
-                    dot={{ fill: '#2563eb', strokeWidth: 2, r: 3 }}
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    fill="url(#attendanceGradient)"
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4, stroke: '#fff' }}
+                    activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2, fill: '#2563eb' }}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
 
-            {/* Monthly Sessions */}
+            {/* Monthly Sessions - Radial Progress Chart */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Monthly Sessions</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Monthly Sessions</h3>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                    <span className="text-xs text-gray-500">Present</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-gray-200"></div>
+                    <span className="text-xs text-gray-500">Absent</span>
+                  </div>
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={stats.monthly_stats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: 10 }}
-                    tickFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' })}
-                  />
-                  <YAxis tick={{ fontSize: 10 }} />
+                <PieChart>
+                  <defs>
+                    <linearGradient id="presentGradient" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#059669" />
+                    </linearGradient>
+                    <linearGradient id="absentGradient" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#f87171" />
+                      <stop offset="100%" stopColor="#ef4444" />
+                    </linearGradient>
+                  </defs>
+                  <Pie
+                    data={[
+                      { 
+                        name: 'Present', 
+                        value: stats.monthly_stats.reduce((acc, m) => acc + m.present, 0),
+                        fill: 'url(#presentGradient)'
+                      },
+                      { 
+                        name: 'Absent', 
+                        value: stats.monthly_stats.reduce((acc, m) => acc + (m.total - m.present), 0),
+                        fill: 'url(#absentGradient)'
+                      }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                  </Pie>
                   <Tooltip 
-                    labelFormatter={(month) => new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    contentStyle={{ 
+                      backgroundColor: '#1f2937', 
+                      border: 'none', 
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    itemStyle={{ color: '#fff' }}
+                    formatter={(value: number, name: string) => [`${value} sessions`, name]}
                   />
-                  <Bar dataKey="present" fill="#10b981" name="Present" />
-                  <Bar dataKey="total" fill="#e5e7eb" name="Total Sessions" />
-                </BarChart>
+                  {/* Center text */}
+                  <text x="50%" y="45%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-900 text-2xl font-bold">
+                    {stats.monthly_stats.reduce((acc, m) => acc + m.present, 0)}
+                  </text>
+                  <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-500 text-xs">
+                    Present
+                  </text>
+                </PieChart>
               </ResponsiveContainer>
+              {/* Summary Stats Below Chart */}
+              <div className="flex justify-center gap-8 mt-2 pt-3 border-t border-gray-100">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-emerald-600">{stats.monthly_stats.reduce((acc, m) => acc + m.present, 0)}</p>
+                  <p className="text-xs text-gray-500">Present</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-red-500">{stats.monthly_stats.reduce((acc, m) => acc + (m.total - m.present), 0)}</p>
+                  <p className="text-xs text-gray-500">Absent</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-gray-700">{stats.monthly_stats.reduce((acc, m) => acc + m.total, 0)}</p>
+                  <p className="text-xs text-gray-500">Total</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
