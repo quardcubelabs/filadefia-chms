@@ -53,37 +53,12 @@
   --fcc-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 3 7 18;
-    --foreground: 248 250 252;
-    
-    --card: 3 7 18;
-    --card-foreground: 248 250 252;
-    
-    --popover: 3 7 18;
-    --popover-foreground: 248 250 252;
-    
-    --primary: 59 130 246; /* Lighter FCC Blue for dark mode */
-    --primary-foreground: 3 7 18;
-    
-    --secondary: 96 165 250; /* Lighter blue for dark mode */
-    --secondary-foreground: 3 7 18;
-    
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
-    
-    --accent: 96 165 250; /* Lighter blue for dark mode */
-    --accent-foreground: 3 7 18;
-    
-    --destructive: 220 38 38;
-    --destructive-foreground: 248 250 252;
-    
-    --border: 30 41 59;
-    --input: 30 41 59;
-    --ring: 59 130 246;
-  }
-}
+/* 
+ * NOTE: We intentionally do NOT use @media (prefers-color-scheme: dark) here.
+ * Dark mode is controlled exclusively through the .dark class (Tailwind darkMode: 'class').
+ * This ensures consistent styling regardless of the user's system/device dark mode preference.
+ * Users can toggle dark mode manually through the app's settings.
+ */
 
 /* Class-based dark mode support (for Tailwind darkMode: 'class') */
 .dark {
