@@ -25,10 +25,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = !!error;
 
-    const selectBaseStyles = 'block w-full rounded-lg sm:rounded-xl border px-3 sm:px-4 py-2.5 sm:py-3 pr-8 sm:pr-10 transition-all focus:outline-none focus:ring-2 appearance-none text-sm sm:text-base';
+    const selectBaseStyles = 'block w-full rounded-lg sm:rounded-xl border px-3 sm:px-4 py-2.5 sm:py-3 pr-8 sm:pr-10 transition-all focus:outline-none focus:ring-2 appearance-none text-sm sm:text-base text-gray-900';
     const selectStateStyles = hasError
-      ? '!border-red-300 focus:!border-red-500 focus:!ring-red-500 focus:!ring-2 !bg-red-50'
-      : '!border-red-300 focus:!border-red-500 focus:!ring-red-500 focus:!ring-2 !bg-red-50';
+      ? 'border-red-400 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-white'
+      : 'border-gray-300 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-white';
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
@@ -55,7 +55,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 sm:pr-3 pointer-events-none text-red-500">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 sm:pr-3 pointer-events-none text-gray-600">
             <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
         </div>

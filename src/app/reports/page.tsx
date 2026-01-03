@@ -830,8 +830,8 @@ export default function ReportsPage() {
           .lte('start_date', endDate);
 
         return {
-          id: zone.id,
-          name: zone.name,
+          id: zone.id as string,
+          name: zone.name as string,
           swahiliName: zone.swahili_name || zone.name,
           leader: leaderName,
           memberCount: totalMembers,
@@ -841,14 +841,20 @@ export default function ReportsPage() {
           totalIncome,
           totalExpenses,
           netAmount: totalIncome - totalExpenses,
-          recentTransactions: transactions?.slice(0, 5).map((t: any) => ({
-            id: t.id || Math.random().toString(),
-            date: t.date,
-            description: t.description || t.transaction_type,
+          recentTransactions: (transactions?.slice(0, 5).map((t: any) => ({
+            id: String(t.id || Math.random()),
+            date: String(t.date),
+            description: String(t.description || t.transaction_type),
             amount: parseFloat(t.amount) || 0,
             type: t.transaction_type === 'expense' ? 'expense' : 'income'
-          })) || []
-        };
+          })) || []) as Array<{
+            id: string;
+            date: string;
+            description: string;
+            amount: number;
+            type: 'income' | 'expense';
+          }>
+        } satisfies ZoneData;
       }));
 
       return zonesWithFinancials;
@@ -1778,20 +1784,10 @@ export default function ReportsPage() {
         });
         csvContent += '\n';
       }
-
-      // Events List
-      if (reportData.events && reportData.events.length > 0) {
-        csvContent += `EVENTS LIST\n`;
-        csvContent += `Title,Date,Location,Department\n`;
-        reportData.events.forEach(event => {
-          csvContent += `"${event.title}","${event.date}","${event.location}","${event.department_name}"\n`;
-        });
-        csvContent += '\n';
-      }
     }
 
     // Department Statistics
-    if (reportType === 'jumuiya' || reportType === 'comprehensive') {
+    if (reportType === 'zones' || reportType === 'departments' || reportType === 'comprehensive') {
       if (reportData.departmentStats.length > 0) {
         csvContent += `DEPARTMENT STATISTICS\n`;
         csvContent += `Name,Swahili Name,Member Count,Active Members,Total Income,Total Expenses,Net Amount\n`;
@@ -1901,7 +1897,7 @@ export default function ReportsPage() {
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value as ReportType)}
-                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
                   >
                     <option value="membership">
                       {isDepartmentLeader ? `${departmentName} - Membership` : isZoneLeader ? `${zoneName} - Membership` : 'Membership'}
@@ -1938,7 +1934,7 @@ export default function ReportsPage() {
                   <select
                     value={reportPeriod}
                     onChange={(e) => setReportPeriod(e.target.value as ReportPeriod)}
-                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -1955,7 +1951,7 @@ export default function ReportsPage() {
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
                   />
                 </div>
 
@@ -1966,7 +1962,7 @@ export default function ReportsPage() {
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 disabled:bg-gray-100"
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
                   />
                 </div>
               </div>

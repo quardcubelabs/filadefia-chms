@@ -17,12 +17,12 @@ export const Badge: React.FC<BadgeProps> = ({
   const baseStyles = 'inline-flex items-center font-medium rounded-full border';
   
   const variants = {
-    default: 'bg-tag-gray-100 text-tag-gray-800 border-tag-gray-200',
-    primary: 'bg-tag-red-100 text-tag-red-800 border-tag-red-200',
-    success: 'bg-tag-green-100 text-tag-green-800 border-tag-green-300',
-    warning: 'bg-orange-100 text-orange-800 border-orange-200',
-    danger: 'bg-tag-red-100 text-tag-red-800 border-tag-red-300',
-    info: 'bg-tag-blue-100 text-tag-blue-800 border-tag-blue-200',
+    default: 'bg-gray-100 text-gray-800 border-gray-300',
+    primary: 'bg-red-100 text-red-700 border-red-300',
+    success: 'bg-green-100 text-green-700 border-green-300',
+    warning: 'bg-orange-100 text-orange-700 border-orange-300',
+    danger: 'bg-red-100 text-red-700 border-red-300',
+    info: 'bg-blue-100 text-blue-700 border-blue-300',
   };
 
   const sizes = {
@@ -32,12 +32,12 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const dotColors = {
-    default: 'bg-tag-gray-600',
-    primary: 'bg-tag-red-600',
-    success: 'bg-tag-green-600',
+    default: 'bg-gray-600',
+    primary: 'bg-red-600',
+    success: 'bg-green-600',
     warning: 'bg-orange-600',
-    danger: 'bg-tag-red-600',
-    info: 'bg-tag-blue-700',
+    danger: 'bg-red-600',
+    info: 'bg-blue-600',
   };
 
   const dotSizes = {
