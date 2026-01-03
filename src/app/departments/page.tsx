@@ -336,68 +336,45 @@ export default function DepartmentsPage() {
               </div>
             </div>
 
-            {/* Departments Grid */}
-            <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border">
-              <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">All Departments</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">Click on any department to view details</p>
-              </div>
-              <div className="p-3 sm:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-                  {departments.map((dept) => {
-                    const Icon = dept.icon;
-                    return (
-                      <div 
-                        key={dept.id} 
-                        className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
-                        onClick={() => router.push(`/departments/${dept.id}`)}
-                      >
-                        {/* Icon and Badge */}
-                        <div className="flex items-start justify-between mb-3 sm:mb-4">
-                          <div className={`h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br ${dept.color} rounded-lg flex items-center justify-center`}>
-                            <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                          </div>
-                          <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {dept.member_count} {dept.member_count === 1 ? 'Member' : 'Members'}
-                          </span>
-                        </div>
-
-                        {/* Department Name */}
-                        <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                          {dept.name}
-                        </h4>
-
-                        {/* Swahili Name */}
-                        {dept.swahili_name && (
-                          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-2">
-                            {dept.swahili_name}
-                          </p>
-                        )}
-
-                        {/* Description */}
-                        <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
-                          {dept.description || 'No description available'}
-                        </p>
-
-                        {/* View Button */}
-                        <div className="flex justify-end">
-                          <button
-                            className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 group-hover:gap-2 transition-all"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/departments/${dept.id}`);
-                            }}
-                          >
-                            <span className="hidden sm:inline">View Details</span>
-                            <span className="sm:hidden">View</span>
-                            <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </button>
-                        </div>
+            {/* Departments Grid - Independent Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {departments.map((dept) => {
+                const Icon = dept.icon;
+                return (
+                  <div 
+                    key={dept.id} 
+                    className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] transition-all duration-200 cursor-pointer group shadow-sm"
+                    onClick={() => router.push(`/departments/${dept.id}`)}
+                  >
+                    {/* Icon and Badge */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br ${dept.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                        <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        {dept.member_count} {dept.member_count === 1 ? 'Member' : 'Members'}
+                      </span>
+                    </div>
+
+                    {/* Department Name */}
+                    <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                      {dept.name}
+                    </h4>
+
+                    {/* Swahili Name */}
+                    {dept.swahili_name && (
+                      <p className="text-sm font-medium text-gray-500 mb-2">
+                        {dept.swahili_name}
+                      </p>
+                    )}
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {dept.description || 'No description available'}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
