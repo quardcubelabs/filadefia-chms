@@ -128,8 +128,9 @@ export const auth = {
 
   // Role hierarchy for permission checking
   getRoleLevel: (role: UserRole): number => {
-    const levels = {
+    const levels: Record<UserRole, number> = {
       member: 1,
+      zone_leader: 2,
       department_leader: 2,
       secretary: 3,
       treasurer: 3,
