@@ -89,15 +89,15 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = !!error;
 
-    const textareaBaseStyles = 'block w-full rounded-xl border-2 px-4 py-3 transition-all focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-500 shadow-sm';
+    const textareaBaseStyles = 'block w-full rounded-xl border-2 px-4 py-3 transition-all focus:outline-none focus:ring-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 shadow-sm';
     const textareaStateStyles = hasError
-      ? 'border-red-400 focus:border-red-500 focus:ring-red-500 bg-white'
-      : 'border-gray-400 bg-gray-50 hover:bg-white hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:bg-white';
+      ? 'border-red-400 focus:border-red-500 focus:ring-red-500 bg-white dark:bg-slate-700'
+      : 'border-gray-400 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 hover:bg-white dark:hover:bg-slate-600 hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:bg-white dark:focus:bg-slate-700';
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             {label}
           </label>
         )}

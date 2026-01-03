@@ -719,57 +719,59 @@ export default function FinancePage() {
             {/* Financial Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
               {/* Total Income Card */}
-              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
-                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <div className={`rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0 ${darkMode ? 'bg-gradient-to-br from-green-900/50 to-green-800/30' : 'bg-gradient-to-br from-green-100 to-green-50'}`}>
+                <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 ${darkMode ? 'bg-slate-700' : 'bg-white'}`}>
                   <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <p className="text-xs text-gray-600 mb-1">Total Income</p>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                <p className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Income</p>
+                <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {formatCurrency(summary.totalIncome)}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1.5">
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   This month: {formatCurrency(summary.monthlyIncome)}
                 </p>
               </div>
 
               {/* Total Expenses Card */}
-              <div className="bg-gradient-to-br from-red-100 to-red-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
-                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <div className={`rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0 ${darkMode ? 'bg-gradient-to-br from-red-900/50 to-red-800/30' : 'bg-gradient-to-br from-red-100 to-red-50'}`}>
+                <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 ${darkMode ? 'bg-slate-700' : 'bg-white'}`}>
                   <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                 </div>
-                <p className="text-xs text-gray-600 mb-1">Total Expenses</p>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                <p className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Expenses</p>
+                <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {formatCurrency(summary.totalExpenses)}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1.5">
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   This month: {formatCurrency(summary.monthlyExpenses)}
                 </p>
               </div>
 
               {/* Net Amount Card */}
-              <div className={`${summary.netAmount >= 0 ? 'bg-gradient-to-br from-blue-100 to-blue-50' : 'bg-gradient-to-br from-orange-100 to-orange-50'} rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0`}>
-                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <div className={`rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0 ${summary.netAmount >= 0 
+                ? (darkMode ? 'bg-gradient-to-br from-blue-900/50 to-blue-800/30' : 'bg-gradient-to-br from-blue-100 to-blue-50') 
+                : (darkMode ? 'bg-gradient-to-br from-orange-900/50 to-orange-800/30' : 'bg-gradient-to-br from-orange-100 to-orange-50')}`}>
+                <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 ${darkMode ? 'bg-slate-700' : 'bg-white'}`}>
                   <DollarSign className={`h-4 w-4 sm:h-5 sm:w-5 ${summary.netAmount >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
                 </div>
-                <p className="text-xs text-gray-600 mb-1">Net Amount</p>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                <p className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Net Amount</p>
+                <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {formatCurrency(summary.netAmount)}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1.5">
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Monthly: {formatCurrency(summary.monthlyIncome - summary.monthlyExpenses)}
                 </p>
               </div>
 
               {/* Recent Activity Card */}
-              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
-                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <div className={`rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0 ${darkMode ? 'bg-gradient-to-br from-purple-900/50 to-purple-800/30' : 'bg-gradient-to-br from-purple-100 to-purple-50'}`}>
+                <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 ${darkMode ? 'bg-slate-700' : 'bg-white'}`}>
                   <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
-                <p className="text-xs text-gray-600 mb-1">Recent Activity</p>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                <p className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Recent Activity</p>
+                <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {summary.recentTransactions}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1.5">
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {summary.unverifiedCount} unverified
                 </p>
               </div>
