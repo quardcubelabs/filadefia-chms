@@ -16,14 +16,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    // Check localStorage for saved preference
+    // Check localStorage for saved preference - default to light mode
     const savedTheme = localStorage.getItem('fcc-theme');
-    if (savedTheme) {
-      setDarkMode(savedTheme === 'dark');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDark);
+      // Default to light mode regardless of system preference
+      // Users can manually enable dark mode if they want
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('fcc-theme', 'light');
     }
   }, []);
 

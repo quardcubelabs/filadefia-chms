@@ -1498,145 +1498,145 @@ export default function FinancePage() {
                     }}
                   />
                 ) : (
-                  <Card>
-                    <CardBody>
-                      <div className="overflow-x-auto">
-                        <table className={`min-w-full divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
-                          <thead className={darkMode ? 'bg-slate-700' : 'bg-gray-50'}>
-                            <tr>
-                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Date
-                              </th>
-                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Type & Description
-                              </th>
-                              <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Member
-                              </th>
-                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Amount
-                              </th>
-                              <th className={`hidden md:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Method
-                              </th>
-                              <th className={`hidden lg:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Status
-                              </th>
-                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className={`divide-y ${darkMode ? 'bg-slate-800 divide-slate-700' : 'bg-white divide-gray-200'}`}>
-                            {filteredTransactions.slice(0, RECENT_TRANSACTIONS_LIMIT).map((transaction) => (
-                              <tr key={transaction.id} className={darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-50'}>
-                                <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {formatDate(transaction.date)}
-                                </td>
-                                <td className="px-4 sm:px-6 py-4">
-                                  <div className="flex items-center space-x-2">
-                                    {getTransactionTypeIcon(transaction.transaction_type)}
-                                    <div>
-                                      <Badge 
-                                        variant={
-                                          ['tithe', 'offering', 'donation'].includes(transaction.transaction_type) ? 'success' :
-                                          ['expense', 'welfare'].includes(transaction.transaction_type) ? 'danger' : 'primary'
-                                        }
-                                      >
-                                        {transaction.transaction_type.toUpperCase()}
-                                      </Badge>
-                                      {transaction.description && (
-                                        <p className={`text-xs sm:text-sm mt-1 line-clamp-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                          {transaction.description}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {transaction.member ? (
-                                    <div>
-                                      <p>{transaction.member.first_name} {transaction.member.last_name}</p>
-                                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>#{transaction.member.member_number}</p>
-                                    </div>
-                                  ) : (
-                                    <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>Anonymous</span>
-                                  )}
-                                </td>
-                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                  <span className={`text-xs sm:text-sm font-medium ${
-                                    ['expense', 'welfare'].includes(transaction.transaction_type) 
-                                      ? 'text-red-600' : 'text-green-600'
-                                  }`}>
-                                    {formatCurrency(transaction.amount)}
-                                  </span>
-                                </td>
-                                <td className={`hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  <div className="flex items-center space-x-1">
-                                    <CreditCard className={`h-4 w-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                                    <span>{transaction.payment_method}</span>
-                                  </div>
-                                </td>
-                                <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                                  {transaction.verified ? (
-                                    <Badge variant="success">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Verified
+                  <div className={`sm:rounded-2xl sm:border ${darkMode ? 'sm:bg-slate-800 sm:border-slate-700' : 'sm:bg-white sm:border-gray-200'}`}>
+                    <div className="overflow-x-auto">
+                      <table className={`min-w-full divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
+                        <thead className={`hidden sm:table-header-group ${darkMode ? 'bg-slate-700' : 'bg-gray-50'}`}>
+                          <tr>
+                            <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Date
+                            </th>
+                            <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Type & Description
+                            </th>
+                            <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Member
+                            </th>
+                            <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Amount
+                            </th>
+                            <th className={`hidden md:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Method
+                            </th>
+                            <th className={`hidden lg:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Status
+                            </th>
+                            <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
+                          {filteredTransactions.slice(0, RECENT_TRANSACTIONS_LIMIT).map((transaction) => (
+                            <tr key={transaction.id} className={`${darkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'} block sm:table-row border-b sm:border-b-0 ${darkMode ? 'border-slate-700' : 'border-gray-100'} py-3 sm:py-0`}>
+                              <td className={`px-4 sm:px-6 py-1 sm:py-4 whitespace-nowrap text-xs sm:text-sm ${darkMode ? 'text-white' : 'text-gray-900'} block sm:table-cell`}>
+                                <span className={`sm:hidden text-xs font-medium mr-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Date:</span>
+                                {formatDate(transaction.date)}
+                              </td>
+                              <td className="px-4 sm:px-6 py-1 sm:py-4 block sm:table-cell">
+                                <div className="flex items-center space-x-2">
+                                  {getTransactionTypeIcon(transaction.transaction_type)}
+                                  <div>
+                                    <Badge 
+                                      variant={
+                                        ['tithe', 'offering', 'donation'].includes(transaction.transaction_type) ? 'success' :
+                                        ['expense', 'welfare'].includes(transaction.transaction_type) ? 'danger' : 'primary'
+                                      }
+                                    >
+                                      {transaction.transaction_type.toUpperCase()}
                                     </Badge>
-                                  ) : (
-                                    <Badge variant="warning">
-                                      <Clock className="h-3 w-3 mr-1" />
-                                      Pending
-                                    </Badge>
-                                  )}
-                                </td>
-                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <div className="flex space-x-1">
-                                    {!transaction.verified && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleVerifyTransaction(transaction.id)}
-                                        icon={<CheckCircle className="h-4 w-4" />}
-                                        className="text-green-600 hover:text-green-700"
-                                      />
+                                    {transaction.description && (
+                                      <p className={`text-xs sm:text-sm mt-1 line-clamp-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {transaction.description}
+                                      </p>
                                     )}
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => openEditModal(transaction)}
-                                      icon={<Edit className="h-4 w-4" />}
-                                    />
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedTransaction(transaction);
-                                        setIsDeleteModalOpen(true);
-                                      }}
-                                      icon={<Trash2 className="h-4 w-4" />}
-                                      className="text-red-600 hover:text-red-700"
-                                    />
                                   </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                </div>
+                              </td>
+                              <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {transaction.member ? (
+                                  <div>
+                                    <p>{transaction.member.first_name} {transaction.member.last_name}</p>
+                                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>#{transaction.member.member_number}</p>
+                                  </div>
+                                ) : (
+                                  <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>Anonymous</span>
+                                )}
+                              </td>
+                              <td className="px-4 sm:px-6 py-1 sm:py-4 whitespace-nowrap block sm:table-cell">
+                                <span className={`sm:hidden text-xs font-medium mr-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Amount:</span>
+                                <span className={`text-sm sm:text-sm font-medium ${
+                                  ['expense', 'welfare'].includes(transaction.transaction_type) 
+                                    ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {formatCurrency(transaction.amount)}
+                                </span>
+                              </td>
+                              <td className={`hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                <div className="flex items-center space-x-1">
+                                  <CreditCard className={`h-4 w-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                                  <span>{transaction.payment_method}</span>
+                                </div>
+                              </td>
+                              <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                                {transaction.verified ? (
+                                  <Badge variant="success">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Verified
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="warning">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="px-4 sm:px-6 py-1 sm:py-4 whitespace-nowrap text-sm text-gray-500 block sm:table-cell">
+                                <div className="flex space-x-1">
+                                  {!transaction.verified && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleVerifyTransaction(transaction.id)}
+                                      icon={<CheckCircle className="h-4 w-4" />}
+                                      className="text-green-600 hover:text-green-700"
+                                    />
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditModal(transaction)}
+                                    icon={<Edit className="h-4 w-4" />}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedTransaction(transaction);
+                                      setIsDeleteModalOpen(true);
+                                    }}
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:text-red-700"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {filteredTransactions.length > RECENT_TRANSACTIONS_LIMIT && (
+                      <div className={`mt-4 pt-4 border-t text-center ${darkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAllTransactions(true)}
+                          className="text-blue-800 border-blue-800 hover:bg-blue-50"
+                        >
+                          View {filteredTransactions.length - RECENT_TRANSACTIONS_LIMIT} more transactions
+                        </Button>
                       </div>
-                      {filteredTransactions.length > RECENT_TRANSACTIONS_LIMIT && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowAllTransactions(true)}
-                            className="text-blue-800 border-blue-800 hover:bg-blue-50"
-                          >
-                            View {filteredTransactions.length - RECENT_TRANSACTIONS_LIMIT} more transactions
-                          </Button>
-                        </div>
-                      )}
-                    </CardBody>
-                  </Card>
+                    )}
+                  </div>
                 )}
               </>
             ) : (
