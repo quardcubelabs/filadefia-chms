@@ -156,7 +156,7 @@ interface ReportData {
   departmentStats: DepartmentData[];
 }
 
-type ReportType = 'membership' | 'financial' | 'attendance' | 'events' | 'jumuiya' | 'comprehensive';
+type ReportType = 'membership' | 'financial' | 'attendance' | 'events' | 'zones' | 'departments' | 'comprehensive';
 type ReportPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
 
 // Additional type definitions for data structures
@@ -225,7 +225,8 @@ export default function ReportsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reportData, setReportData] = useState<ReportData | null>(null);
-  const [selectedJumuiya, setSelectedJumuiya] = useState<string>('all');
+  const [selectedZone, setSelectedZone] = useState<string>('all');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('membership');
   const [savingReport, setSavingReport] = useState(false);
@@ -356,10 +357,14 @@ export default function ReportsPage() {
         }
       }
 
-      if (reportType === 'jumuiya' || reportType === 'comprehensive') {
-        console.log('🏘️ Fetching jumuiya data...');
-        // jumuiyasData = await fetchJumuiyasData();
-        // departmentStats = await fetchDepartmentStats();
+      if (reportType === 'zones' || reportType === 'comprehensive') {
+        console.log('🏘️ Fetching zones data...');
+        jumuiyasData = await fetchZonesData();
+      }
+
+      if (reportType === 'departments' || reportType === 'comprehensive') {
+        console.log('🏢 Fetching departments data...');
+        departmentStats = await fetchDepartmentStats();
       }
 
       console.log('✅ Data fetching completed for:', reportType);
@@ -708,6 +713,148 @@ export default function ReportsPage() {
     } catch (err: any) {
       console.error('Error in fetchEventsData:', err);
       return null;
+    }
+  };
+
+  // Renamed interface for zones data
+  interface ZoneData {
+    id: string;
+    name: string;
+    swahiliName?: string;
+    leader?: string;
+    memberCount: number;
+    activeMembers: number;
+    inactiveMembers?: number;
+    recentEvents: number;
+    totalIncome?: number;
+    totalExpenses?: number;
+    netAmount?: number;
+    recentTransactions?: Array<{
+      id: string;
+      date: string;
+      description: string;
+      amount: number;
+      type: 'income' | 'expense';
+    }>;
+  }
+
+  const fetchZonesData = async (): Promise<ZoneData[]> => {
+    try {
+      console.log('Fetching zones data...');
+      
+      if (!supabase) return [];
+      
+      // Build query based on user role
+      let query = supabase
+        .from('zones')
+        .select(`
+          id,
+          name,
+          swahili_name,
+          description,
+          leader_id,
+          is_active,
+          zone_members(
+            member_id,
+            members(id, status, first_name, last_name)
+          )
+        `)
+        .eq('is_active', true);
+
+      // If zone leader, only fetch their zone
+      if (isZoneLeader && zoneId && !canAccessAllDepartments) {
+        query = query.eq('id', zoneId);
+      }
+
+      const { data: zones, error } = await query;
+
+      if (error) {
+        console.error('Error fetching zones data:', error);
+        return [];
+      }
+
+      console.log('Zones found:', zones?.length || 0);
+
+      if (!zones || zones.length === 0) {
+        return [];
+      }
+
+      // Fetch financial data for zones
+      const zonesWithFinancials = await Promise.all(zones.map(async (zone: any) => {
+        const members = zone.zone_members || [];
+        const activeMembers = members.filter((zm: any) => 
+          zm.members && zm.members.status === 'active'
+        ).length;
+        const totalMembers = members.length;
+
+        // Get leader name
+        let leaderName = 'N/A';
+        if (zone.leader_id) {
+          const { data: leaderData } = await supabase
+            .from('members')
+            .select('first_name, last_name')
+            .eq('id', zone.leader_id)
+            .single();
+          if (leaderData) {
+            leaderName = `${leaderData.first_name} ${leaderData.last_name}`;
+          }
+        }
+
+        // Fetch financial transactions for this zone
+        let totalIncome = 0;
+        let totalExpenses = 0;
+        const { data: transactions } = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type, date, description')
+          .eq('zone_id', zone.id)
+          .gte('date', startDate)
+          .lte('date', endDate);
+
+        if (transactions) {
+          transactions.forEach((t: any) => {
+            const amount = parseFloat(t.amount) || 0;
+            if (t.transaction_type === 'expense') {
+              totalExpenses += amount;
+            } else {
+              totalIncome += amount;
+            }
+          });
+        }
+
+        // Fetch events for this zone
+        const { data: events } = await supabase
+          .from('events')
+          .select('id')
+          .eq('zone_id', zone.id)
+          .gte('start_date', startDate)
+          .lte('start_date', endDate);
+
+        return {
+          id: zone.id,
+          name: zone.name,
+          swahiliName: zone.swahili_name || zone.name,
+          leader: leaderName,
+          memberCount: totalMembers,
+          activeMembers,
+          inactiveMembers: totalMembers - activeMembers,
+          recentEvents: events?.length || 0,
+          totalIncome,
+          totalExpenses,
+          netAmount: totalIncome - totalExpenses,
+          recentTransactions: transactions?.slice(0, 5).map((t: any) => ({
+            id: t.id || Math.random().toString(),
+            date: t.date,
+            description: t.description || t.transaction_type,
+            amount: parseFloat(t.amount) || 0,
+            type: t.transaction_type === 'expense' ? 'expense' : 'income'
+          })) || []
+        };
+      }));
+
+      return zonesWithFinancials;
+    } catch (err) {
+      console.error('Error in fetchZonesData:', err);
+      return [];
     }
   };
 
@@ -1164,51 +1311,111 @@ export default function ReportsPage() {
       console.log('Fetching department statistics...');
       
       if (!supabase) return [];
-      const { data: departments, error } = await supabase
+      
+      // Build query based on user role
+      let query = supabase
         .from('departments')
         .select(`
           id,
           name,
           swahili_name,
           leader_id,
+          is_active,
           department_members(
             member_id,
             members(id, status, first_name, last_name)
           )
-        `);
+        `)
+        .eq('is_active', true);
+
+      // If department leader, only fetch their department
+      if (isDepartmentLeader && departmentId && !canAccessAllDepartments) {
+        query = query.eq('id', departmentId);
+      }
+
+      const { data: departments, error } = await query;
 
       if (error) {
         console.error('Error fetching department stats:', error);
         return [];
       }
 
-      return departments?.map((dept: any) => {
+      console.log('Departments found:', departments?.length || 0);
+
+      // Fetch additional data for each department
+      const departmentsWithData = await Promise.all((departments || []).map(async (dept: any) => {
         const members = dept.department_members || [];
         const activeMembers = members.filter((dm: { member_id: string; members: { id: string; status: string; first_name: string; last_name: string } }) => 
           dm.members && dm.members.status === 'active'
         ).length;
         const totalMembers = members.length;
 
+        // Get leader name
+        let leaderInfo = undefined;
+        if (dept.leader_id) {
+          const { data: leaderData } = await supabase
+            .from('members')
+            .select('first_name, last_name, email, phone')
+            .eq('id', dept.leader_id)
+            .single();
+          if (leaderData) {
+            leaderInfo = {
+              name: `${leaderData.first_name} ${leaderData.last_name}`,
+              email: leaderData.email || '',
+              phone: leaderData.phone || ''
+            };
+          }
+        }
+
+        // Fetch financial transactions for this department
+        let totalIncome = 0;
+        let totalExpenses = 0;
+        let transactionCount = 0;
+        const { data: transactions } = await supabase
+          .from('financial_transactions')
+          .select('amount, transaction_type')
+          .eq('department_id', dept.id)
+          .gte('date', startDate)
+          .lte('date', endDate);
+
+        if (transactions) {
+          transactionCount = transactions.length;
+          transactions.forEach((t: any) => {
+            const amount = parseFloat(t.amount) || 0;
+            if (t.transaction_type === 'expense') {
+              totalExpenses += amount;
+            } else {
+              totalIncome += amount;
+            }
+          });
+        }
+
+        // Fetch events for this department
+        const { data: events } = await supabase
+          .from('events')
+          .select('id')
+          .eq('department_id', dept.id)
+          .gte('start_date', startDate)
+          .lte('start_date', endDate);
+
         return {
           id: dept.id,
           name: dept.name,
           swahiliName: dept.swahili_name,
-          leader: dept.leader_id ? {
-            name: 'Department Leader', // Would need separate query for leader details
-            email: '',
-            phone: ''
-          } : undefined,
+          leader: leaderInfo,
           memberCount: totalMembers,
           activeMembers,
           inactiveMembers: totalMembers - activeMembers,
-          totalIncome: 0, // Would need financial transactions by department
-          totalExpenses: 0,
-          netAmount: 0,
-          recentEvents: 0,
-          recentTransactions: 0,
-          transactionCount: 0
+          totalIncome,
+          totalExpenses,
+          netAmount: totalIncome - totalExpenses,
+          recentEvents: events?.length || 0,
+          recentTransactions: transactionCount,
+          transactionCount
         };
-      }) || [];
+      }));
+
+      return departmentsWithData;
     } catch (err) {
       console.error('Error in fetchDepartmentStats:', err);
       return [];
@@ -1654,7 +1861,7 @@ export default function ReportsPage() {
     >
       <div className="max-w-7xl">
         {/* Department Leader Access Notification */}
-        {isDepartmentLeader && departmentName && (
+        {isDepartmentLeader && departmentName && !canAccessAllDepartments && (
           <div className="mb-4 sm:mb-8 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start sm:items-center">
               <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
@@ -1664,6 +1871,23 @@ export default function ReportsPage() {
                 </h3>
                 <p className="text-xs sm:text-sm text-red-700 mt-0.5">
                   You have access to reports for your department only.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Zone Leader Access Notification */}
+        {isZoneLeader && zoneName && !canAccessAllDepartments && (
+          <div className="mb-4 sm:mb-8 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start sm:items-center">
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-medium text-blue-800">
+                  Zone Access: {zoneName}
+                </h3>
+                <p className="text-xs sm:text-sm text-blue-700 mt-0.5">
+                  You have access to reports for your zone only.
                 </p>
               </div>
             </div>
@@ -1680,22 +1904,31 @@ export default function ReportsPage() {
                     className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
                   >
                     <option value="membership">
-                      {isDepartmentLeader ? `${departmentName} - Membership` : 'Membership'}
+                      {isDepartmentLeader ? `${departmentName} - Membership` : isZoneLeader ? `${zoneName} - Membership` : 'Membership'}
                     </option>
                     <option value="financial">
-                      {isDepartmentLeader ? `${departmentName} - Financial` : 'Financial'}
+                      {isDepartmentLeader ? `${departmentName} - Financial` : isZoneLeader ? `${zoneName} - Financial` : 'Financial'}
                     </option>
                     <option value="attendance">
-                      {isDepartmentLeader ? `${departmentName} - Attendance` : 'Attendance'}
+                      {isDepartmentLeader ? `${departmentName} - Attendance` : isZoneLeader ? `${zoneName} - Attendance` : 'Attendance'}
                     </option>
                     <option value="events">
-                      {isDepartmentLeader ? `${departmentName} - Events` : 'Events'}
+                      {isDepartmentLeader ? `${departmentName} - Events` : isZoneLeader ? `${zoneName} - Events` : 'Events'}
                     </option>
-                    <option value="jumuiya">
-                      {isDepartmentLeader ? `${departmentName} - Department` : 'Jumuiya'}
-                    </option>
+                    {/* Zones report - visible to admin/pastor or zone leaders */}
+                    {(canAccessAllDepartments || isZoneLeader) && (
+                      <option value="zones">
+                        {isZoneLeader && !canAccessAllDepartments ? `${zoneName} Zone` : 'Zones'}
+                      </option>
+                    )}
+                    {/* Departments report - visible to admin/pastor or department leaders */}
+                    {(canAccessAllDepartments || isDepartmentLeader) && (
+                      <option value="departments">
+                        {isDepartmentLeader && !canAccessAllDepartments ? `${departmentName} Department` : 'Departments'}
+                      </option>
+                    )}
                     <option value="comprehensive">
-                      {isDepartmentLeader ? `${departmentName} - Comprehensive` : 'Comprehensive'}
+                      {isDepartmentLeader ? `${departmentName} - Comprehensive` : isZoneLeader ? `${zoneName} - Comprehensive` : 'Comprehensive'}
                     </option>
                   </select>
                 </div>
@@ -1814,7 +2047,11 @@ export default function ReportsPage() {
                     { id: 'membership', label: 'Membership', icon: Users },
                     { id: 'finance', label: 'Finance', icon: DollarSign },
                     { id: 'events', label: 'Events', icon: Calendar },
-                    { id: 'attendance', label: 'Attendance', icon: UserCheck }
+                    { id: 'attendance', label: 'Attendance', icon: UserCheck },
+                    // Show Zones tab for admin or zone leaders
+                    ...(canAccessAllDepartments || isZoneLeader ? [{ id: 'zones', label: isZoneLeader && !canAccessAllDepartments ? `${zoneName} Zone` : 'Zones', icon: Building2 }] : []),
+                    // Show Departments tab for admin or department leaders
+                    ...(canAccessAllDepartments || isDepartmentLeader ? [{ id: 'departments', label: isDepartmentLeader && !canAccessAllDepartments ? `${departmentName}` : 'Departments', icon: Building2 }] : [])
                   ].map((tab) => {
                     const IconComponent = tab.icon;
                     return (
@@ -2258,6 +2495,228 @@ export default function ReportsPage() {
                           </table>
                         ) : (
                           <p className="text-gray-500 text-center py-8">No attendance sessions recorded for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
+              )}
+
+              {/* Zones Tab */}
+              {activeTab === 'zones' && (
+                <div className="space-y-4 md:space-y-6">
+                  {/* Zones Summary Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <Building2 className="h-5 w-5 md:h-8 md:w-8 text-blue-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {reportData?.jumuiyas?.length || 0}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Zones</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <Users className="h-5 w-5 md:h-8 md:w-8 text-green-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {reportData?.jumuiyas?.reduce((sum, z) => sum + (z.memberCount || 0), 0) || 0}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Members</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <DollarSign className="h-5 w-5 md:h-8 md:w-8 text-emerald-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {(reportData?.jumuiyas?.reduce((sum, z) => sum + (z.totalIncome || 0), 0) || 0).toLocaleString()}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Income (TZS)</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <Calendar className="h-5 w-5 md:h-8 md:w-8 text-purple-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {reportData?.jumuiyas?.reduce((sum, z) => sum + (z.recentEvents || 0), 0) || 0}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Events</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  </div>
+
+                  {/* Zones Table */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Zones Overview</h3>
+                      <div className="overflow-x-auto">
+                        {(reportData?.jumuiyas || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leader</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income (TZS)</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses (TZS)</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net (TZS)</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Events</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {reportData?.jumuiyas.map((zone) => (
+                                <tr key={zone.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{zone.name}</p>
+                                      {zone.swahiliName && zone.swahiliName !== zone.name && (
+                                        <p className="text-xs text-gray-500">{zone.swahiliName}</p>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{zone.leader || 'N/A'}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{zone.memberCount}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <span className="text-sm font-medium text-green-600">{zone.activeMembers}</span>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                    {(zone.totalIncome || 0).toLocaleString()}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
+                                    {(zone.totalExpenses || 0).toLocaleString()}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <span className={`text-sm font-medium ${(zone.netAmount || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {(zone.netAmount || 0).toLocaleString()}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{zone.recentEvents}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No zones data available for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
+              )}
+
+              {/* Departments Tab */}
+              {activeTab === 'departments' && (
+                <div className="space-y-4 md:space-y-6">
+                  {/* Departments Summary Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <Building2 className="h-5 w-5 md:h-8 md:w-8 text-blue-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {reportData?.departmentStats?.length || 0}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Departments</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <Users className="h-5 w-5 md:h-8 md:w-8 text-green-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {reportData?.departmentStats?.reduce((sum, d) => sum + (d.memberCount || 0), 0) || 0}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Members</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <DollarSign className="h-5 w-5 md:h-8 md:w-8 text-emerald-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {(reportData?.departmentStats?.reduce((sum, d) => sum + (d.totalIncome || 0), 0) || 0).toLocaleString()}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Income (TZS)</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <div className="text-center">
+                          <Calendar className="h-5 w-5 md:h-8 md:w-8 text-purple-600 mx-auto mb-1 md:mb-2" />
+                          <p className="text-lg md:text-2xl font-bold text-gray-900">
+                            {reportData?.departmentStats?.reduce((sum, d) => sum + (d.recentEvents || 0), 0) || 0}
+                          </p>
+                          <p className="text-[10px] md:text-sm text-gray-600">Total Events</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  </div>
+
+                  {/* Departments Table */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Departments Overview</h3>
+                      <div className="overflow-x-auto">
+                        {(reportData?.departmentStats || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leader</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income (TZS)</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses (TZS)</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net (TZS)</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {reportData?.departmentStats.map((dept) => (
+                                <tr key={dept.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{dept.name}</p>
+                                      {dept.swahiliName && dept.swahiliName !== dept.name && (
+                                        <p className="text-xs text-gray-500">{dept.swahiliName}</p>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{dept.leader?.name || 'N/A'}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{dept.memberCount}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <span className="text-sm font-medium text-green-600">{dept.activeMembers}</span>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                    {(dept.totalIncome || 0).toLocaleString()}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
+                                    {(dept.totalExpenses || 0).toLocaleString()}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <span className={`text-sm font-medium ${(dept.netAmount || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {(dept.netAmount || 0).toLocaleString()}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{dept.transactionCount || 0}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No departments data available for this period</p>
                         )}
                       </div>
                     </CardBody>
