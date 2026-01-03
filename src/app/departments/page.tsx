@@ -41,6 +41,7 @@ export default function DepartmentsPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
   const [departments, setDepartments] = useState<DepartmentStats[]>([]);
+  const [uniqueMemberCount, setUniqueMemberCount] = useState<number>(0); // Unique members across all departments
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -88,6 +89,20 @@ export default function DepartmentsPage() {
       console.log('Departments fetched:', depts, 'Error:', deptsError);
 
       if (deptsError) throw deptsError;
+
+      // Fetch unique member count (members assigned to at least one department)
+      // This avoids counting the same member multiple times if they're in multiple departments
+      const { data: uniqueMembers, error: uniqueError } = await supabase
+        .from('department_members')
+        .select('member_id')
+        .eq('is_active', true);
+
+      if (!uniqueError && uniqueMembers) {
+        // Get unique member_ids using Set
+        const uniqueMemberIds = new Set(uniqueMembers.map(m => m.member_id));
+        setUniqueMemberCount(uniqueMemberIds.size);
+        console.log('Unique members in departments:', uniqueMemberIds.size);
+      }
 
       // Fetch member counts for each department
       const departmentsWithStats: DepartmentStats[] = await Promise.all(
@@ -302,25 +317,25 @@ export default function DepartmentsPage() {
                 </h3>
               </div>
 
-              {/* Total Members Card */}
+              {/* Total Unique Members Card - counts each member once even if in multiple departments */}
               <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
                 <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
                   <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <p className="text-xs text-gray-600 mb-1">Total Members</p>
+                <p className="text-xs text-gray-600 mb-1">Unique Members</p>
                 <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                  {departments.reduce((sum, d) => sum + d.member_count, 0)}
+                  {uniqueMemberCount}
                 </h3>
               </div>
 
-              {/* Average Members Card */}
+              {/* Total Assignments Card - shows total department memberships including multi-department members */}
               <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
                 <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
                   <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
-                <p className="text-xs text-gray-600 mb-1">Avg Members/Dept</p>
+                <p className="text-xs text-gray-600 mb-1">Total Assignments</p>
                 <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                  {departments.length > 0 ? Math.round(departments.reduce((sum, d) => sum + d.member_count, 0) / departments.length) : 0}
+                  {departments.reduce((sum, d) => sum + d.member_count, 0)}
                 </h3>
               </div>
 
