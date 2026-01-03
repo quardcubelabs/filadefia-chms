@@ -35,12 +35,21 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('fcc-theme');
+                  // Only add dark class if explicitly set to dark
+                  // Otherwise default to light mode
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');
+                    // Force light mode if no preference is set
+                    if (!theme) {
+                      localStorage.setItem('fcc-theme', 'light');
+                    }
                   }
-                } catch (e) {}
+                } catch (e) {
+                  // On error, ensure dark class is removed
+                  document.documentElement.classList.remove('dark');
+                }
               })();
             `,
           }}

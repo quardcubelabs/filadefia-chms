@@ -18,6 +18,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMounted(true);
     // Check localStorage for saved preference - default to light mode
     const savedTheme = localStorage.getItem('fcc-theme');
+    const themeMigrated = localStorage.getItem('fcc-theme-migrated-v2');
+    
+    // Force migration to light mode for existing users (one-time reset)
+    if (!themeMigrated) {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('fcc-theme', 'light');
+      localStorage.setItem('fcc-theme-migrated-v2', 'true');
+      return;
+    }
+    
     if (savedTheme === 'dark') {
       setDarkMode(true);
       document.documentElement.classList.add('dark');
