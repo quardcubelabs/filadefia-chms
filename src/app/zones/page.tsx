@@ -378,129 +378,52 @@ export default function ZonesPage() {
               </div>
             </div>
 
-            {/* Zones Grid */}
-            <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border">
-              <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">All Zones</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">Click on any zone to view details and manage members</p>
-              </div>
-              <div className="p-3 sm:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-                  {zones.map((zone) => (
-                    <div 
-                      key={zone.id} 
-                      className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
-                      onClick={() => router.push(`/zones/${zone.id}`)}
-                    >
-                      {/* Icon and Badge */}
-                      <div className="flex items-start justify-between mb-3 sm:mb-4">
-                        <div className={`h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
-                          <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                        </div>
-                        <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {zone.member_count} {zone.member_count === 1 ? 'Member' : 'Members'}
-                        </span>
-                      </div>
-
-                      {/* Zone Name */}
-                      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                        {zone.name}
-                      </h4>
-
-                      {/* Swahili Name */}
-                      {zone.swahili_name && (
-                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-2">
-                          {zone.swahili_name}
-                        </p>
-                      )}
-
-                      {/* Leader */}
-                      {zone.leader_name && (
-                        <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                          <span className="font-medium">Leader:</span> {zone.leader_name}
-                        </p>
-                      )}
-
-                      {/* Description */}
-                      <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
-                        {zone.description || 'No description available'}
-                      </p>
-
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <button
-                          className="text-gray-500 hover:text-blue-600 p-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(zone);
-                          }}
-                          title="Edit Zone"
-                        >
-                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </button>
-                        <button
-                          className="text-gray-500 hover:text-red-600 p-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteZone(zone.id);
-                          }}
-                          title="Delete Zone"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile Zones Grid - Individual Cards */}
-            <div className="md:hidden space-y-3">
+            {/* Zones Grid - Independent Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {zones.map((zone) => (
                 <div 
                   key={zone.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+                  className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] transition-all duration-200 cursor-pointer group shadow-sm"
                   onClick={() => router.push(`/zones/${zone.id}`)}
                 >
                   {/* Icon and Badge */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`h-10 w-10 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
-                      <MapPin className="h-5 w-5 text-white" />
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br ${zone.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                      <MapPin className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                     </div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                       {zone.member_count} {zone.member_count === 1 ? 'Member' : 'Members'}
                     </span>
                   </div>
 
                   {/* Zone Name */}
-                  <h4 className="text-base font-semibold text-gray-900 mb-1">
+                  <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                     {zone.name}
                   </h4>
 
                   {/* Swahili Name */}
                   {zone.swahili_name && (
-                    <p className="text-xs font-medium text-gray-500 mb-2">
+                    <p className="text-sm font-medium text-gray-500 mb-2">
                       {zone.swahili_name}
                     </p>
                   )}
 
                   {/* Leader */}
                   {zone.leader_name && (
-                    <p className="text-xs text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 mb-2">
                       <span className="font-medium">Leader:</span> {zone.leader_name}
                     </p>
                   )}
 
                   {/* Description */}
-                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                     {zone.description || 'No description available'}
                   </p>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
                     <button
-                      className="text-gray-500 hover:text-blue-600 p-1"
+                      className="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(zone);
@@ -510,7 +433,7 @@ export default function ZonesPage() {
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      className="text-gray-500 hover:text-red-600 p-1"
+                      className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteZone(zone.id);
