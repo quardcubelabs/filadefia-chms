@@ -25,15 +25,15 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = !!error;
 
-    const selectBaseStyles = 'block w-full rounded-lg sm:rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 pr-8 sm:pr-10 transition-all focus:outline-none focus:ring-2 appearance-none text-sm sm:text-base text-gray-900 shadow-sm';
+    const selectBaseStyles = 'block w-full rounded-lg sm:rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 pr-8 sm:pr-10 transition-all focus:outline-none focus:ring-2 appearance-none text-sm sm:text-base text-gray-900 dark:text-white shadow-sm';
     const selectStateStyles = hasError
-      ? 'border-red-400 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-white'
-      : 'border-gray-400 bg-gray-50 hover:bg-white hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:ring-2 focus:bg-white';
+      ? 'border-red-400 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-white dark:bg-slate-800'
+      : 'border-gray-400 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 hover:bg-white dark:hover:bg-slate-600 hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:ring-2 focus:bg-white dark:focus:bg-slate-700';
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label htmlFor={selectId} className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label htmlFor={selectId} className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
             {label}
           </label>
         )}
@@ -55,7 +55,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 sm:pr-3 pointer-events-none text-gray-600">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 sm:pr-3 pointer-events-none text-gray-600 dark:text-gray-400">
             <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
         </div>

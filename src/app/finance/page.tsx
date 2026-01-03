@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useTheme } from '@/contexts/ThemeContext';
 import MainLayout from '@/components/MainLayout';
 import { 
   Button, 
@@ -127,6 +128,7 @@ export default function FinancePage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
   const { isDepartmentLeader, departmentId, departmentName, loading: departmentLoading } = useDepartmentAccess();
+  const { darkMode } = useTheme();
   
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -907,18 +909,18 @@ export default function FinancePage() {
             {/* Financial Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Income vs Expense Line Chart */}
-              <div className="bg-[#F1F5F9] rounded-xl sm:rounded-2xl p-3 sm:p-6">
+              <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-6 ${darkMode ? 'bg-slate-800' : 'bg-[#F1F5F9]'}`}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                    <h3 className="text-base sm:text-xl font-semibold text-gray-900">Financial Trend</h3>
+                    <h3 className={`text-base sm:text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Financial Trend</h3>
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#22D3EE]"></div>
-                        <span className="text-xs sm:text-sm text-gray-600">Income</span>
+                        <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Income</span>
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#2563EB]"></div>
-                        <span className="text-xs sm:text-sm text-gray-600">Expense</span>
+                        <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expense</span>
                       </div>
                     </div>
                   </div>
@@ -926,13 +928,17 @@ export default function FinancePage() {
                     <select 
                       value={trendChartPeriod}
                       onChange={(e) => setTrendChartPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
-                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`appearance-none border rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        darkMode 
+                          ? 'bg-slate-700 border-slate-600 text-gray-300' 
+                          : 'bg-white border-gray-200 text-gray-600'
+                      }`}
                     >
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
+                    <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 pointer-events-none ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                   </div>
                 </div>
                 <div className="h-48 sm:h-64">
@@ -1118,27 +1124,31 @@ export default function FinancePage() {
               </div>
 
               {/* Income Breakdown Donut Chart */}
-              <div className="bg-[#F1F5F9] rounded-xl sm:rounded-2xl p-3 sm:p-6">
+              <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-6 ${darkMode ? 'bg-slate-800' : 'bg-[#F1F5F9]'}`}>
                 <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
-                  <h3 className="text-base sm:text-xl font-semibold text-gray-900">Income (%)</h3>
+                  <h3 className={`text-base sm:text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Income (%)</h3>
                   <div className="relative">
                     <select 
                       value={incomeChartPeriod}
                       onChange={(e) => setIncomeChartPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
-                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`appearance-none border rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        darkMode 
+                          ? 'bg-slate-700 border-slate-600 text-gray-300' 
+                          : 'bg-white border-gray-200 text-gray-600'
+                      }`}
                     >
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
+                    <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 pointer-events-none ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                   </div>
                 </div>
 
                 {/* Total Income - Top */}
                 <div className="mb-3 sm:mb-4">
-                  <p className="text-[10px] sm:text-xs text-gray-500">Total Income ({incomeChartPeriod === 'weekly' ? 'This Week' : incomeChartPeriod === 'monthly' ? 'This Month' : 'This Year'})</p>
-                  <p className="text-base sm:text-lg font-bold text-gray-900">
+                  <p className={`text-[10px] sm:text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Income ({incomeChartPeriod === 'weekly' ? 'This Week' : incomeChartPeriod === 'monthly' ? 'This Month' : 'This Year'})</p>
+                  <p className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     {(() => {
                       const now = new Date();
                       let startDate: Date;
@@ -1329,9 +1339,9 @@ export default function FinancePage() {
                     <div className="flex items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-cyan-400 flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm text-gray-600">Offerings</span>
+                        <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Offerings</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                      <span className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
@@ -1372,9 +1382,9 @@ export default function FinancePage() {
                     <div className="flex items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm text-gray-600">Tithes</span>
+                        <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tithes</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                      <span className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
@@ -1415,9 +1425,9 @@ export default function FinancePage() {
                     <div className="flex items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-pink-500 flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm text-gray-600">Contributions</span>
+                        <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Contributions</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                      <span className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
@@ -1465,7 +1475,7 @@ export default function FinancePage() {
               /* Recent Transactions View */
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Transactions</h2>
+                  <h2 className={`text-lg sm:text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recent Transactions</h2>
                   <Button
                     variant="outline"
                     onClick={() => setShowAllTransactions(true)}
@@ -1489,36 +1499,36 @@ export default function FinancePage() {
                   <Card>
                     <CardBody>
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                        <table className={`min-w-full divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
+                          <thead className={darkMode ? 'bg-slate-700' : 'bg-gray-50'}>
                             <tr>
-                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Date
                               </th>
-                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Type & Description
                               </th>
-                              <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Member
                               </th>
-                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Amount
                               </th>
-                              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`hidden md:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Method
                               </th>
-                              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`hidden lg:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Status
                               </th>
-                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                 Actions
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className={`divide-y ${darkMode ? 'bg-slate-800 divide-slate-700' : 'bg-white divide-gray-200'}`}>
                             {filteredTransactions.slice(0, RECENT_TRANSACTIONS_LIMIT).map((transaction) => (
-                              <tr key={transaction.id} className="hover:bg-gray-50">
-                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                              <tr key={transaction.id} className={darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-50'}>
+                                <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                   {formatDate(transaction.date)}
                                 </td>
                                 <td className="px-4 sm:px-6 py-4">
@@ -1534,21 +1544,21 @@ export default function FinancePage() {
                                         {transaction.transaction_type.toUpperCase()}
                                       </Badge>
                                       {transaction.description && (
-                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-1">
+                                        <p className={`text-xs sm:text-sm mt-1 line-clamp-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                           {transaction.description}
                                         </p>
                                       )}
                                     </div>
                                   </div>
                                 </td>
-                                <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                   {transaction.member ? (
                                     <div>
                                       <p>{transaction.member.first_name} {transaction.member.last_name}</p>
-                                      <p className="text-xs text-gray-500">#{transaction.member.member_number}</p>
+                                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>#{transaction.member.member_number}</p>
                                     </div>
                                   ) : (
-                                    <span className="text-gray-400">Anonymous</span>
+                                    <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>Anonymous</span>
                                   )}
                                 </td>
                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -1559,9 +1569,9 @@ export default function FinancePage() {
                                     {formatCurrency(transaction.amount)}
                                   </span>
                                 </td>
-                                <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td className={`hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                   <div className="flex items-center space-x-1">
-                                    <CreditCard className="h-4 w-4 text-gray-400" />
+                                    <CreditCard className={`h-4 w-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                                     <span>{transaction.payment_method}</span>
                                   </div>
                                 </td>
@@ -1635,11 +1645,11 @@ export default function FinancePage() {
                     <Button
                       variant="ghost"
                       onClick={() => setShowAllTransactions(false)}
-                      className="text-gray-600 hover:text-gray-800"
+                      className={`${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Transaction History</h2>
+                    <h2 className={`text-lg sm:text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Transaction History</h2>
                     <Badge variant="primary">{filteredTransactions.length} transactions</Badge>
                   </div>
                 </div>
@@ -1658,36 +1668,36 @@ export default function FinancePage() {
                   <Card>
                     <CardBody>
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                        <table className={`min-w-full divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
+                          <thead className={darkMode ? 'bg-slate-700' : 'bg-gray-50'}>
                             <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Date
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Type & Description
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Member
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Amount
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Method
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Status
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                             Actions
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className={`divide-y ${darkMode ? 'bg-slate-800 divide-slate-700' : 'bg-white divide-gray-200'}`}>
                         {filteredTransactions.map((transaction) => (
-                          <tr key={transaction.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <tr key={transaction.id} className={darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-50'}>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               {formatDate(transaction.date)}
                             </td>
                             <td className="px-6 py-4">
@@ -1703,21 +1713,21 @@ export default function FinancePage() {
                                     {transaction.transaction_type.toUpperCase()}
                                   </Badge>
                                   {transaction.description && (
-                                    <p className="text-sm text-gray-600 mt-1">
+                                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                       {transaction.description}
                                     </p>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               {transaction.member ? (
                                 <div>
                                   <p>{transaction.member.first_name} {transaction.member.last_name}</p>
-                                  <p className="text-xs text-gray-500">#{transaction.member.member_number}</p>
+                                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>#{transaction.member.member_number}</p>
                                 </div>
                               ) : (
-                                <span className="text-gray-400">Anonymous</span>
+                                <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>Anonymous</span>
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1728,13 +1738,13 @@ export default function FinancePage() {
                                 {formatCurrency(transaction.amount)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               <div className="flex items-center space-x-1">
-                                <CreditCard className="h-4 w-4 text-gray-400" />
+                                <CreditCard className={`h-4 w-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                                 <span>{transaction.payment_method}</span>
                               </div>
                               {transaction.reference_number && (
-                                <p className="text-xs text-gray-500">
+                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                   Ref: {transaction.reference_number}
                                 </p>
                               )}

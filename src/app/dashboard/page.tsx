@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
 import AttendanceCard from '@/components/AttendanceCard';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import { 
   Building2,
@@ -18,10 +19,10 @@ import {
 // Loading component to prevent blank pages
 function DashboardLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
       <div className="text-center">
         <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-        <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Loading dashboard...</p>
       </div>
     </div>
   );
@@ -31,7 +32,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, status, signOut, supabase } = useAuth();
   const { departmentId, isDepartmentLeader, loading: deptAccessLoading } = useDepartmentAccess();
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, toggleDarkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [dashboardData, setDashboardData] = useState({
@@ -498,7 +499,7 @@ export default function DashboardPage() {
 
 
 
-  const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
+  const bgColor = darkMode ? 'bg-slate-900' : 'bg-gray-50';
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
@@ -518,10 +519,10 @@ export default function DashboardPage() {
       window.location.href = '/login';
     }
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-          <p className="mt-3 text-gray-600 text-sm">Redirecting to login...</p>
+          <p className="mt-3 text-gray-600 dark:text-gray-400 text-sm">Redirecting to login...</p>
         </div>
       </div>
     );
@@ -557,7 +558,7 @@ export default function DashboardPage() {
           title={`Hello ${user?.profile?.first_name || user?.email?.split('@')[0] || 'User'}`}
           subtitle="Tanzania Assemblies of God - FCC"
           darkMode={darkMode}
-          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onToggleDarkMode={toggleDarkMode}
           onMenuClick={() => setSidebarOpen(true)}
         />
 
@@ -1384,7 +1385,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <span className={textSecondary}>Dark Mode</span>
                     <button
-                      onClick={() => setDarkMode(!darkMode)}
+                      onClick={toggleDarkMode}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                         darkMode ? 'bg-blue-600' : 'bg-gray-300'
                       }`}

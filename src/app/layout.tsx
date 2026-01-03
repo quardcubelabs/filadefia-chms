@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,10 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased h-full bg-gray-50`} suppressHydrationWarning>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className={`${inter.className} antialiased h-full bg-gray-50 dark:bg-slate-900`} suppressHydrationWarning>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

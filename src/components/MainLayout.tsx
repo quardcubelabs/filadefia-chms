@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,6 @@ interface MainLayoutProps {
   searchPlaceholder?: string;
   onSearch?: (query: string) => void;
   navbarActions?: React.ReactNode;
-  darkMode?: boolean;
   className?: string;
 }
 
@@ -24,20 +24,15 @@ export default function MainLayout({
   searchPlaceholder = "Search...",
   onSearch,
   navbarActions,
-  darkMode: initialDarkMode = false,
   className = ''
 }: MainLayoutProps) {
-  const [darkMode, setDarkMode] = useState(initialDarkMode);
+  const { darkMode, toggleDarkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
-  const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
+  const bgColor = darkMode ? 'bg-slate-900' : 'bg-gray-50';
 
   return (
-    <div className={`min-h-screen ${bgColor} ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${bgColor}`}>
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 

@@ -107,8 +107,8 @@ export default function TopNavbar({
     loadNotifications();
   }, [user, supabase, isDepartmentLeader, departmentId, isZoneLeader, zoneId]);
 
-  const bgColor = darkMode ? 'bg-gray-900' : 'bg-white';
-  const borderColor = darkMode ? 'border-gray-800' : 'border-gray-200';
+  const bgColor = darkMode ? 'bg-slate-800' : 'bg-white';
+  const borderColor = darkMode ? 'border-slate-700' : 'border-gray-200';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
 
@@ -212,27 +212,35 @@ export default function TopNavbar({
 
               {/* Notifications Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                  <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                <div className={`absolute right-0 mt-2 w-80 rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto ${
+                  darkMode 
+                    ? 'bg-slate-800 border-slate-700' 
+                    : 'bg-white border-gray-200'
+                }`}>
+                  <div className={`p-3 border-b flex items-center justify-between ${
+                    darkMode ? 'border-slate-700' : 'border-gray-200'
+                  }`}>
+                    <h3 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Notifications</h3>
                     <button
                       onClick={() => setShowNotifications(false)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className={`${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   
                   {notifications.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500 text-sm">
+                    <div className={`p-4 text-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       No new notifications
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-100">
+                    <div className={`divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className="p-3 hover:bg-gray-50 cursor-pointer"
+                          className={`p-3 cursor-pointer ${
+                            darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-50'
+                          }`}
                           onClick={() => {
                             setShowNotifications(false);
                             router.push('/messages');
@@ -244,13 +252,19 @@ export default function TopNavbar({
                               notification.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
                             }`} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className={`text-sm font-medium truncate ${
+                                darkMode ? 'text-white' : 'text-gray-900'
+                              }`}>
                                 {notification.title}
                               </p>
-                              <p className="text-xs text-gray-500 line-clamp-2">
+                              <p className={`text-xs line-clamp-2 ${
+                                darkMode ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
                                 {notification.content}
                               </p>
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className={`text-xs mt-1 ${
+                                darkMode ? 'text-gray-500' : 'text-gray-400'
+                              }`}>
                                 {new Date(notification.created_at).toLocaleDateString()}
                               </p>
                             </div>
@@ -260,7 +274,7 @@ export default function TopNavbar({
                     </div>
                   )}
                   
-                  <div className="p-2 border-t border-gray-200">
+                  <div className={`p-2 border-t ${darkMode ? 'border-slate-700' : 'border-gray-200'}`}>
                     <button
                       onClick={() => {
                         setShowNotifications(false);
