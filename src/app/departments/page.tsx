@@ -7,9 +7,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
+import { Modal, Input, TextArea, Button } from '@/components/ui';
 import { 
   Users, Building2, UserCheck, TrendingUp, ArrowRight, 
-  Music, Heart, Briefcase, BookOpen, Globe, Phone, Plus, Edit
+  Music, Heart, Briefcase, BookOpen, Globe, Phone, Plus, Edit, X
 } from 'lucide-react';
 
 interface Department {
@@ -18,6 +19,7 @@ interface Department {
   swahili_name?: string;
   description?: string;
   leader_id?: string;
+  leader_user_id?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -27,6 +29,8 @@ interface DepartmentStats {
   name: string;
   swahili_name?: string;
   description?: string;
+  leader_id?: string;
+  leader_user_id?: string;
   member_count: number;
   leader_name?: string;
   icon: any;
@@ -39,6 +43,15 @@ export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<DepartmentStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Add Department Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    swahili_name: '',
+    description: ''
+  });
 
   useEffect(() => {
     console.log('Auth state:', { user: !!user, authLoading, supabase: !!supabase });
@@ -141,6 +154,49 @@ export default function DepartmentsPage() {
     return colorMap[name] || 'from-red-500 to-red-700';
   };
 
+  const handleAddDepartment = async () => {
+    if (!formData.name.trim()) {
+      setError('Department name is required');
+      return;
+    }
+
+    if (!supabase) {
+      setError('Database connection not available');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const { data, error: insertError } = await supabase
+        .from('departments')
+        .insert({
+          name: formData.name.trim(),
+          swahili_name: formData.swahili_name.trim() || null,
+          description: formData.description.trim() || null,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Reset form and close modal
+      setFormData({ name: '', swahili_name: '', description: '' });
+      setIsAddModalOpen(false);
+      
+      // Refresh departments list
+      await fetchDepartments();
+
+    } catch (err: any) {
+      console.error('Error adding department:', err);
+      setError(err.message || 'Failed to add department');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -169,7 +225,7 @@ export default function DepartmentsPage() {
           </div>
           <div className="flex gap-3 mt-4 md:mt-0">
             <button
-              onClick={() => router.push('/departments/create')}
+              onClick={() => setIsAddModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -224,7 +280,7 @@ export default function DepartmentsPage() {
             <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No departments found</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4">No active departments are currently configured in the system</p>
             <button
-              onClick={() => router.push('/departments/create')}
+              onClick={() => setIsAddModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg flex items-center gap-2 transition-colors mx-auto text-sm sm:text-base"
             >
               <Plus className="w-4 h-4" />
@@ -236,45 +292,47 @@ export default function DepartmentsPage() {
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
               {/* Total Departments Card */}
-              <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-                  <Building2 className="h-5 w-5 sm:h-7 sm:w-7 text-blue-600" />
+              <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Total Departments</p>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+                <p className="text-xs text-gray-600 mb-1">Total Departments</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                   {departments.length}
                 </h3>
               </div>
 
               {/* Total Members Card */}
-              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-                  <Users className="h-5 w-5 sm:h-7 sm:w-7 text-green-600" />
+              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Total Members</p>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+                <p className="text-xs text-gray-600 mb-1">Total Members</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                   {departments.reduce((sum, d) => sum + d.member_count, 0)}
                 </h3>
               </div>
 
               {/* Average Members Card */}
-              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-                  <TrendingUp className="h-5 w-5 sm:h-7 sm:w-7 text-purple-600" />
+              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Avg Members/Dept</p>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+                <p className="text-xs text-gray-600 mb-1">Avg Members/Dept</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                   {departments.length > 0 ? Math.round(departments.reduce((sum, d) => sum + d.member_count, 0) / departments.length) : 0}
                 </h3>
               </div>
 
               {/* Active Status Card */}
-              <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-                <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-                  <UserCheck className="h-5 w-5 sm:h-7 sm:w-7 text-cyan-600" />
+              <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Status</p>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600">Active</h3>
+                <p className="text-xs text-gray-600 mb-1">With Leaders</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {departments.filter(d => d.leader_id || d.leader_user_id).length}
+                </h3>
               </div>
             </div>
 
@@ -344,6 +402,80 @@ export default function DepartmentsPage() {
           </>
         )}
       </div>
+
+      {/* Add Department Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setFormData({ name: '', swahili_name: '', description: '' });
+          setError(null);
+        }}
+        title="Add New Department"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Department Name *"
+            placeholder="e.g., Youth Department"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+          
+          <Input
+            label="Swahili Name"
+            placeholder="e.g., Idara ya Vijana"
+            value={formData.swahili_name}
+            onChange={(e) => setFormData({ ...formData, swahili_name: e.target.value })}
+          />
+          
+          <TextArea
+            label="Description"
+            placeholder="Brief description of the department's purpose and activities..."
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+          />
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                setFormData({ name: '', swahili_name: '', description: '' });
+                setError(null);
+              }}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleAddDepartment}
+              disabled={saving || !formData.name.trim()}
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Department
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </MainLayout>
   );
 }

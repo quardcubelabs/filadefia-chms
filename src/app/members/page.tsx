@@ -559,61 +559,41 @@ export default function MembersPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-          <Card variant="default" padding="sm" rounded="xl">
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Members</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.total}</p>
-                </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
-                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          {/* Total Members Card */}
+          <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+            <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            </div>
+            <p className="text-xs text-gray-600 mb-1">Total Members</p>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.total}</h3>
+          </div>
 
-          <Card variant="default" padding="sm" rounded="xl">
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Active Members</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-green-600 mt-0.5 sm:mt-1">{stats.active}</p>
-                </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
-                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          {/* Active Members Card */}
+          <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+            <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            </div>
+            <p className="text-xs text-gray-600 mb-1">Active Members</p>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.active}</h3>
+          </div>
 
-          <Card variant="default" padding="sm" rounded="xl">
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Visitors</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600 mt-0.5 sm:mt-1">{stats.visitors}</p>
-                </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
-                  <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          {/* Visitors Card */}
+          <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+            <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            </div>
+            <p className="text-xs text-gray-600 mb-1">Visitors</p>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.visitors}</h3>
+          </div>
 
-          <Card variant="default" padding="sm" rounded="xl">
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">New This Month</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-600 mt-0.5 sm:mt-1">{stats.newThisMonth}</p>
-                </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
-                  <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          {/* New This Month Card */}
+          <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+            <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
+            </div>
+            <p className="text-xs text-gray-600 mb-1">New This Month</p>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.newThisMonth}</h3>
+          </div>
         </div>
 
         {/* Actions & Filters */}

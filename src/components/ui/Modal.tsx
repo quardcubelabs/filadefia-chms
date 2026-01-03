@@ -60,9 +60,9 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Overlay */}
+      {/* Overlay - Shows blurry background of current page */}
       <div 
-        className="fixed inset-0 bg-tag-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/30 backdrop-blur-md transition-opacity"
         onClick={closeOnOverlayClick ? onClose : undefined}
       ></div>
 

@@ -1111,7 +1111,7 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
 
         {/* Add Member Modal */}
         {showAddMemberModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-6 py-4 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">Add Member to Zone</h3>
@@ -1197,7 +1197,7 @@ export default function ZoneDashboardPage({ params }: { params: Promise<{ id: st
 
         {/* Edit Member Modal */}
         {showEditMember && selectedMember && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
               <div className="p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
