@@ -372,8 +372,8 @@ export default function SettingsPage() {
   }
 
   const profile = user?.profile;
-  const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
-  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const bgColor = darkMode ? 'bg-slate-900' : 'bg-gray-50';
+  const cardBg = darkMode ? 'bg-slate-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
 

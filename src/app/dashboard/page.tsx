@@ -500,12 +500,12 @@ export default function DashboardPage() {
 
 
   const bgColor = darkMode ? 'bg-slate-900' : 'bg-gray-50';
-  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const cardBg = darkMode ? 'bg-slate-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
-  const borderClass = darkMode ? '' : 'border border-gray-200';
-  const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
-  const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const borderClass = darkMode ? 'border border-slate-700' : 'border border-gray-200';
+  const borderColor = darkMode ? 'border-slate-700' : 'border-gray-200';
+  const inputBg = darkMode ? 'bg-slate-700' : 'bg-white';
 
   // Show loading screen ONLY while auth is initializing (not when unauthenticated)
   if (authLoading || status === AuthStatus.LOADING) {
@@ -732,7 +732,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {departmentLeaders.length > 0 ? (
                   departmentLeaders.slice(0, 4).map((leader, index) => (
-                    <div key={index} className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                    <div key={index} className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-slate-700' : 'bg-gray-50'}`}>
                       <div className="relative">
                         <img
                           src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
