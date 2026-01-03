@@ -42,7 +42,9 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  ChevronDown
+  ChevronDown,
+  History,
+  ArrowLeft
 } from 'lucide-react';
 import {
   LineChart,
@@ -158,6 +160,10 @@ export default function FinancePage() {
   // Chart period filters
   const [trendChartPeriod, setTrendChartPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
   const [incomeChartPeriod, setIncomeChartPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  
+  // View mode for transactions
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const RECENT_TRANSACTIONS_LIMIT = 10;
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -1454,24 +1460,207 @@ export default function FinancePage() {
               </div>
             </div>
 
-            {/* Transactions List */}
-            {filteredTransactions.length === 0 ? (
-              <EmptyState
-                icon={<DollarSign className="h-16 w-16 text-gray-400" />}
-                title="No Transactions Found"
-                description="No transactions match your current filters."
-                action={{
-                  label: "Add First Transaction",
-                  onClick: () => setIsAddModalOpen(true)
-                }}
-              />
+            {/* Transactions Section */}
+            {!showAllTransactions ? (
+              /* Recent Transactions View */
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Transactions</h2>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllTransactions(true)}
+                    className="text-blue-800 border-blue-800 hover:bg-blue-50"
+                  >
+                    <History className="h-4 w-4 mr-2" />
+                    View All History
+                  </Button>
+                </div>
+                {filteredTransactions.length === 0 ? (
+                  <EmptyState
+                    icon={<DollarSign className="h-16 w-16 text-gray-400" />}
+                    title="No Transactions Found"
+                    description="No transactions match your current filters."
+                    action={{
+                      label: "Add First Transaction",
+                      onClick: () => setIsAddModalOpen(true)
+                    }}
+                  />
+                ) : (
+                  <Card>
+                    <CardBody>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                              </th>
+                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type & Description
+                              </th>
+                              <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Member
+                              </th>
+                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Amount
+                              </th>
+                              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Method
+                              </th>
+                              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                              </th>
+                              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredTransactions.slice(0, RECENT_TRANSACTIONS_LIMIT).map((transaction) => (
+                              <tr key={transaction.id} className="hover:bg-gray-50">
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                                  {formatDate(transaction.date)}
+                                </td>
+                                <td className="px-4 sm:px-6 py-4">
+                                  <div className="flex items-center space-x-2">
+                                    {getTransactionTypeIcon(transaction.transaction_type)}
+                                    <div>
+                                      <Badge 
+                                        variant={
+                                          ['tithe', 'offering', 'donation'].includes(transaction.transaction_type) ? 'success' :
+                                          ['expense', 'welfare'].includes(transaction.transaction_type) ? 'danger' : 'primary'
+                                        }
+                                      >
+                                        {transaction.transaction_type.toUpperCase()}
+                                      </Badge>
+                                      {transaction.description && (
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-1">
+                                          {transaction.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {transaction.member ? (
+                                    <div>
+                                      <p>{transaction.member.first_name} {transaction.member.last_name}</p>
+                                      <p className="text-xs text-gray-500">#{transaction.member.member_number}</p>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">Anonymous</span>
+                                  )}
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                  <span className={`text-xs sm:text-sm font-medium ${
+                                    ['expense', 'welfare'].includes(transaction.transaction_type) 
+                                      ? 'text-red-600' : 'text-green-600'
+                                  }`}>
+                                    {formatCurrency(transaction.amount)}
+                                  </span>
+                                </td>
+                                <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <div className="flex items-center space-x-1">
+                                    <CreditCard className="h-4 w-4 text-gray-400" />
+                                    <span>{transaction.payment_method}</span>
+                                  </div>
+                                </td>
+                                <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                                  {transaction.verified ? (
+                                    <Badge variant="success">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Verified
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="warning">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Pending
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <div className="flex space-x-1">
+                                    {!transaction.verified && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleVerifyTransaction(transaction.id)}
+                                        icon={<CheckCircle className="h-4 w-4" />}
+                                        className="text-green-600 hover:text-green-700"
+                                      />
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openEditModal(transaction)}
+                                      icon={<Edit className="h-4 w-4" />}
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedTransaction(transaction);
+                                        setIsDeleteModalOpen(true);
+                                      }}
+                                      icon={<Trash2 className="h-4 w-4" />}
+                                      className="text-red-600 hover:text-red-700"
+                                    />
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {filteredTransactions.length > RECENT_TRANSACTIONS_LIMIT && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowAllTransactions(true)}
+                            className="text-blue-800 border-blue-800 hover:bg-blue-50"
+                          >
+                            View {filteredTransactions.length - RECENT_TRANSACTIONS_LIMIT} more transactions
+                          </Button>
+                        </div>
+                      )}
+                    </CardBody>
+                  </Card>
+                )}
+              </>
             ) : (
-              <Card>
-                <CardBody>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
+              /* Full Transaction History View */
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowAllTransactions(false)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Transaction History</h2>
+                    <Badge variant="primary">{filteredTransactions.length} transactions</Badge>
+                  </div>
+                </div>
+                
+                {filteredTransactions.length === 0 ? (
+                  <EmptyState
+                    icon={<DollarSign className="h-16 w-16 text-gray-400" />}
+                    title="No Transactions Found"
+                    description="No transactions match your current filters."
+                    action={{
+                      label: "Add First Transaction",
+                      onClick: () => setIsAddModalOpen(true)
+                    }}
+                  />
+                ) : (
+                  <Card>
+                    <CardBody>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Date
                           </th>
@@ -1599,6 +1788,8 @@ export default function FinancePage() {
                   </div>
                 </CardBody>
               </Card>
+                )}
+              </>
             )}
 
           {/* Add Transaction Modal */}
