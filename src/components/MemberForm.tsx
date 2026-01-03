@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Input, TextArea, Select } from '@/components/ui';
-import { User, Phone, Mail, MapPin, Calendar, Briefcase, Users as UsersIcon, Upload, Building2, X } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, Briefcase, Users as UsersIcon, Upload, Building2, X, Map } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Department {
+  id: string;
+  name: string;
+  swahili_name?: string;
+}
+
+interface Zone {
   id: string;
   name: string;
   swahili_name?: string;
@@ -31,6 +37,7 @@ interface MemberFormData {
   notes: string;
   photo_url: string;
   department_ids: string[];
+  zone_id: string;
 }
 
 interface MemberFormProps {
@@ -44,7 +51,9 @@ interface MemberFormProps {
 export default function MemberForm({ initialData, onSubmit, onCancel, isEditing = false, loading = false }: MemberFormProps) {
   const { supabase } = useAuth();
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
+  const [loadingZones, setLoadingZones] = useState(true);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   
   const [formData, setFormData] = useState<MemberFormData>({
@@ -67,11 +76,12 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
     notes: initialData?.notes || '',
     photo_url: initialData?.photo_url || '',
     department_ids: initialData?.department_ids || [],
+    zone_id: initialData?.zone_id || '',
   });
 
   const [uploading, setUploading] = useState(false);
 
-  // Fetch departments on component mount
+  // Fetch departments and zones on component mount
   useEffect(() => {
     const fetchDepartments = async () => {
       if (!supabase) return;
@@ -92,7 +102,27 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       }
     };
 
+    const fetchZones = async () => {
+      if (!supabase) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('zones')
+          .select('id, name, swahili_name')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+        setZones(data || []);
+      } catch (error) {
+        console.error('Error fetching zones:', error);
+      } finally {
+        setLoadingZones(false);
+      }
+    };
+
     fetchDepartments();
+    fetchZones();
   }, [supabase]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -477,6 +507,61 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
               No departments assigned yet. Members can be assigned to multiple departments.
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Zone Assignment */}
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <Map className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
+          Zone Assignment
+        </h3>
+        
+        <div className="space-y-3 sm:space-y-4">
+          <Select
+            label="Select Zone"
+            name="zone_id"
+            value={formData.zone_id}
+            onChange={handleChange}
+            options={[
+              { value: '', label: 'Choose a zone (optional)...' },
+              ...zones.map(zone => ({
+                value: zone.id,
+                label: zone.swahili_name ? `${zone.name} (${zone.swahili_name})` : zone.name
+              }))
+            ]}
+            disabled={loadingZones}
+            fullWidth
+          />
+          
+          {formData.zone_id && (
+            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+              <div className="flex items-center space-x-3">
+                <Map className="h-4 w-4 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {zones.find(z => z.id === formData.zone_id)?.name}
+                  </p>
+                  {zones.find(z => z.id === formData.zone_id)?.swahili_name && (
+                    <p className="text-xs text-gray-500">
+                      {zones.find(z => z.id === formData.zone_id)?.swahili_name}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, zone_id: '' }))}
+                className="text-red-600 hover:text-red-700 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          <p className="text-sm text-gray-500 italic">
+            {formData.zone_id ? 'Member will be assigned to this zone.' : 'Members can be assigned to one zone based on their location.'}
+          </p>
         </div>
       </div>
 

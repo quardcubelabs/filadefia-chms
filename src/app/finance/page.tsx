@@ -67,6 +67,7 @@ interface FinancialTransaction {
   payment_method: string;
   reference_number?: string;
   department_id?: string;
+  zone_id?: string;
   date: string;
   recorded_by: string;
   verified: boolean;
@@ -82,6 +83,9 @@ interface FinancialTransaction {
   department?: {
     name: string;
   };
+  zone?: {
+    name: string;
+  };
   recorder?: {
     first_name: string;
     last_name: string;
@@ -89,6 +93,12 @@ interface FinancialTransaction {
 }
 
 interface Department {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+interface Zone {
   id: string;
   name: string;
   is_active: boolean;
@@ -118,6 +128,7 @@ export default function FinancePage() {
   
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [summary, setSummary] = useState<FinancialSummary>({
     totalIncome: 0,
@@ -138,6 +149,7 @@ export default function FinancePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [filterZone, setFilterZone] = useState<string>('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
   const [filterVerified, setFilterVerified] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -162,6 +174,7 @@ export default function FinancePage() {
     payment_method: 'Cash',
     reference_number: '',
     department_id: '',
+    zone_id: '',
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -183,6 +196,7 @@ export default function FinancePage() {
       setDataLoaded(true); // Mark as loaded to prevent re-runs
       loadTransactions();
       loadDepartments();
+      loadZones();
       loadMembers();
     }
   }, [user, authLoading, departmentLoading, dataLoaded]); // Added dataLoaded to dependencies
@@ -203,7 +217,8 @@ export default function FinancePage() {
         .select(`
           *,
           member:members(first_name, last_name, member_number),
-          department:departments(name)
+          department:departments(name),
+          zone:zones(name)
         `);
 
       // If user is a department leader, filter by their department
@@ -338,6 +353,23 @@ export default function FinancePage() {
     }
   };
 
+  const loadZones = async () => {
+    if (!supabase) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('zones')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setZones(data || []);
+    } catch (err: any) {
+      console.error('Error loading zones:', err);
+    }
+  };
+
   const loadMembers = async () => {
     if (!supabase) return;
     
@@ -419,6 +451,7 @@ export default function FinancePage() {
         payment_method: formData.payment_method,
         reference_number: formData.reference_number || null,
         department_id: isDepartmentLeader ? departmentId : (formData.department_id || null),
+        zone_id: formData.zone_id || null,
         date: formData.date,
         recorded_by: user.profile.id
       };
@@ -451,6 +484,7 @@ export default function FinancePage() {
         payment_method: formData.payment_method,
         reference_number: formData.reference_number || null,
         department_id: isDepartmentLeader ? departmentId : (formData.department_id || null),
+        zone_id: formData.zone_id || null,
         date: formData.date
       };
 
@@ -525,6 +559,7 @@ export default function FinancePage() {
       payment_method: 'Cash',
       reference_number: '',
       department_id: '',
+      zone_id: '',
       date: new Date().toISOString().split('T')[0]
     });
   };
@@ -539,6 +574,7 @@ export default function FinancePage() {
       payment_method: transaction.payment_method,
       reference_number: transaction.reference_number || '',
       department_id: transaction.department_id || '',
+      zone_id: transaction.zone_id || '',
       date: transaction.date
     });
     setIsEditModalOpen(true);
@@ -1633,6 +1669,16 @@ export default function FinancePage() {
                 <p className="text-xs text-gray-500">All transactions will be assigned to your department</p>
               </div>
             )}
+
+            <Select
+              label="Zone (Optional)"
+              value={formData.zone_id}
+              onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
+              options={[
+                { value: "", label: "No Zone" },
+                ...zones.map(zone => ({ value: zone.id, label: zone.name }))
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1747,6 +1793,16 @@ export default function FinancePage() {
                 </div>
               </div>
             )}
+
+            <Select
+              label="Zone (Optional)"
+              value={formData.zone_id}
+              onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
+              options={[
+                { value: "", label: "No Zone" },
+                ...zones.map(zone => ({ value: zone.id, label: zone.name }))
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

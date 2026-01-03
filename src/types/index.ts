@@ -5,7 +5,8 @@ export type UserRole =
   | 'pastor' 
   | 'treasurer' 
   | 'secretary' 
-  | 'department_leader' 
+  | 'department_leader'
+  | 'zone_leader'
   | 'member';
 
 export type MemberStatus = 'active' | 'visitor' | 'transferred' | 'inactive';

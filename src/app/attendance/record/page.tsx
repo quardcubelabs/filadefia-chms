@@ -35,6 +35,12 @@ interface Department {
   swahili_name?: string;
 }
 
+interface Zone {
+  id: string;
+  name: string;
+  swahili_name?: string;
+}
+
 export default function RecordAttendancePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -42,11 +48,13 @@ export default function RecordAttendancePage() {
   
   const [members, setMembers] = useState<Member[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>(departmentId || '');
+  const [selectedZone, setSelectedZone] = useState<string>('');
   const [attendanceType, setAttendanceType] = useState('sunday_service');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [eventId, setEventId] = useState('');
@@ -74,10 +82,10 @@ export default function RecordAttendancePage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (selectedDepartment) {
+    if (selectedDepartment || selectedZone) {
       loadMembers();
     }
-  }, [selectedDepartment]);
+  }, [selectedDepartment, selectedZone]);
 
   // Load existing attendance after members are loaded and date/type are set
   useEffect(() => {
@@ -132,6 +140,15 @@ export default function RecordAttendancePage() {
           alert(deptData.message);
         }
       }
+
+      // Load zones
+      const zoneResponse = await fetch('/api/zones');
+      if (zoneResponse.ok) {
+        const zoneData = await zoneResponse.json();
+        if (zoneData.data) {
+          setZones(zoneData.data);
+        }
+      }
       
       // If no department selected but user is department leader, select their department
       if (!selectedDepartment && departmentId) {
@@ -155,6 +172,9 @@ export default function RecordAttendancePage() {
       let membersUrl = '/api/members?status=active';
       if (selectedDepartment !== 'all') {
         membersUrl += `&department_id=${selectedDepartment}`;
+      }
+      if (selectedZone) {
+        membersUrl += `&zone_id=${selectedZone}`;
       }
       
       const response = await fetch(membersUrl);
@@ -398,6 +418,22 @@ export default function RecordAttendancePage() {
                 </select>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Zone (Optional)</label>
+              <select
+                value={selectedZone}
+                onChange={(e) => setSelectedZone(e.target.value)}
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Zones</option>
+                {zones.map(zone => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Event ID (Optional)</label>

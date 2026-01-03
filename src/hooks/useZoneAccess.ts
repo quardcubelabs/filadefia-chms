@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from './useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export interface ZoneAccess {
   zoneId: string | null;
@@ -23,6 +23,10 @@ export function useZoneAccess(): ZoneAccess {
   // Prevent SSR execution
   const [mounted, setMounted] = useState(false);
   
+  // Prevent duplicate fetches
+  const hasFetchedRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
+  
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -36,17 +40,59 @@ export function useZoneAccess(): ZoneAccess {
         return;
       }
 
+      // Prevent duplicate fetches for same user
+      if (hasFetchedRef.current && lastUserIdRef.current === user.id) {
+        return;
+      }
+
       try {
         // If user is administrator or pastor, they can access everything
         if (['administrator', 'pastor'].includes(user.profile.role)) {
           console.log('✅ Admin/Pastor user - full zone access');
           setZoneInfo({ id: null, name: null });
           setLoading(false);
+          hasFetchedRef.current = true;
+          lastUserIdRef.current = user.id;
           return;
         }
 
-        // Check if user is a zone leader
-        console.log('🔍 Checking zone leadership for user:', {
+        // Check if user is a zone leader via role
+        if (user.profile.role === 'zone_leader') {
+          console.log('🔍 User is zone_leader role, checking zone_profiles...');
+          
+          // Check zone_profiles table first
+          const { data: zoneProfileData } = await supabase
+            .from('zone_profiles')
+            .select(`
+              zone_id,
+              zones (
+                id,
+                name
+              )
+            `)
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (zoneProfileData?.zones) {
+            const zone = zoneProfileData.zones as any;
+            console.log('✅ Found zone via zone_profiles:', {
+              zoneId: zone.id,
+              zoneName: zone.name
+            });
+            setZoneInfo({
+              id: zone.id,
+              name: zone.name
+            });
+            hasFetchedRef.current = true;
+            lastUserIdRef.current = user.id;
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Check if user is a zone leader via member lookup
+        console.log('🔍 Checking zone leadership via member lookup for user:', {
           email: user.email,
           userId: user.id
         });
@@ -60,11 +106,13 @@ export function useZoneAccess(): ZoneAccess {
 
         if (memberError || !memberData) {
           console.log('❌ No member record found for zone check');
+          hasFetchedRef.current = true;
+          lastUserIdRef.current = user.id;
           setLoading(false);
           return;
         }
 
-        // Check if this member is a zone leader
+        // Check if this member is a zone leader via zone_members
         const { data: zoneLeaderData } = await supabase
           .from('zone_members')
           .select(`
@@ -84,7 +132,7 @@ export function useZoneAccess(): ZoneAccess {
 
         if (zoneLeaderData?.zones) {
           const zone = zoneLeaderData.zones as any;
-          console.log('✅ Found zone leadership:', {
+          console.log('✅ Found zone leadership via zone_members:', {
             zoneId: zone.id,
             zoneName: zone.name
           });
@@ -117,6 +165,9 @@ export function useZoneAccess(): ZoneAccess {
           }
         }
 
+        hasFetchedRef.current = true;
+        lastUserIdRef.current = user.id;
+
       } catch (error) {
         console.error('💥 Error in zone access check:', error);
       } finally {
@@ -125,11 +176,11 @@ export function useZoneAccess(): ZoneAccess {
     };
 
     loadZoneAccess();
-  }, [user, supabase, mounted]);
+  }, [user?.id, user?.profile?.role, user?.email, supabase, mounted]);
 
   const userRole = user?.profile?.role || '';
   const isAdminOrPastor = ['administrator', 'pastor'].includes(userRole);
-  const isZoneLeader = zoneInfo.id !== null;
+  const isZoneLeader = zoneInfo.id !== null || userRole === 'zone_leader';
 
   return {
     zoneId: zoneInfo.id,

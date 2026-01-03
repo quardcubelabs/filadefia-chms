@@ -523,6 +523,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const roleHierarchy: Record<UserRole, number> = {
       member: 1,
       department_leader: 2,
+      zone_leader: 2,
       secretary: 3,
       treasurer: 3,
       pastor: 4,

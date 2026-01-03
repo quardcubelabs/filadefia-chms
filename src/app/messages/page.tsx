@@ -43,12 +43,19 @@ import {
   MessageCircle
 } from 'lucide-react';
 
+interface Zone {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 interface Announcement {
   id: string;
   title: string;
   content: string;
   author_id: string;
   department_id?: string;
+  zone_id?: string;
   priority: 'low' | 'medium' | 'high';
   expires_at?: string;
   is_active: boolean;
@@ -103,6 +110,7 @@ export default function MessagesPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +124,7 @@ export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [filterZone, setFilterZone] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   
   // Modal states
@@ -130,6 +139,7 @@ export default function MessagesPage() {
     title: '',
     content: '',
     department_id: '',
+    zone_id: '',
     priority: 'medium' as Announcement['priority'],
     expires_at: ''
   });
@@ -172,6 +182,7 @@ export default function MessagesPage() {
       }
       
       await loadDepartments();
+      await loadZones();
       await loadMembers();
     } catch (err: any) {
       console.error('Error loading data:', err);
@@ -240,6 +251,23 @@ export default function MessagesPage() {
       setDepartments(data || []);
     } catch (err: any) {
       console.error('Error loading departments:', err);
+    }
+  };
+
+  const loadZones = async () => {
+    if (!supabase) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('zones')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setZones(data || []);
+    } catch (err: any) {
+      console.error('Error loading zones:', err);
     }
   };
 
@@ -327,6 +355,7 @@ export default function MessagesPage() {
         content: announcementForm.content.trim(),
         author_id: user.profile.id,
         department_id: isDepartmentLeader ? departmentId : (announcementForm.department_id || null),
+        zone_id: announcementForm.zone_id || null,
         priority: announcementForm.priority,
         expires_at: announcementForm.expires_at ? new Date(announcementForm.expires_at).toISOString() : null
       };
@@ -357,6 +386,7 @@ export default function MessagesPage() {
         title: '',
         content: '',
         department_id: '',
+        zone_id: '',
         priority: 'medium',
         expires_at: ''
       });
@@ -770,6 +800,7 @@ export default function MessagesPage() {
                                           title: announcement.title,
                                           content: announcement.content,
                                           department_id: announcement.department_id || '',
+                                          zone_id: announcement.zone_id || '',
                                           priority: announcement.priority,
                                           expires_at: announcement.expires_at ? 
                                             new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
@@ -862,6 +893,7 @@ export default function MessagesPage() {
                                   title: announcement.title,
                                   content: announcement.content,
                                   department_id: announcement.department_id || '',
+                                  zone_id: announcement.zone_id || '',
                                   priority: announcement.priority,
                                   expires_at: announcement.expires_at ? 
                                     new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
@@ -1018,6 +1050,16 @@ export default function MessagesPage() {
               </div>
             )}
           </div>
+
+          <Select
+            label="Zone (Optional)"
+            value={announcementForm.zone_id}
+            onChange={(e) => setAnnouncementForm({ ...announcementForm, zone_id: e.target.value })}
+            options={[
+              { value: "", label: "All Zones" },
+              ...zones.map(zone => ({ value: zone.id, label: zone.name }))
+            ]}
+          />
 
           <Input
             label="Expiry Date (Optional)"
@@ -1180,6 +1222,16 @@ export default function MessagesPage() {
             />
           </div>
 
+          <Select
+            label="Zone (Optional)"
+            value={announcementForm.zone_id}
+            onChange={(e) => setAnnouncementForm({ ...announcementForm, zone_id: e.target.value })}
+            options={[
+              { value: "", label: "All Zones" },
+              ...zones.map(zone => ({ value: zone.id, label: zone.name }))
+            ]}
+          />
+
           <Input
             label="Expiry Date (Optional)"
             type="datetime-local"
@@ -1202,6 +1254,7 @@ export default function MessagesPage() {
                   title: announcementForm.title,
                   content: announcementForm.content,
                   department_id: announcementForm.department_id || null,
+                  zone_id: announcementForm.zone_id || null,
                   priority: announcementForm.priority,
                   expires_at: announcementForm.expires_at || null
                 })

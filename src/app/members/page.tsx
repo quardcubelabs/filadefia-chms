@@ -257,6 +257,28 @@ export default function MembersPage() {
           console.log('Department assignments added successfully');
         }
       }
+
+      // Step 3: Add zone assignment if any
+      if (formData.zone_id) {
+        console.log('Adding zone assignment...', formData.zone_id);
+        
+        const { error: zoneError } = await supabase
+          .from('zone_members')
+          .insert({
+            member_id: data.id,
+            zone_id: formData.zone_id,
+            position: 'member',
+            joined_date: new Date().toISOString().split('T')[0],
+            is_active: true,
+          });
+
+        if (zoneError) {
+          console.error('Error adding zone assignment:', zoneError);
+          alert(`Member added but zone assignment failed: ${zoneError.message}`);
+        } else {
+          console.log('Zone assignment added successfully');
+        }
+      }
       
       // Refresh the members list to get the latest data
       await fetchMembers();

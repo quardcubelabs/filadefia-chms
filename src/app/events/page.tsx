@@ -49,6 +49,7 @@ interface Event {
   location: string;
   organizer_id: string;
   department_id?: string;
+  zone_id?: string;
   max_attendees?: number;
   registration_required: boolean;
   registration_deadline?: string;
@@ -62,11 +63,20 @@ interface Event {
   department?: {
     name: string;
   };
+  zone?: {
+    name: string;
+  };
   registration_count?: number;
   attendance_count?: number;
 }
 
 interface Department {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+interface Zone {
   id: string;
   name: string;
   is_active: boolean;
@@ -84,6 +94,7 @@ export default function EventsPage() {
   
   const [events, setEvents] = useState<Event[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -110,6 +121,7 @@ export default function EventsPage() {
     end_date: '',
     location: '',
     department_id: '',
+    zone_id: '',
     max_attendees: '',
     registration_required: false,
     registration_deadline: '',
@@ -138,6 +150,7 @@ export default function EventsPage() {
       console.log('User authenticated, loading data');
       loadEvents();
       loadDepartments();
+      loadZones();
     }
   }, [user, authLoading, supabase]);
 
@@ -379,6 +392,24 @@ export default function EventsPage() {
     }
   };
 
+  const loadZones = async () => {
+    if (!supabase) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('zones')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      setZones(data || []);
+    } catch (err: any) {
+      console.error('Error loading zones:', err);
+    }
+  };
+
   const handleAddEvent = async () => {
     if (!supabase || !user?.profile?.id) return;
 
@@ -392,6 +423,7 @@ export default function EventsPage() {
         location: formData.location,
         organizer_id: user.profile.id,
         department_id: isDepartmentLeader && departmentId ? departmentId : (formData.department_id || null),
+        zone_id: formData.zone_id || null,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         registration_required: formData.registration_required,
         registration_deadline: formData.registration_deadline || null,
@@ -426,6 +458,7 @@ export default function EventsPage() {
         end_date: formData.end_date,
         location: formData.location,
         department_id: isDepartmentLeader && departmentId ? departmentId : (formData.department_id || null),
+        zone_id: formData.zone_id || null,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         registration_required: formData.registration_required,
         registration_deadline: formData.registration_deadline || null,
@@ -480,6 +513,7 @@ export default function EventsPage() {
       end_date: '',
       location: '',
       department_id: isDepartmentLeader && departmentId ? departmentId : '',
+      zone_id: '',
       max_attendees: '',
       registration_required: false,
       registration_deadline: '',
@@ -497,6 +531,7 @@ export default function EventsPage() {
       end_date: new Date(event.end_date).toISOString().slice(0, 16),
       location: event.location,
       department_id: isDepartmentLeader && departmentId ? departmentId : (event.department_id || ''),
+      zone_id: event.zone_id || '',
       max_attendees: event.max_attendees?.toString() || '',
       registration_required: event.registration_required,
       registration_deadline: event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0, 16) : '',
@@ -859,6 +894,16 @@ export default function EventsPage() {
             )}
           </div>
 
+          <Select
+            label="Zone (Optional)"
+            value={formData.zone_id}
+            onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
+            options={[
+              { value: "", label: "No Zone" },
+              ...zones.map(zone => ({ value: zone.id, label: zone.name }))
+            ]}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Start Date & Time"
@@ -998,6 +1043,16 @@ export default function EventsPage() {
               />
             )}
           </div>
+
+          <Select
+            label="Zone (Optional)"
+            value={formData.zone_id}
+            onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
+            options={[
+              { value: "", label: "No Zone" },
+              ...zones.map(zone => ({ value: zone.id, label: zone.name }))
+            ]}
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
