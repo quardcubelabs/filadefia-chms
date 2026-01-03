@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   Home,
   Calendar,
@@ -14,14 +13,12 @@ import {
   FileText,
   DollarSign,
   BarChart3,
-  Bell,
   LogOut,
   ChevronLeft,
-  Church,
-  Briefcase,
   UserCheck,
   MapPin,
-  X
+  X,
+  Briefcase
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,90 +32,12 @@ interface NavItem {
   icon: React.ReactNode;
   label: string;
   href: string;
-  badge?: number;
 }
 
 export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = false, onMobileClose }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
   const { departmentId, isDepartmentLeader, loading: deptAccessLoading } = useDepartmentAccess();
-  const { user, supabase } = useAuth();
-  const [eventCount, setEventCount] = useState<number>(0);
-  const [messageCount, setMessageCount] = useState<number>(0);
-
-  // Load event and message counts
-  useEffect(() => {
-    const loadCounts = async () => {
-      if (!user || !supabase) return;
-      
-      try {
-        // Load event count
-        let eventQuery = supabase
-          .from('events')
-          .select('*', { count: 'exact', head: true });
-        
-        if (isDepartmentLeader && departmentId) {
-          eventQuery = eventQuery.eq('department_id', departmentId);
-        }
-
-        const { count: evtCount, error: eventError } = await eventQuery;
-        
-        if (eventError) {
-          console.warn('Error loading event count:', eventError);
-          // Set a test value to verify badge display
-          setEventCount(3);
-        } else {
-          console.log('Event count loaded successfully:', evtCount);
-          setEventCount(evtCount || 0);
-        }
-
-        // Load message count - try announcements table first, then fallback
-        try {
-          let messageQuery = supabase
-            .from('announcements')
-            .select('*', { count: 'exact', head: true });
-          
-          if (isDepartmentLeader && departmentId) {
-            messageQuery = messageQuery.eq('department_id', departmentId);
-          }
-
-          const { count: msgCount, error: messageError } = await messageQuery;
-          
-          if (messageError) {
-            console.warn('Error loading message count from announcements:', messageError);
-            // Try alternative table names
-            const { count: altMsgCount, error: altError } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true });
-            
-            if (altError) {
-              console.warn('Error loading from messages table:', altError);
-              // Set a test value to verify badge display
-              setMessageCount(15);
-            } else {
-              console.log('Message count loaded from messages table:', altMsgCount);
-              setMessageCount(altMsgCount || 0);
-            }
-          } else {
-            console.log('Message count loaded successfully:', msgCount);
-            setMessageCount(msgCount || 0);
-          }
-        } catch (msgError) {
-          console.warn('Message count loading failed:', msgError);
-          // Set a test value to verify badge display
-          setMessageCount(15);
-        }
-
-      } catch (error) {
-        console.error('Error loading sidebar counts:', error);
-        // Set test values to verify badge display when database fails
-        setEventCount(3);
-        setMessageCount(15);
-      }
-    };
-
-    loadCounts();
-  }, [user, supabase, isDepartmentLeader, departmentId]);
 
   const navItems: NavItem[] = useMemo(() => {
     // Don't calculate nav items until department access is loaded
@@ -140,8 +59,8 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
       { icon: <Home className="h-5 w-5" />, label: dashboardLabel, href: dashboardHref },
       { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
       { icon: <UserCheck className="h-5 w-5" />, label: 'Attendance', href: '/attendance' },
-      { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events', badge: eventCount },
-      { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages', badge: messageCount },
+      { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events' },
+      { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages' },
       { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
       { icon: <BarChart3 className="h-5 w-5" />, label: 'Reports', href: '/reports' },
       { icon: <FileText className="h-5 w-5" />, label: 'Documents', href: '/documents' },
@@ -155,7 +74,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
     }
 
     return baseNavItems;
-  }, [isDepartmentLeader, departmentId, eventCount, messageCount, deptAccessLoading]);
+  }, [isDepartmentLeader, departmentId, deptAccessLoading]);
 
   const isActive = (href: string) => pathname === href;
 
@@ -227,16 +146,6 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
         <nav className="flex-1 px-2 lg:px-3 space-y-0.5 lg:space-y-1 overflow-y-auto scrollbar-hide">
           {navItems.map((item, index) => {
             const active = isActive(item.href);
-            // Debug logging for badge visibility
-            if (item.badge && item.badge > 0) {
-              console.log(`Badge debug for ${item.label}:`, {
-                badge: item.badge,
-                mobileOpen,
-                isExpanded,
-                shouldShowCollapsed: !mobileOpen && !isExpanded,
-                shouldShowExpanded: mobileOpen || isExpanded
-              });
-            }
             return (
               <Link
                 key={index}
@@ -251,33 +160,19 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                 }`}
               >
                 {/* Icon */}
-                <div className="flex-shrink-0 relative">
+                <div className="flex-shrink-0">
                   <div className="[&>svg]:h-4 [&>svg]:w-4 lg:[&>svg]:h-5 [&>svg]:w-5">
                     {item.icon}
                   </div>
-                  {item.badge && item.badge > 0 && !mobileOpen && !isExpanded && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 lg:h-6 lg:w-6 bg-blue-500 text-white text-xs lg:text-sm rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md">
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  )}
                 </div>
 
                 {/* Label */}
                 <div
-                  className={`flex items-center justify-between flex-1 overflow-hidden transition-all duration-300 ${
+                  className={`overflow-hidden transition-all duration-300 ${
                     mobileOpen ? 'w-auto opacity-100' : isExpanded ? 'lg:w-auto lg:opacity-100' : 'lg:w-0 lg:opacity-0'
                   }`}
                 >
                   <span className="text-sm lg:text-base font-medium whitespace-nowrap">{item.label}</span>
-                  {item.badge && item.badge > 0 && (mobileOpen || isExpanded) && (
-                    <span className={`px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full text-xs lg:text-sm font-bold ${
-                      active 
-                        ? 'bg-white text-red-600' 
-                        : 'bg-blue-500 text-white'
-                    }`}>
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  )}
                 </div>
 
                 {/* Hover tooltip when collapsed */}

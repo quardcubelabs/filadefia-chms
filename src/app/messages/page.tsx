@@ -670,6 +670,21 @@ export default function MessagesPage() {
             {/* Announcements Tab */}
             {activeTab === 'announcements' && (
               <>
+                {/* Header with Create Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Announcements</h2>
+                    <p className="text-sm text-gray-500">Create and manage church announcements</p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={() => setIsAnnouncementModalOpen(true)}
+                    icon={<Plus className="h-4 w-4" />}
+                  >
+                    Create Announcement
+                  </Button>
+                </div>
+
                 {/* Search and Filters */}
                 <Card className="mb-4 md:mb-6">
                   <CardBody className="p-3 md:p-6">
@@ -925,6 +940,21 @@ export default function MessagesPage() {
             {/* Communications Tab */}
             {activeTab === 'communications' && (
               <div className="space-y-4">
+                {/* Header with Create Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Sent Messages</h2>
+                    <p className="text-sm text-gray-500">View and send SMS, Email, or WhatsApp messages</p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={() => setIsCommunicationModalOpen(true)}
+                    icon={<Send className="h-4 w-4" />}
+                  >
+                    Send Message
+                  </Button>
+                </div>
+
                 {communications.length === 0 ? (
                   <EmptyState
                     icon={<Send className="h-16 w-16 text-gray-400" />}
