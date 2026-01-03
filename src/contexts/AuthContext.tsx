@@ -266,19 +266,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sign out
   const signOut = useCallback(async () => {
+    // Clear local state IMMEDIATELY - don't wait for server
+    // This prevents stale user data from appearing
+    setUser(null);
+    setSession(null);
+    setStatus(AuthStatus.UNAUTHENTICATED);
+    
     if (!supabase) {
-      clearAuthState();
       return;
     }
 
     try {
-      // Clear state first to prevent race conditions
-      clearAuthState();
-      await supabase.auth.signOut();
+      // Now sign out from server (non-blocking for UX)
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (error) {
       console.error('Error signing out:', error);
+      // State is already cleared, so user experience is fine
     }
-  }, [supabase, clearAuthState]);
+  }, [supabase]);
 
   // Initialize auth state (runs once)
   useEffect(() => {
@@ -297,32 +302,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session - this checks cookies and refreshes if needed
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        // IMPORTANT: Use getUser() to validate with the server, not getSession()
+        // getSession() returns cached data which can show stale user after logout
+        const { data: { user: validatedUser }, error: userError } = await supabase.auth.getUser();
 
         if (!mounted) return;
 
-        if (error) {
-          // If JWT expired, try to refresh
-          if (isJWTExpiredError(error)) {
-            console.log('Initial session JWT expired, attempting refresh...');
-            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-            if (refreshedSession?.user) {
-              await setAuthenticatedUser(refreshedSession.user, refreshedSession);
-              setIsInitialized(true);
-              clearTimeout(safetyTimeout);
-              return;
-            }
-          }
-          console.error('Error getting initial session:', error);
+        if (userError || !validatedUser) {
+          // No valid authenticated user - clear state and stay unauthenticated
+          console.log('No valid session found, user must login');
           clearAuthState();
           setIsInitialized(true);
           clearTimeout(safetyTimeout);
           return;
         }
 
-        if (initialSession?.user) {
-          await setAuthenticatedUser(initialSession.user, initialSession);
+        // User is validated, now get the session for tokens
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        if (currentSession?.user) {
+          await setAuthenticatedUser(currentSession.user, currentSession);
         } else {
           clearAuthState();
         }
@@ -332,20 +333,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error: any) {
         console.error('Exception initializing auth:', error);
         if (mounted) {
-          // Try refresh on any error
-          if (isJWTExpiredError(error)) {
-            try {
-              const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-              if (refreshedSession?.user) {
-                await setAuthenticatedUser(refreshedSession.user, refreshedSession);
-                setIsInitialized(true);
-                clearTimeout(safetyTimeout);
-                return;
-              }
-            } catch {
-              // Refresh failed
-            }
-          }
           clearAuthState();
           setIsInitialized(true);
           clearTimeout(safetyTimeout);
