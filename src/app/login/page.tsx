@@ -156,9 +156,19 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
+      {/* Mobile Background Image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat md:hidden"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1507692049790-de58290a4334?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80')`,
+        }}
+      />
+      {/* Mobile Dark Overlay */}
+      <div className="fixed inset-0 bg-gradient-to-b from-blue-900/70 via-blue-800/60 to-blue-900/80 md:hidden"></div>
+
       {/* Left Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-6 md:p-8 bg-white">
+      <div className="flex-1 flex items-center justify-center px-4 py-6 md:p-8 bg-transparent md:bg-white relative z-10">
         <div className="w-full max-w-md">
           {/* Logo - Centered */}
           <div className="mb-6 md:mb-8 text-center">
@@ -171,121 +181,136 @@ function LoginForm() {
                 />
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Welcome!</h1>
-                <p className="text-xs md:text-sm text-gray-600 mt-1">to FCC CHMS</p>
+                <h1 className="text-xl md:text-2xl font-bold text-white md:text-gray-900">Welcome!</h1>
+                <p className="text-xs md:text-sm text-blue-100 md:text-gray-600 mt-1">to FCC CHMS</p>
               </div>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-5">
-            {/* Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2 text-left">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 hover:border-gray-300 text-gray-900"
-                  placeholder="you@example.com"
-                />
+            {/* Form Container - visible on mobile */}
+            <div className="bg-white/95 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none rounded-2xl p-4 md:p-0 space-y-3 md:space-y-5 shadow-xl md:shadow-none">
+              {/* Email Input */}
+              <div>
+                <label htmlFor="email" className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2 text-left">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white hover:border-gray-300 text-gray-900"
+                    placeholder="you@example.com"
+                  />
               </div>
             </div>
 
             {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2 text-left">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+              <div>
+                <label htmlFor="password" className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2 text-left">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 md:pl-12 pr-10 md:pr-12 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white hover:border-gray-300 text-gray-900"
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 md:pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 md:h-5 md:w-5" />
+                    ) : (
+                      <Eye className="h-4 w-4 md:h-5 md:w-5" />
+                    )}
+                  </button>
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 md:pl-12 pr-10 md:pr-12 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 hover:border-gray-300 text-gray-900"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 md:pr-4 flex items-center text-gray-400 hover:text-gray-600"
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-xs md:text-sm text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+
+                <Link
+                  href="/forgot-password"
+                  className="text-xs md:text-sm font-medium text-blue-600 hover:text-blue-700"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 md:h-5 md:w-5" />
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 md:px-4 py-2 rounded-xl flex items-center space-x-2">
+                  <span className="text-xs md:text-sm">{error}</span>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <div className="flex justify-center">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-4/5 md:w-full flex justify-center items-center space-x-2 py-2.5 md:py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm md:text-base font-medium rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-white"></div>
+                      <span>Signing in...</span>
+                    </>
                   ) : (
-                    <Eye className="h-4 w-4 md:h-5 md:w-5" />
+                    <>
+                      <span>Sign in</span>
+                      <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                    </>
                   )}
                 </button>
               </div>
-            </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-xs md:text-sm text-gray-700">
-                  Remember me
-                </label>
+              {/* Need Access - Inside container on mobile */}
+              <div className="text-center md:hidden pt-2">
+                <p className="text-xs text-gray-600">
+                  Need access?{' '}
+                  <span className="font-medium text-blue-600">
+                    Contact your administrator
+                  </span>
+                </p>
               </div>
-
-              <Link
-                href="/forgot-password"
-                className="text-xs md:text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Forgot password?
-              </Link>
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-3 md:px-4 py-2 rounded-xl flex items-center space-x-2">
-                <span className="text-xs md:text-sm">{error}</span>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center items-center space-x-2 py-2 md:py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm md:text-base font-medium rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-white"></div>
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign in</span>
-                  <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-                </>
-              )}
-            </button>
           </form>
 
-          {/* Footer */}
-          <div className="mt-6 md:mt-8 text-center">
+          {/* Footer - Desktop only for "Need access" */}
+          <div className="mt-6 md:mt-8 text-center hidden md:block">
             <p className="text-xs md:text-sm text-gray-600">
               Need access?{' '}
               <span className="font-medium text-blue-600">
@@ -294,9 +319,9 @@ function LoginForm() {
             </p>
           </div>
 
-          <div className="mt-4 md:mt-8 pt-3 md:pt-6 border-t border-gray-200 text-center">
-            <p className="text-[10px] md:text-xs text-gray-500">
-              © 2025 Filadefia Christian Center. All rights reserved.
+          <div className="mt-4 md:mt-8 pt-3 md:pt-6 border-t border-white/20 md:border-gray-200 text-center">
+            <p className="text-[10px] md:text-xs text-white/70 md:text-gray-500">
+              © 2026 Filadefia Christian Center. All rights reserved.
             </p>
           </div>
         </div>

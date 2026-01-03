@@ -768,14 +768,14 @@ export default function FinancePage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 mb-6 justify-end">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6 justify-center sm:justify-end">
               {isDepartmentLeader ? (
                 <>
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="bg-pink-200 hover:bg-pink-300 text-pink-800 border-pink-200"
+                    className="bg-pink-200 hover:bg-pink-300 text-pink-800 border-pink-200 text-sm"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-1.5 sm:mr-2" />
                     Add Income
                   </Button>
                   <Button
@@ -783,9 +783,9 @@ export default function FinancePage() {
                       setIsAddModalOpen(true);
                       setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
                     }}
-                    className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                    className="bg-red-600 hover:bg-red-700 text-white border-red-600 text-sm"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-1.5 sm:mr-2" />
                     Add Expense
                   </Button>
                 </>
@@ -793,9 +793,9 @@ export default function FinancePage() {
                 <>
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="bg-pink-200 hover:bg-pink-300 text-pink-800 border-pink-200"
+                    className="bg-pink-200 hover:bg-pink-300 text-pink-800 border-pink-200 text-sm"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-1.5 sm:mr-2" />
                     Add Transaction
                   </Button>
                   <Button
@@ -803,9 +803,9 @@ export default function FinancePage() {
                       setIsAddModalOpen(true);
                       setFormData(prev => ({ ...prev, transaction_type: 'expense' as const }));
                     }}
-                    className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                    className="bg-red-600 hover:bg-red-700 text-white border-red-600 text-sm"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-1.5 sm:mr-2" />
                     Add Expense
                   </Button>
                 </>
@@ -816,7 +816,7 @@ export default function FinancePage() {
             <Card className="mb-4 sm:mb-6" padding="sm" rounded="xl">
               <CardBody>
                 {/* Search and Primary Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4">
                   <div className="md:col-span-1">
                     <Input
                       placeholder="Search transactions..."
@@ -858,7 +858,7 @@ export default function FinancePage() {
                 </div>
                 
                 {/* Secondary Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4 mb-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
                   <Select
                     value={filterPaymentMethod}
                     onChange={(e) => setFilterPaymentMethod(e.target.value)}
@@ -899,37 +899,37 @@ export default function FinancePage() {
             </Card>
 
             {/* Financial Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Income vs Expense Line Chart */}
-              <div className="bg-[#F1F5F9] rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Financial Trend</h3>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm bg-[#22D3EE]"></div>
-                        <span className="text-sm text-gray-600">Income</span>
+              <div className="bg-[#F1F5F9] rounded-xl sm:rounded-2xl p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                    <h3 className="text-base sm:text-xl font-semibold text-gray-900">Financial Trend</h3>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#22D3EE]"></div>
+                        <span className="text-xs sm:text-sm text-gray-600">Income</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm bg-[#2563EB]"></div>
-                        <span className="text-sm text-gray-600">Expense</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#2563EB]"></div>
+                        <span className="text-xs sm:text-sm text-gray-600">Expense</span>
                       </div>
                     </div>
                   </div>
-                  <div className="relative">
+                  <div className="relative self-end sm:self-auto">
                     <select 
                       value={trendChartPeriod}
                       onChange={(e) => setTrendChartPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
-                      className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
-                <div className="h-64">
+                <div className="h-48 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={(() => {
@@ -1064,13 +1064,14 @@ export default function FinancePage() {
                           return yearData;
                         }
                       })()}
-                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                     >
                       <XAxis 
                         dataKey="name" 
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                        tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                        interval="preserveStartEnd"
                       />
                       <YAxis hide />
                       <Tooltip
@@ -1111,25 +1112,25 @@ export default function FinancePage() {
               </div>
 
               {/* Income Breakdown Donut Chart */}
-              <div className="bg-[#F1F5F9] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">Income (%)</h3>
+              <div className="bg-[#F1F5F9] rounded-xl sm:rounded-2xl p-3 sm:p-6">
+                <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-xl font-semibold text-gray-900">Income (%)</h3>
                   <div className="relative">
                     <select 
                       value={incomeChartPeriod}
                       onChange={(e) => setIncomeChartPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
-                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 pr-7 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
 
                 {/* Total Income - Top */}
-                <div className="mb-3">
+                <div className="mb-3 sm:mb-4">
                   <p className="text-[10px] sm:text-xs text-gray-500">Total Income ({incomeChartPeriod === 'weekly' ? 'This Week' : incomeChartPeriod === 'monthly' ? 'This Month' : 'This Year'})</p>
                   <p className="text-base sm:text-lg font-bold text-gray-900">
                     {(() => {
@@ -1159,7 +1160,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Chart and Legend Row */}
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex flex-row items-center justify-center gap-2 sm:gap-4">
                   {/* Donut Chart */}
                   <div className="relative flex items-center justify-center flex-shrink-0">
                     {(() => {
@@ -1201,7 +1202,7 @@ export default function FinancePage() {
                       const contributionsRatio = total === 0 ? 0.20 : contributions / total;
 
                       return (
-                        <svg className="transform -rotate-90 w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]" viewBox="0 0 200 200">
+                        <svg className="transform -rotate-90 w-[120px] h-[120px] sm:w-[180px] sm:h-[180px]" viewBox="0 0 200 200">
                           <defs>
                             <linearGradient id="incomeGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                               <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 1 }} />
@@ -1276,8 +1277,8 @@ export default function FinancePage() {
                     
                     {/* Center text */}
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                      <p className="text-[9px] sm:text-[10px] text-gray-500">Tithes</p>
-                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                      <p className="text-[6px] sm:text-[10px] text-gray-500">Tithes</p>
+                      <p className="text-xs sm:text-xl font-bold text-blue-600">
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
@@ -1318,13 +1319,13 @@ export default function FinancePage() {
                   </div>
 
                   {/* Legend */}
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm bg-cyan-400 flex-shrink-0"></div>
-                        <span className="text-xs text-gray-600">Offerings</span>
+                  <div className="flex flex-col gap-2 sm:gap-2.5">
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-cyan-400 flex-shrink-0"></div>
+                        <span className="text-xs sm:text-sm text-gray-600">Offerings</span>
                       </div>
-                      <span className="text-xs font-semibold text-gray-900">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
@@ -1362,12 +1363,12 @@ export default function FinancePage() {
                         })()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                        <span className="text-xs text-gray-600">Tithes</span>
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-blue-600 flex-shrink-0"></div>
+                        <span className="text-xs sm:text-sm text-gray-600">Tithes</span>
                       </div>
-                      <span className="text-xs font-semibold text-gray-900">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
@@ -1405,12 +1406,12 @@ export default function FinancePage() {
                         })()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm bg-pink-500 flex-shrink-0"></div>
-                        <span className="text-xs text-gray-600">Contributions</span>
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-pink-500 flex-shrink-0"></div>
+                        <span className="text-xs sm:text-sm text-gray-600">Contributions</span>
                       </div>
-                      <span className="text-xs font-semibold text-gray-900">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
                         {(() => {
                           // Filter transactions by period
                           const now = new Date();
