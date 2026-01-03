@@ -25,10 +25,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = !!error;
 
-    const selectBaseStyles = 'block w-full rounded-lg sm:rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 pr-8 sm:pr-10 transition-all focus:outline-none focus:ring-2 appearance-none text-sm sm:text-base text-gray-900';
+    const selectBaseStyles = 'block w-full rounded-lg sm:rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 pr-8 sm:pr-10 transition-all focus:outline-none focus:ring-2 appearance-none text-sm sm:text-base text-gray-900 shadow-sm';
     const selectStateStyles = hasError
       ? 'border-red-400 focus:border-red-500 focus:ring-red-500 focus:ring-2 bg-white'
-      : 'border-gray-500 hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:ring-2 bg-white';
+      : 'border-gray-400 bg-gray-50 hover:bg-white hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:ring-2 focus:bg-white';
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>

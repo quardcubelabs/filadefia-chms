@@ -59,7 +59,7 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto scrollbar-hide">
       {/* Overlay - Shows blurry background of current page */}
       <div 
         className="fixed inset-0 bg-black/30 backdrop-blur-md transition-opacity"
@@ -69,20 +69,20 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal */}
       <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
         <div 
-          className={`relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full ${sizes[size]} transform transition-all max-h-[90vh] sm:max-h-[85vh] flex flex-col`}
+          className={`relative bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-300 w-full ${sizes[size]} transform transition-all max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {(title || description) && (
-            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-tag-gray-200 flex-shrink-0">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex-shrink-0 bg-gray-50">
               <div className="flex items-start justify-between">
                 <div className="pr-8">
-                  {title && <h3 className="text-lg sm:text-xl font-semibold text-tag-gray-900">{title}</h3>}
-                  {description && <p className="mt-1 text-xs sm:text-sm text-tag-gray-600">{description}</p>}
+                  {title && <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{title}</h3>}
+                  {description && <p className="mt-1 text-xs sm:text-sm text-gray-600">{description}</p>}
                 </div>
                 <button
                   onClick={onClose}
-                  className="absolute top-3 right-3 sm:top-4 sm:right-4 text-tag-gray-400 hover:text-tag-red-600 transition-colors p-2 hover:bg-tag-red-50 rounded-lg"
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -91,13 +91,13 @@ export const Modal: React.FC<ModalProps> = ({
           )}
 
           {/* Body */}
-          <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto flex-1">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto flex-1 bg-white scrollbar-hide">
             {children}
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-tag-gray-50 border-t border-tag-gray-200 rounded-b-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-100 border-t border-gray-200 rounded-b-3xl flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
               {footer}
             </div>
           )}
@@ -154,7 +154,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         </>
       }
     >
-      <p className="text-tag-gray-700">{message}</p>
+      <p className="text-gray-700">{message}</p>
     </Modal>
   );
 };
