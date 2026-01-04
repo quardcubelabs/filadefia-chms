@@ -1,6 +1,15 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
+// AI Insights interface
+interface AIInsightsData {
+  executiveSummary?: string;
+  highlights?: string[];
+  areasForAttention?: string[];
+  recommendation?: string;
+  rawInsights?: string;
+}
+
 // Professional PDF styles for main report content
 const styles = StyleSheet.create({
   page: {
@@ -190,6 +199,148 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   
+  // AI Insights styles
+  aiInsightsSection: {
+    marginBottom: 25,
+  },
+  
+  aiInsightsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    backgroundColor: '#f5f3ff',
+    padding: 12,
+    borderRadius: 8,
+  },
+  
+  aiInsightsTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#6b21a8',
+  },
+  
+  aiInsightsSubtitle: {
+    fontSize: 8,
+    color: '#9333ea',
+    marginLeft: 10,
+  },
+  
+  aiSummaryBox: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e9d5ff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  
+  aiSummaryTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#6b21a8',
+    marginBottom: 6,
+  },
+  
+  aiSummaryText: {
+    fontSize: 10,
+    color: '#4a5568',
+    lineHeight: 1.6,
+  },
+  
+  aiHighlightsBox: {
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  
+  aiHighlightsTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#166534',
+    marginBottom: 6,
+  },
+  
+  aiHighlightItem: {
+    flexDirection: 'row',
+    marginBottom: 4,
+    alignItems: 'flex-start',
+  },
+  
+  aiHighlightBullet: {
+    width: 5,
+    height: 5,
+    backgroundColor: '#22c55e',
+    borderRadius: 2.5,
+    marginTop: 4,
+    marginRight: 8,
+  },
+  
+  aiHighlightText: {
+    flex: 1,
+    fontSize: 9,
+    color: '#4a5568',
+    lineHeight: 1.5,
+  },
+  
+  aiAttentionBox: {
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  
+  aiAttentionTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#b45309',
+    marginBottom: 6,
+  },
+  
+  aiAttentionItem: {
+    flexDirection: 'row',
+    marginBottom: 4,
+    alignItems: 'flex-start',
+  },
+  
+  aiAttentionBullet: {
+    width: 5,
+    height: 5,
+    backgroundColor: '#f59e0b',
+    borderRadius: 2.5,
+    marginTop: 4,
+    marginRight: 8,
+  },
+  
+  aiAttentionText: {
+    flex: 1,
+    fontSize: 9,
+    color: '#4a5568',
+    lineHeight: 1.5,
+  },
+  
+  aiRecommendationBox: {
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  
+  aiRecommendationTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1d4ed8',
+    marginBottom: 6,
+  },
+  
+  aiRecommendationText: {
+    fontSize: 9,
+    color: '#4a5568',
+    lineHeight: 1.5,
+  },
+  
   // Footer
   footer: {
     position: 'absolute',
@@ -258,10 +409,11 @@ interface MainReportProps {
     }>;
   };
   reportType: string;
+  aiInsights?: AIInsightsData;
 }
 
 // Main Report Content Component
-const MainReport: React.FC<MainReportProps> = ({ reportData, reportType }) => {
+const MainReport: React.FC<MainReportProps> = ({ reportData, reportType, aiInsights }) => {
   const currentYear = new Date().getFullYear();
   
   // Format currency
@@ -346,6 +498,66 @@ const MainReport: React.FC<MainReportProps> = ({ reportData, reportType }) => {
                   Net Income: {formatCurrency(netIncome)} | 
                   {netIncome >= 0 ? ' Positive financial position' : ' Requires financial attention'}
                 </Text>
+              </View>
+            )}
+          </View>
+        )}
+        
+        {/* AI-Generated Insights Section */}
+        {aiInsights && (aiInsights.executiveSummary || aiInsights.highlights?.length || aiInsights.areasForAttention?.length || aiInsights.recommendation || aiInsights.rawInsights) && (
+          <View style={styles.aiInsightsSection}>
+            <View style={styles.aiInsightsHeader}>
+              <Text style={styles.aiInsightsTitle}>AI-Generated Insights</Text>
+              <Text style={styles.aiInsightsSubtitle}>Powered by Qwen AI</Text>
+            </View>
+            
+            {/* Executive Summary */}
+            {aiInsights.executiveSummary && (
+              <View style={styles.aiSummaryBox}>
+                <Text style={styles.aiSummaryTitle}>Executive Summary</Text>
+                <Text style={styles.aiSummaryText}>{aiInsights.executiveSummary}</Text>
+              </View>
+            )}
+            
+            {/* Key Highlights */}
+            {aiInsights.highlights && aiInsights.highlights.length > 0 && (
+              <View style={styles.aiHighlightsBox}>
+                <Text style={styles.aiHighlightsTitle}>Key Highlights & Achievements</Text>
+                {aiInsights.highlights.map((highlight, index) => (
+                  <View key={index} style={styles.aiHighlightItem}>
+                    <View style={styles.aiHighlightBullet} />
+                    <Text style={styles.aiHighlightText}>{highlight}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            
+            {/* Areas for Attention */}
+            {aiInsights.areasForAttention && aiInsights.areasForAttention.length > 0 && (
+              <View style={styles.aiAttentionBox}>
+                <Text style={styles.aiAttentionTitle}>Areas for Attention</Text>
+                {aiInsights.areasForAttention.map((area, index) => (
+                  <View key={index} style={styles.aiAttentionItem}>
+                    <View style={styles.aiAttentionBullet} />
+                    <Text style={styles.aiAttentionText}>{area}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            
+            {/* Recommendations */}
+            {aiInsights.recommendation && (
+              <View style={styles.aiRecommendationBox}>
+                <Text style={styles.aiRecommendationTitle}>Recommendations & Outlook</Text>
+                <Text style={styles.aiRecommendationText}>{aiInsights.recommendation}</Text>
+              </View>
+            )}
+            
+            {/* Raw insights fallback */}
+            {!aiInsights.executiveSummary && !aiInsights.highlights?.length && !aiInsights.areasForAttention?.length && !aiInsights.recommendation && aiInsights.rawInsights && (
+              <View style={styles.aiSummaryBox}>
+                <Text style={styles.aiSummaryTitle}>Analysis</Text>
+                <Text style={styles.aiSummaryText}>{aiInsights.rawInsights}</Text>
               </View>
             )}
           </View>
@@ -532,17 +744,17 @@ const MainReport: React.FC<MainReportProps> = ({ reportData, reportType }) => {
 };
 
 // Main Report Document Component
-export const MainReportDocument: React.FC<MainReportProps> = ({ reportData, reportType }) => {
+export const MainReportDocument: React.FC<MainReportProps> = ({ reportData, reportType, aiInsights }) => {
   return (
     <Document>
-      <MainReport reportData={reportData} reportType={reportType} />
+      <MainReport reportData={reportData} reportType={reportType} aiInsights={aiInsights} />
     </Document>
   );
 };
 
 // Export individual pages component for use in combined documents
-export const MainReportPages: React.FC<MainReportProps> = ({ reportData, reportType }) => {
-  return <MainReport reportData={reportData} reportType={reportType} />;
+export const MainReportPages: React.FC<MainReportProps> = ({ reportData, reportType, aiInsights }) => {
+  return <MainReport reportData={reportData} reportType={reportType} aiInsights={aiInsights} />;
 };
 
 export default MainReportDocument;

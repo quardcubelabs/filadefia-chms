@@ -26,13 +26,17 @@ import {
   CreditCard,
   Clock,
   CheckCircle,
-  Eye
+  Eye,
+  Sparkles,
+  Lightbulb,
+  AlertTriangle
 } from 'lucide-react';
 import { Card, CardBody, Button, Badge, Loading, Alert } from '@/components/ui';
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useZoneAccess } from '@/hooks/useZoneAccess';
+import { useAIInsights, formatAIInsights } from '@/hooks/useAIInsights';
 import { pdf } from '@react-pdf/renderer';
 import PDFReport from '@/components/reports/PDFReport';
 
@@ -217,6 +221,16 @@ export default function ReportsPage() {
     isZoneLeader,
     loading: zoneLoading
   } = useZoneAccess();
+  
+  // AI Insights hook
+  const { 
+    insights: aiInsights, 
+    loading: aiLoading, 
+    error: aiError, 
+    generateInsights, 
+    clearInsights 
+  } = useAIInsights();
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -230,6 +244,7 @@ export default function ReportsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('membership');
   const [savingReport, setSavingReport] = useState(false);
+  const [showAIInsights, setShowAIInsights] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -488,6 +503,52 @@ export default function ReportsPage() {
       setError('Failed to generate report. Please check your database connection and try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Generate AI Insights for the report
+  const handleGenerateAIInsights = async () => {
+    if (!reportData) {
+      setError('Please generate a report first before requesting AI insights');
+      return;
+    }
+
+    // Prepare data for AI analysis
+    const aiReportData = {
+      reportType,
+      totalMembers: reportData.membershipStats?.totalMembers || reportData.totalMembers,
+      activeMembers: reportData.membershipStats?.activeMembers || reportData.activeMembers,
+      newMembers: reportData.membershipStats?.newMembersThisMonth || reportData.newMembers,
+      totalIncome: reportData.financialStats?.totalIncome || reportData.totalIncome,
+      totalExpenses: reportData.financialStats?.totalExpenses || reportData.totalExpenses,
+      netAmount: reportData.financialStats?.netAmount || reportData.netAmount,
+      totalEvents: reportData.eventStats?.totalEvents || reportData.totalEvents,
+      upcomingEvents: reportData.eventStats?.upcomingEvents,
+      completedEvents: reportData.eventStats?.completedEvents,
+      totalDepartments: reportData.departmentStats?.length,
+      totalZones: reportData.jumuiyas?.length,
+      attendanceRate: reportData.attendanceStats?.averageAttendanceRate,
+      periodStart: startDate,
+      periodEnd: endDate,
+      departmentStats: reportData.departmentStats?.map((d: any) => ({
+        name: d.name,
+        memberCount: d.memberCount,
+        totalIncome: d.totalIncome,
+        totalExpenses: d.totalExpenses
+      })),
+      zoneStats: reportData.jumuiyas?.map((z: any) => ({
+        name: z.name,
+        memberCount: z.memberCount,
+        totalIncome: z.totalIncome
+      })),
+      financialTrends: reportData.financialStats?.monthlyTrends
+    };
+
+    const result = await generateInsights(aiReportData);
+    if (result) {
+      setShowAIInsights(true);
+      setSuccess('AI insights generated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -1450,6 +1511,9 @@ export default function ReportsPage() {
       
       const filename = `FCC${entityName}-${periodText}-Report-${currentDate}.pdf`;
       
+      // Prepare AI insights for PDF if available
+      const pdfAiInsights = aiInsights ? formatAIInsights(aiInsights) : undefined;
+      
       // Generate PDF using react-pdf
       const doc = pdf(
         <PDFReport 
@@ -1457,6 +1521,13 @@ export default function ReportsPage() {
           reportType={reportType}
           startDate={startDate}
           endDate={endDate}
+          aiInsights={pdfAiInsights ? {
+            executiveSummary: pdfAiInsights.executiveSummary,
+            highlights: pdfAiInsights.highlights,
+            areasForAttention: pdfAiInsights.areasForAttention,
+            recommendation: pdfAiInsights.recommendation,
+            rawInsights: aiInsights || undefined
+          } : undefined}
         />
       );
 
@@ -2027,11 +2098,171 @@ export default function ReportsPage() {
                         </>
                       )}
                     </Button>
+                    
+                    {/* AI Insights Button */}
+                    <Button
+                      variant="primary"
+                      onClick={handleGenerateAIInsights}
+                      className="flex items-center space-x-1 md:space-x-2 bg-purple-600 hover:bg-purple-700 text-xs md:text-sm px-3 md:px-4"
+                      disabled={aiLoading}
+                    >
+                      {aiLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
+                          <span className="hidden md:inline">Analyzing...</span>
+                          <span className="md:hidden">AI...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3 w-3 md:h-4 md:w-4" />
+                          <span className="hidden md:inline">AI Insights</span>
+                          <span className="md:hidden">AI</span>
+                        </>
+                      )}
+                    </Button>
                   </>
                 )}
               </div>
             </CardBody>
           </Card>
+
+          {/* AI Insights Section */}
+          {(aiInsights || aiLoading || aiError) && (
+            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-white">
+              <CardBody>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Sparkles className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">AI-Generated Insights</h3>
+                      <p className="text-xs text-gray-500">Powered by Qwen AI</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      clearInsights();
+                      setShowAIInsights(false);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </Button>
+                </div>
+
+                {aiLoading && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-3"></div>
+                      <p className="text-sm text-gray-600">Analyzing your report data...</p>
+                      <p className="text-xs text-gray-400 mt-1">This may take a few seconds</p>
+                    </div>
+                  </div>
+                )}
+
+                {aiError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-red-800">Failed to generate insights</p>
+                        <p className="text-xs text-red-600 mt-1">{aiError}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGenerateAIInsights}
+                          className="mt-2 text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {aiInsights && !aiLoading && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const formatted = formatAIInsights(aiInsights);
+                      return (
+                        <>
+                          {/* Executive Summary */}
+                          {formatted.executiveSummary && (
+                            <div className="bg-white rounded-lg p-4 border border-purple-100">
+                              <h4 className="text-sm font-semibold text-purple-800 mb-2 flex items-center">
+                                <FileText className="h-4 w-4 mr-2" />
+                                Executive Summary
+                              </h4>
+                              <p className="text-sm text-gray-700 leading-relaxed">{formatted.executiveSummary}</p>
+                            </div>
+                          )}
+
+                          {/* Key Highlights */}
+                          {formatted.highlights.length > 0 && (
+                            <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                              <h4 className="text-sm font-semibold text-green-800 mb-2 flex items-center">
+                                <Lightbulb className="h-4 w-4 mr-2" />
+                                Key Highlights & Achievements
+                              </h4>
+                              <ul className="space-y-2">
+                                {formatted.highlights.map((highlight, idx) => (
+                                  <li key={idx} className="flex items-start text-sm text-gray-700">
+                                    <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                                    <span>{highlight}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Areas for Attention */}
+                          {formatted.areasForAttention.length > 0 && (
+                            <div className="bg-amber-50 rounded-lg p-4 border border-amber-100">
+                              <h4 className="text-sm font-semibold text-amber-800 mb-2 flex items-center">
+                                <AlertTriangle className="h-4 w-4 mr-2" />
+                                Areas for Attention
+                              </h4>
+                              <ul className="space-y-2">
+                                {formatted.areasForAttention.map((area, idx) => (
+                                  <li key={idx} className="flex items-start text-sm text-gray-700">
+                                    <span className="w-4 h-4 rounded-full bg-amber-400 text-white text-xs flex items-center justify-center mr-2 flex-shrink-0 mt-0.5">!</span>
+                                    <span>{area}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Recommendations */}
+                          {formatted.recommendation && (
+                            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                              <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+                                <TrendingUp className="h-4 w-4 mr-2" />
+                                Recommendations & Outlook
+                              </h4>
+                              <p className="text-sm text-gray-700 leading-relaxed">{formatted.recommendation}</p>
+                            </div>
+                          )}
+
+                          {/* Raw insights fallback if parsing didn't work well */}
+                          {!formatted.executiveSummary && !formatted.highlights.length && !formatted.areasForAttention.length && !formatted.recommendation && (
+                            <div className="bg-white rounded-lg p-4 border border-purple-100">
+                              <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                                {aiInsights}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          )}
 
           {/* Report Content */}
           {reportData && (
