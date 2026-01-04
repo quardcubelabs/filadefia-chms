@@ -12,7 +12,8 @@ import {
   Building2,
   Crown,
   Users,
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from 'lucide-react';
 
 // Loading component to prevent blank pages
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState({
     totalMembers: 0,
     totalDepartments: 0,
+    totalZones: 0,
     departmentStats: [],
     membersByAge: { youth: 0, adults: 0, seniors: 0 }
   });
@@ -83,7 +85,8 @@ export default function DashboardPage() {
         fetchDashboardData(),
         fetchFinancialData(),
         fetchDepartmentLeaders(),
-        fetchUserProfile()
+        fetchUserProfile(),
+        fetchZonesData()
       ]).finally(() => {
         clearTimeout(loadingTimeout);
       });
@@ -160,12 +163,13 @@ export default function DashboardPage() {
         }
       });
 
-      setDashboardData({
+      setDashboardData(prev => ({
+        ...prev,
         totalMembers: members?.length || 0,
         totalDepartments: departments?.length || 0,
         departmentStats: departmentStats || [] as any,
         membersByAge
-      });
+      }));
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -371,6 +375,33 @@ export default function DashboardPage() {
       setUserProfile(profile);
     } catch (error: any) {
       console.error('Error fetching user profile:', error.message || error);
+    }
+  };
+
+  const fetchZonesData = async () => {
+    try {
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
+
+      // Fetch total active zones count
+      const { count, error: zonesError } = await supabase
+        .from('zones')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      if (zonesError) {
+        console.error('Error fetching zones:', zonesError);
+        return;
+      }
+
+      setDashboardData(prev => ({
+        ...prev,
+        totalZones: count || 0
+      }));
+    } catch (error: any) {
+      console.error('Error fetching zones data:', error.message || error);
     }
   };
 
@@ -604,15 +635,15 @@ export default function DashboardPage() {
                 </h3>
               </div>
 
-              {/* Active Events */}
+              {/* Total Zones */}
               <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-xl p-3 shadow-sm`}>
                 <div className={`inline-flex p-2 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-lg mb-2`}>
-                  <svg className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-green-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <MapPin className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-green-600'}`} />
                 </div>
-                <p className={`text-[10px] ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-0.5`}>Active Events</p>
-                <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>12</h3>
+                <p className={`text-[10px] ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-0.5`}>Total Zones</p>
+                <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {loading ? '...' : dashboardData.totalZones}
+                </h3>
               </div>
             </div>
 
@@ -806,15 +837,15 @@ export default function DashboardPage() {
                   </h3>
                 </div>
 
-                {/* Active Events Card */}
+                {/* Total Zones Card */}
                 <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0`}>
                   <div className={`inline-flex p-2.5 sm:p-4 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-xl sm:rounded-2xl mb-3 sm:mb-4`}>
-                    <svg className={`h-5 w-5 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-green-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <MapPin className={`h-5 w-5 sm:h-7 sm:w-7 ${darkMode ? 'text-white' : 'text-green-600'}`} />
                   </div>
-                  <p className={`text-xs sm:text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Active Events</p>
-                  <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>12</h3>
+                  <p className={`text-xs sm:text-sm ${darkMode ? 'text-green-100' : 'text-gray-600'} mb-1 sm:mb-2`}>Total Zones</p>
+                  <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {loading ? '...' : dashboardData.totalZones}
+                  </h3>
                 </div>
               </div>
 

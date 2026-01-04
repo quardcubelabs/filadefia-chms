@@ -615,23 +615,25 @@ export default function DepartmentDashboardPage() {
         />
       )}
       
-      <TopNavbar 
-        title={department?.name || 'Department Dashboard'}
-        subtitle={`${department?.swahili_name ? department.swahili_name : ''} - Department Management`.trim()}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-        onMenuClick={() => setSidebarOpen(true)}
-      />
+      {/* Main Content Area - with left margin for sidebar on desktop */}
+      <div className="lg:ml-20 transition-all duration-300">
+        <TopNavbar 
+          title={department?.name || 'Department Dashboard'}
+          subtitle={`${department?.swahili_name ? department.swahili_name : ''} - Department Management`.trim()}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
-      <main className="lg:ml-20 p-3 sm:p-4 md:p-6 lg:p-8 transition-all duration-300">
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-4 sm:mb-6">
-            <Alert variant="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          </div>
-        )}
+        <main className="p-3 sm:p-4 md:p-6 lg:p-8">
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-4 sm:mb-6">
+              <Alert variant="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            </div>
+          )}
 
 
 
@@ -1333,6 +1335,7 @@ export default function DepartmentDashboardPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
