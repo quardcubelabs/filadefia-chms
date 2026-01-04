@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'gradient' | 'bordered' | 'elevated' | 'stat';
+  variant?: 'default' | 'gradient' | 'bordered' | 'elevated';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
   rounded?: 'md' | 'lg' | 'xl' | '2xl' | '3xl';
@@ -20,11 +20,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     };
     
     const variants = {
-      default: 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm',
-      gradient: 'bg-gradient-to-br from-red-50 via-white to-blue-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-700 border border-gray-200 dark:border-slate-700 shadow-md',
-      bordered: 'bg-white dark:bg-slate-800 border-2 border-red-200 dark:border-slate-600',
-      elevated: 'bg-white dark:bg-slate-800 shadow-lg border border-gray-100 dark:border-slate-700',
-      stat: 'bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700/50 shadow-sm backdrop-blur-sm',
+      default: 'bg-white border border-gray-200 shadow-sm',
+      gradient: 'bg-gradient-to-br from-red-50 via-white to-blue-50 border border-gray-200 shadow-md',
+      bordered: 'bg-white border-2 border-red-200',
+      elevated: 'bg-white shadow-lg border border-gray-100',
     };
 
     const paddings = {
@@ -34,7 +33,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       lg: 'p-5 sm:p-6 md:p-8',
     };
 
-    const hoverClass = hover ? 'hover:shadow-xl hover:border-red-300 dark:hover:border-blue-500 hover:-translate-y-1 cursor-pointer active:scale-[0.98]' : '';
+    const hoverClass = hover ? 'hover:shadow-xl hover:border-red-300 hover:-translate-y-1 cursor-pointer active:scale-[0.98]' : '';
 
     return (
       <div
@@ -60,8 +59,8 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subtitle, action,
   return (
     <div className={`flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 ${className}`} {...props}>
       <div className="min-w-0 flex-1">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">{title}</h3>
-        {subtitle && <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">{subtitle}</p>}
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{title}</h3>
+        {subtitle && <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">{subtitle}</p>}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
     </div>
@@ -82,7 +81,7 @@ CardBody.displayName = 'CardBody';
 
 export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, className = '', ...props }) => {
   return (
-    <div className={`mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-slate-700 ${className}`} {...props}>
+    <div className={`mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 ${className}`} {...props}>
       {children}
     </div>
   );

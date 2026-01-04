@@ -3,7 +3,6 @@
 import React from 'react';
 import { Inbox, FileQuestion } from 'lucide-react';
 import { Button } from './Button';
-import { useTheme } from '@/contexts/ThemeContext';
 
 export interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -24,15 +23,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   action,
   className = '',
 }) => {
-  const { darkMode } = useTheme();
-  
   return (
     <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
-      <div className={`mb-4 p-4 rounded-full ${darkMode ? 'bg-slate-700' : 'bg-gray-100'}`}>
-        {icon || <Inbox className={`h-12 w-12 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />}
+      <div className="mb-4 p-4 rounded-full bg-gray-100">
+        {icon || <Inbox className="h-12 w-12 text-gray-400" />}
       </div>
-      <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
-      {description && <p className={`text-sm max-w-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{description}</p>}
+      <h3 className="text-lg font-semibold mb-2 text-gray-900">{title}</h3>
+      {description && <p className="text-sm max-w-sm mb-6 text-gray-600">{description}</p>}
       {action && (
         <Button onClick={action.onClick} icon={action.icon}>
           {action.label}
@@ -51,7 +48,6 @@ export interface LoadingProps {
 }
 
 export const Loading: React.FC<LoadingProps> = ({ text, size = 'md', className = '' }) => {
-  const { darkMode } = useTheme();
   const sizes = {
     sm: 'h-6 w-6',
     md: 'h-10 w-10',
@@ -61,7 +57,7 @@ export const Loading: React.FC<LoadingProps> = ({ text, size = 'md', className =
   return (
     <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
       <div className={`animate-spin rounded-full ${sizes[size]} border-b-2 border-fcc-blue-600 mb-4`}></div>
-      {text && <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{text}</p>}
+      {text && <p className="text-sm text-gray-600">{text}</p>}
     </div>
   );
 };
@@ -81,15 +77,13 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   onRetry,
   className = '',
 }) => {
-  const { darkMode } = useTheme();
-  
   return (
     <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
-      <div className={`mb-4 p-4 rounded-full ${darkMode ? 'bg-red-900/30' : 'bg-red-100'}`}>
+      <div className="mb-4 p-4 rounded-full bg-red-100">
         <FileQuestion className="h-12 w-12 text-red-600" />
       </div>
-      <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
-      <p className={`text-sm max-w-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{message}</p>
+      <h3 className="text-lg font-semibold mb-2 text-gray-900">{title}</h3>
+      <p className="text-sm max-w-sm mb-6 text-gray-600">{message}</p>
       {onRetry && (
         <Button onClick={onRetry} variant="primary">
           Try Again

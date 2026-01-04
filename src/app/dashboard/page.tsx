@@ -7,7 +7,6 @@ import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
 import AttendanceCard from '@/components/AttendanceCard';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import { useTheme } from '@/contexts/ThemeContext';
 
 import { 
   Building2,
@@ -19,10 +18,10 @@ import {
 // Loading component to prevent blank pages
 function DashboardLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Loading dashboard...</p>
+        <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
       </div>
     </div>
   );
@@ -32,7 +31,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, status, signOut, supabase } = useAuth();
   const { departmentId, isDepartmentLeader, loading: deptAccessLoading } = useDepartmentAccess();
-  const { darkMode, toggleDarkMode } = useTheme();
+  const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [dashboardData, setDashboardData] = useState({
@@ -499,13 +498,13 @@ export default function DashboardPage() {
 
 
 
-  const bgColor = darkMode ? 'bg-slate-900' : 'bg-gray-50';
-  const cardBg = darkMode ? 'bg-slate-800' : 'bg-white';
+  const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
+  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
-  const borderClass = darkMode ? 'border border-slate-700' : 'border border-gray-200';
-  const borderColor = darkMode ? 'border-slate-700' : 'border-gray-200';
-  const inputBg = darkMode ? 'bg-slate-700' : 'bg-white';
+  const borderClass = darkMode ? '' : 'border border-gray-200';
+  const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
+  const inputBg = darkMode ? 'bg-gray-800' : 'bg-white';
 
   // Show loading screen ONLY while auth is initializing (not when unauthenticated)
   if (authLoading || status === AuthStatus.LOADING) {
@@ -519,10 +518,10 @@ export default function DashboardPage() {
       window.location.href = '/login';
     }
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-          <p className="mt-3 text-gray-600 dark:text-gray-400 text-sm">Redirecting to login...</p>
+          <p className="mt-3 text-gray-600 text-sm">Redirecting to login...</p>
         </div>
       </div>
     );
@@ -558,7 +557,7 @@ export default function DashboardPage() {
           title={`Hello ${user?.profile?.first_name || user?.email?.split('@')[0] || 'User'}`}
           subtitle="Tanzania Assemblies of God - FCC"
           darkMode={darkMode}
-          onToggleDarkMode={toggleDarkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
           onMenuClick={() => setSidebarOpen(true)}
         />
 
@@ -732,7 +731,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {departmentLeaders.length > 0 ? (
                   departmentLeaders.slice(0, 4).map((leader, index) => (
-                    <div key={index} className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-slate-700' : 'bg-gray-50'}`}>
+                    <div key={index} className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                       <div className="relative">
                         <img
                           src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
@@ -1385,7 +1384,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <span className={textSecondary}>Dark Mode</span>
                     <button
-                      onClick={toggleDarkMode}
+                      onClick={() => setDarkMode(!darkMode)}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                         darkMode ? 'bg-blue-600' : 'bg-gray-300'
                       }`}

@@ -90,7 +90,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
       className={`fixed left-0 top-0 h-full ${
-        darkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'
+        darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
       } border-r flex flex-col py-4 lg:py-6 z-50 transition-all duration-300 ease-in-out shadow-lg ${
         mobileOpen 
           ? 'w-48 translate-x-0 lg:hidden' 
@@ -106,7 +106,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
           <button
             onClick={onMobileClose}
             className={`absolute top-3 right-3 p-1.5 rounded-lg lg:hidden ${
-              darkMode ? 'hover:bg-slate-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+              darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
             }`}
           >
             <X className="h-4 w-4" />
@@ -155,7 +155,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                   active
                     ? 'bg-red-100 text-red-700 shadow-md ring-1 ring-red-200'
                     : darkMode
-                    ? 'text-gray-300 hover:bg-slate-800 hover:text-white hover:shadow-md'
+                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white hover:shadow-md'
                     : 'text-gray-600 hover:bg-red-100 hover:text-red-600 hover:shadow-sm'
                 }`}
               >
@@ -192,7 +192,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
           <div
             className={`flex items-center justify-center h-8 w-8 rounded-lg ${
               darkMode 
-                ? 'bg-slate-800 text-gray-400' 
+                ? 'bg-gray-800 text-gray-400' 
                 : 'bg-gray-100 text-gray-600'
             } transition-all duration-300 ${
               isExpanded ? 'mx-auto rotate-180' : 'mx-auto'

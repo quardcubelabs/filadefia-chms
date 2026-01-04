@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button, Input, TextArea, Select } from '@/components/ui';
 import { User, Phone, Mail, MapPin, Calendar, Briefcase, Users as UsersIcon, Upload, Building2, X, Map } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface Department {
   id: string;
@@ -51,17 +50,11 @@ interface MemberFormProps {
 
 export default function MemberForm({ initialData, onSubmit, onCancel, isEditing = false, loading = false }: MemberFormProps) {
   const { supabase } = useAuth();
-  const { darkMode } = useTheme();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [loadingZones, setLoadingZones] = useState(true);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
-  
-  // Dark mode styling variables
-  const sectionHeaderClass = `text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center ${darkMode ? 'text-white' : 'text-gray-900'}`;
-  const borderClass = darkMode ? 'border-slate-700' : 'border-gray-200';
-  const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-500';
   
   const [formData, setFormData] = useState<MemberFormData>({
     first_name: initialData?.first_name || '',
@@ -212,13 +205,13 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
                 cursor-pointer"
             />
           </label>
-          <p className={`text-xs mt-1 ${textSecondary}`}>PNG, JPG up to 5MB</p>
+          <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
         </div>
       </div>
 
       {/* Personal Information */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Personal Information
         </h3>
@@ -291,8 +284,8 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Contact Information */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <Phone className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Contact Information
         </h3>
@@ -335,8 +328,8 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Employment Information */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Employment Information
         </h3>
@@ -361,8 +354,8 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Emergency Contact */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Emergency Contact
         </h3>
@@ -391,8 +384,8 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Membership Information */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-fcc-blue-600" />
           Membership Information
         </h3>
@@ -433,8 +426,8 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Department Assignment */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <Building2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
           Department Assignment
         </h3>
@@ -510,7 +503,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
           )}
 
           {formData.department_ids.length === 0 && (
-            <p className={`text-sm italic ${textSecondary}`}>
+            <p className="text-sm text-gray-500 italic">
               No departments assigned yet. Members can be assigned to multiple departments.
             </p>
           )}
@@ -518,8 +511,8 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Zone Assignment */}
-      <div className={`border-b ${borderClass} pb-4`}>
-        <h3 className={sectionHeaderClass}>
+      <div className="border-b border-gray-200 pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
           <Map className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
           Zone Assignment
         </h3>
@@ -566,7 +559,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
             </div>
           )}
 
-          <p className={`text-sm italic ${textSecondary}`}>
+          <p className="text-sm text-gray-500 italic">
             {formData.zone_id ? 'Member will be assigned to this zone.' : 'Members can be assigned to one zone based on their location.'}
           </p>
         </div>
@@ -586,7 +579,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
       </div>
 
       {/* Form Actions */}
-      <div className={`flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t ${borderClass}`}>
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
         <Button
           type="button"
           variant="ghost"

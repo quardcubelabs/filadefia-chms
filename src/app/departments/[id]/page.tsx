@@ -596,12 +596,12 @@ export default function DepartmentDashboardPage() {
   }
 
   // Styling variables
-  const bgColor = darkMode ? 'bg-slate-900' : 'bg-gray-50';
-  const cardBg = darkMode ? 'bg-slate-800' : 'bg-white';
+  const bgColor = darkMode ? 'bg-gray-900' : 'bg-gray-50';
+  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-600';
-  const borderColor = darkMode ? 'border-slate-700' : 'border-gray-200';
-  const inputBg = darkMode ? 'bg-slate-700' : 'bg-gray-50';
+  const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
+  const inputBg = darkMode ? 'bg-gray-700' : 'bg-gray-50';
 
   return (
     <div className={`min-h-screen ${bgColor}`}>

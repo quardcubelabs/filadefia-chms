@@ -33,7 +33,6 @@ import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useZoneAccess } from '@/hooks/useZoneAccess';
-import { useTheme } from '@/contexts/ThemeContext';
 import { pdf } from '@react-pdf/renderer';
 import PDFReport from '@/components/reports/PDFReport';
 
@@ -204,7 +203,6 @@ interface Department {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const { darkMode } = useTheme();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
   const { 
     departmentId, 
@@ -1895,11 +1893,11 @@ export default function ReportsPage() {
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                 <div>
-                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Report Type</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Report Type</label>
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value as ReportType)}
-                    className={`w-full px-2 md:px-3 py-2 text-xs md:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 ${darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
                   >
                     <option value="membership">
                       {isDepartmentLeader ? `${departmentName} - Membership` : isZoneLeader ? `${zoneName} - Membership` : 'Membership'}
@@ -1932,11 +1930,11 @@ export default function ReportsPage() {
                 </div>
 
                 <div>
-                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Period</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Period</label>
                   <select
                     value={reportPeriod}
                     onChange={(e) => setReportPeriod(e.target.value as ReportPeriod)}
-                    className={`w-full px-2 md:px-3 py-2 text-xs md:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 ${darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -1947,24 +1945,24 @@ export default function ReportsPage() {
                 </div>
 
                 <div>
-                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Start Date</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Start Date</label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className={`w-full px-2 md:px-3 py-2 text-xs md:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 ${darkMode ? 'bg-slate-700 border-slate-600 text-white disabled:bg-slate-800 disabled:text-gray-500' : 'bg-white border-gray-300 text-gray-900 disabled:bg-gray-100 disabled:text-gray-500'}`}
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
                   />
                 </div>
 
                 <div>
-                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>End Date</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">End Date</label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     disabled={reportPeriod !== 'custom'}
-                    className={`w-full px-2 md:px-3 py-2 text-xs md:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 ${darkMode ? 'bg-slate-700 border-slate-600 text-white disabled:bg-slate-800 disabled:text-gray-500' : 'bg-white border-gray-300 text-gray-900 disabled:bg-gray-100 disabled:text-gray-500'}`}
+                    className="w-full px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
                   />
                 </div>
               </div>

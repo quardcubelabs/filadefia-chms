@@ -19,7 +19,6 @@ import {
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface AttendanceStats {
   totalMembers: number;
@@ -65,7 +64,6 @@ export default function AttendancePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
-  const { darkMode } = useTheme();
   
   const [stats, setStats] = useState<AttendanceStats>({
     totalMembers: 0,
@@ -326,21 +324,21 @@ export default function AttendancePage() {
         {loading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className={`rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6 animate-pulse ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
-                <div className={`h-3 sm:h-4 rounded mb-3 sm:mb-4 ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
-                <div className={`h-6 sm:h-8 rounded mb-2 ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
-                <div className={`h-2 sm:h-3 rounded ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
+              <div key={i} className="rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6 animate-pulse bg-white border-gray-200">
+                <div className="h-3 sm:h-4 rounded mb-3 sm:mb-4 bg-gray-200"></div>
+                <div className="h-6 sm:h-8 rounded mb-2 bg-gray-200"></div>
+                <div className="h-2 sm:h-3 rounded bg-gray-200"></div>
               </div>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {/* Total Members */}
-            <div className={`rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+            <div className="rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 bg-white border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs sm:text-sm font-medium truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Members</p>
-                  <p className={`text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.totalMembers}</p>
+                  <p className="text-xs sm:text-sm font-medium truncate text-gray-600">Total Members</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1 text-gray-900">{stats.totalMembers}</p>
                 </div>
                 <div className="bg-blue-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
@@ -349,10 +347,10 @@ export default function AttendancePage() {
             </div>
 
             {/* Present Today */}
-            <div className={`rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+            <div className="rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 bg-white border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs sm:text-sm font-medium truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Present This Week</p>
+                  <p className="text-xs sm:text-sm font-medium truncate text-gray-600">Present This Week</p>
                   <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{stats.presentToday}</p>
                 </div>
                 <div className="bg-green-50 p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ml-2">
@@ -362,11 +360,11 @@ export default function AttendancePage() {
             </div>
 
             {/* Attendance Rate */}
-            <div className={`rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+            <div className="rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 bg-white border-gray-200">
               <div className="flex items-center justify-between mb-2 sm:mb-0">
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs sm:text-sm font-medium truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Attendance Rate</p>
-                  <p className={`text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <p className="text-xs sm:text-sm font-medium truncate text-gray-600">Attendance Rate</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1 text-gray-900">
                     {stats.attendanceRate.toFixed(1)}%
                   </p>
                 </div>
@@ -387,15 +385,15 @@ export default function AttendancePage() {
             </div>
 
             {/* Check-ins Breakdown */}
-            <div className={`rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+            <div className="rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4 md:p-6 bg-white border-gray-200">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className="flex items-center min-w-0">
                   <div className="bg-orange-50 p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
                     <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-orange-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs sm:text-sm font-medium truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Check-ins</p>
-                    <p className={`text-lg sm:text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.totalCheckIns}</p>
+                    <p className="text-xs sm:text-sm font-medium truncate text-gray-600">Check-ins</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.totalCheckIns}</p>
                   </div>
                 </div>
               </div>
@@ -446,10 +444,10 @@ export default function AttendancePage() {
         </div>
 
         {/* Recent Activity */}
-        <div className={`rounded-xl sm:rounded-2xl shadow-sm border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
-          <div className={`p-3 sm:p-4 md:p-6 border-b ${darkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+        <div className="rounded-xl sm:rounded-2xl shadow-sm border bg-white border-gray-200">
+          <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h2 className={`text-base sm:text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recent Sessions</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Sessions</h2>
               <button
                 onClick={() => router.push('/attendance/reports')}
                 className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center gap-1"
@@ -464,8 +462,8 @@ export default function AttendancePage() {
               <div className="space-y-3 sm:space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className={`h-3 sm:h-4 rounded mb-2 ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
-                    <div className={`h-2 sm:h-3 rounded w-3/4 ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
+                    <div className="h-3 sm:h-4 rounded mb-2 bg-gray-200"></div>
+                    <div className="h-2 sm:h-3 rounded w-3/4 bg-gray-200"></div>
                   </div>
                 ))}
               </div>
@@ -475,16 +473,14 @@ export default function AttendancePage() {
                   <div
                     key={session.id}
                     onClick={() => handleSessionClick(session)}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-200 gap-2 sm:gap-4 ${
-                      darkMode ? 'bg-slate-700' : 'bg-gray-50'
-                    } ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-200 gap-2 sm:gap-4 bg-gray-50 ${
                       session.hasQRCode
                         ? session.qr_is_active && session.qr_expires_at && new Date(session.qr_expires_at) > new Date()
-                          ? `${darkMode ? 'hover:bg-green-900/30' : 'hover:bg-green-50'} cursor-pointer border-l-4 border-l-green-500 hover:shadow-md active:scale-[0.98]` 
-                          : `${darkMode ? 'hover:bg-orange-900/30' : 'hover:bg-orange-50'} cursor-pointer border-l-4 border-l-orange-400 hover:shadow-md active:scale-[0.98]`
+                          ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md active:scale-[0.98]' 
+                          : 'hover:bg-orange-50 cursor-pointer border-l-4 border-l-orange-400 hover:shadow-md active:scale-[0.98]'
                         : session.isQRSession 
-                        ? `${darkMode ? 'hover:bg-green-900/30' : 'hover:bg-green-50'} cursor-pointer border-l-4 border-l-green-500 hover:shadow-md active:scale-[0.98]` 
-                        : `${darkMode ? 'hover:bg-slate-600' : 'hover:bg-gray-100'} cursor-pointer hover:shadow-sm active:scale-[0.98]`
+                        ? 'hover:bg-green-50 cursor-pointer border-l-4 border-l-green-500 hover:shadow-md active:scale-[0.98]' 
+                        : 'hover:bg-gray-100 cursor-pointer hover:shadow-sm active:scale-[0.98]'
                     } touch-manipulation`}
                   >
                     <div className="flex items-center space-x-3 sm:space-x-4">
@@ -511,7 +507,7 @@ export default function AttendancePage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <h4 className={`font-medium text-sm sm:text-base truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          <h4 className="font-medium text-sm sm:text-base truncate text-gray-900">
                             {getAttendanceTypeLabel(session.attendance_type)}
                           </h4>
                           {(session.hasQRCode || session.isQRSession) && (
@@ -531,7 +527,7 @@ export default function AttendancePage() {
                             </span>
                           )}
                         </div>
-                        <p className={`text-xs sm:text-sm truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <p className="text-xs sm:text-sm truncate text-gray-600">
                           {formatDate(session.date)} • {session.present_count}/{session.total_count}
                         </p>
                       </div>
@@ -546,16 +542,16 @@ export default function AttendancePage() {
                       }`}>
                         {session.percentage.toFixed(1)}%
                       </div>
-                      <ArrowRight className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <ArrowRight className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <Clock className={`w-12 h-12 mx-auto mb-4 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`} />
-                <h3 className={`text-lg font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>No Recent Sessions</h3>
-                <p className={`mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Start recording attendance to see activity here</p>
+                <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2 text-gray-900">No Recent Sessions</h3>
+                <p className="mb-4 text-gray-600">Start recording attendance to see activity here</p>
                 <button
                   onClick={() => router.push('/attendance/record')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2"
