@@ -750,21 +750,61 @@ export default function QRAttendancePage() {
                   <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Refresh</span>
                 </button>
+
+                {/* Actions */}
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                  <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">Actions</h4>
+                  <div className="space-y-2 sm:space-y-3">
+                    <button
+                      onClick={() => router.push('/attendance')}
+                      className="w-full px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-xs sm:text-sm"
+                    >
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>View All Attendance</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => router.push(`/attendance/record?date=${currentSession.session_info.date}&type=${currentSession.session_info.attendance_type}&session_id=${currentSession.session_id}`)}
+                      className="w-full px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 text-xs sm:text-sm"
+                    >
+                      <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>Manual Recording</span>
+                    </button>
+                    
+                    {!isSessionExpired(currentSession.session_info.expires_at) && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs sm:text-sm text-green-600 mb-1 sm:mb-2">✓ QR check-ins are active</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500">
+                          Members can scan QR code or use manual recording above
+                        </p>
+                      </div>
+                    )}
+                    
+                    {isSessionExpired(currentSession.session_info.expires_at) && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs sm:text-sm text-orange-600 mb-1 sm:mb-2">⚠️ QR check-ins are disabled</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500">
+                          Use manual recording above or extend QR session
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Recent Check-ins */}
               {sessionStats.recent_checkins && sessionStats.recent_checkins.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Check-ins</h3>
-                  <div className="space-y-3">
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Recent Check-ins</h3>
+                  <div className="space-y-2 sm:space-y-3">
                     {sessionStats.recent_checkins.slice(0, 5).map((checkin: any, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
-                        <UserCheck className="w-4 h-4 text-green-600" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
+                      <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 bg-gray-50 rounded-lg">
+                        <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                             {checkin.members.first_name} {checkin.members.last_name}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-[10px] sm:text-xs text-gray-600">
                             {new Date(checkin.created_at).toLocaleTimeString()}
                           </p>
                         </div>
@@ -773,46 +813,6 @@ export default function QRAttendancePage() {
                   </div>
                 </div>
               )}
-
-              {/* Action Buttons */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => router.push('/attendance')}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View All Attendance</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => router.push(`/attendance/record?date=${currentSession.session_info.date}&type=${currentSession.session_info.attendance_type}&session_id=${currentSession.session_id}`)}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>Manual Recording</span>
-                  </button>
-                  
-                  {!isSessionExpired(currentSession.session_info.expires_at) && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <p className="text-sm text-green-600 mb-2">✓ QR check-ins are active</p>
-                      <p className="text-xs text-gray-500">
-                        Members can scan QR code or use manual recording above
-                      </p>
-                    </div>
-                  )}
-                  
-                  {isSessionExpired(currentSession.session_info.expires_at) && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <p className="text-sm text-orange-600 mb-2">⚠️ QR check-ins are disabled</p>
-                      <p className="text-xs text-gray-500">
-                        Use manual recording above or extend QR session
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}

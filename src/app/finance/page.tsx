@@ -864,7 +864,7 @@ export default function FinancePage() {
                 </div>
                 
                 {/* Secondary Filters */}
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
                   <Select
                     value={filterPaymentMethod}
                     onChange={(e) => setFilterPaymentMethod(e.target.value)}
@@ -886,20 +886,28 @@ export default function FinancePage() {
                       { value: "unverified", label: "Unverified" }
                     ]}
                   />
-                  <Input
-                    label="From Date"
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full"
-                  />
-                  <Input
-                    label="To Date"
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full"
-                  />
+                  <div className="col-span-2 sm:col-span-2 lg:col-span-2">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                      <div className="min-w-0">
+                        <label className="block text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 sm:mb-1.5 truncate">From</label>
+                        <input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => setDateFrom(e.target.value)}
+                          className="w-full block rounded-lg sm:rounded-xl border-2 border-gray-400 bg-gray-50 hover:bg-white hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:ring-2 focus:outline-none focus:bg-white px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-900 transition-all shadow-sm"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="block text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 sm:mb-1.5 truncate">To</label>
+                        <input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => setDateTo(e.target.value)}
+                          className="w-full block rounded-lg sm:rounded-xl border-2 border-gray-400 bg-gray-50 hover:bg-white hover:border-blue-800 focus:border-blue-800 focus:ring-blue-800 focus:ring-2 focus:outline-none focus:bg-white px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-900 transition-all shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardBody>
             </Card>
