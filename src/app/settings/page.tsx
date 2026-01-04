@@ -828,8 +828,8 @@ export default function SettingsPage() {
           {/* Photo Upload Modal */}
           {showPhotoModal && (
             <Modal isOpen={showPhotoModal} onClose={() => setShowPhotoModal(false)}>
-              <div className="p-6">
-                <h2 className="text-xl font-bold mb-4">Change Profile Photo</h2>
+              <div className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Change Profile Photo</h2>
                 
                 <div className="mb-4">
                   <input
@@ -841,10 +841,10 @@ export default function SettingsPage() {
                   />
                   <label
                     htmlFor="photo-upload"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                    className="flex flex-col items-center justify-center w-full h-28 sm:h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
                   >
-                    <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-600">Click to upload photo</span>
+                    <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mb-2" />
+                    <span className="text-xs sm:text-sm text-gray-600">Click to upload photo</span>
                     <span className="text-xs text-gray-500">Max 5MB, JPG, PNG, GIF</span>
                   </label>
                 </div>
@@ -854,7 +854,7 @@ export default function SettingsPage() {
                     <img
                       src={photoPreview}
                       alt="Preview"
-                      className="w-32 h-32 object-cover rounded-full mx-auto"
+                      className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-full mx-auto"
                     />
                   </div>
                 )}
@@ -867,11 +867,11 @@ export default function SettingsPage() {
                         style={{ width: `${uploadProgress}%` }}
                       ></div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{uploadProgress}% uploaded</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">{uploadProgress}% uploaded</p>
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -879,12 +879,14 @@ export default function SettingsPage() {
                       setSelectedPhoto(null);
                       setPhotoPreview(null);
                     }}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handlePhotoUpload}
                     disabled={!selectedPhoto || isSaving}
+                    className="w-full sm:w-auto"
                   >
                     {isSaving ? 'Uploading...' : 'Upload'}
                   </Button>
@@ -896,12 +898,12 @@ export default function SettingsPage() {
           {/* Password Change Modal */}
           {showPasswordModal && (
             <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)}>
-              <div className="p-6">
-                <h2 className="text-xl font-bold mb-4">Change Password</h2>
+              <div className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Change Password</h2>
                 
-                <div className="space-y-4 mb-6">
+                <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Current Password</label>
                     <div className="relative">
                       <Input
                         type={showPasswords.current ? 'text' : 'password'}
@@ -920,7 +922,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">New Password</label>
                     <div className="relative">
                       <Input
                         type={showPasswords.new ? 'text' : 'password'}
@@ -939,7 +941,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Confirm Password</label>
                     <div className="relative">
                       <Input
                         type={showPasswords.confirm ? 'text' : 'password'}
@@ -958,19 +960,21 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
                   <Button
                     variant="outline"
                     onClick={() => {
                       setShowPasswordModal(false);
                       setPasswords({ current: '', new: '', confirm: '' });
                     }}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handlePasswordChange}
                     disabled={!passwords.current || !passwords.new || !passwords.confirm || isSaving}
+                    className="w-full sm:w-auto"
                   >
                     {isSaving ? 'Updating...' : 'Update Password'}
                   </Button>
@@ -982,21 +986,22 @@ export default function SettingsPage() {
           {/* Delete Account Modal */}
           {showDeleteModal && (
             <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-              <div className="p-6">
-                <h2 className="text-xl font-bold text-red-600 mb-4">Delete Account</h2>
-                <p className="text-gray-600 mb-6">
+              <div className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold text-red-600 mb-3 sm:mb-4">Delete Account</h2>
+                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
                   This action cannot be undone. Your account and all associated data will be permanently deleted.
                 </p>
                 
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
                   <Button
                     variant="outline"
                     onClick={() => setShowDeleteModal(false)}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
                   <Button
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                     onClick={() => {
                       // Handle account deletion
                       setShowDeleteModal(false);

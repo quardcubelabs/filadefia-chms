@@ -1030,7 +1030,7 @@ export default function MessagesPage() {
         title="Create New Announcement"
         size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Input
             label="Title"
             value={announcementForm.title}
@@ -1044,11 +1044,11 @@ export default function MessagesPage() {
             value={announcementForm.content}
             onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
             placeholder="Enter announcement content"
-            rows={5}
+            rows={4}
             required
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Priority"
               value={announcementForm.priority}
@@ -1073,8 +1073,8 @@ export default function MessagesPage() {
               />
             ) : (
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Target Audience</label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">Target Audience</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md sm:rounded-lg bg-gray-50 text-sm sm:text-base text-gray-700">
                   {departmentName} Department
                 </div>
               </div>
@@ -1099,11 +1099,11 @@ export default function MessagesPage() {
           />
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsAnnouncementModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsAnnouncementModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleCreateAnnouncement}>
+          <Button onClick={handleCreateAnnouncement} className="w-full sm:w-auto">
             Create Announcement
           </Button>
         </div>
@@ -1116,8 +1116,8 @@ export default function MessagesPage() {
           title="Send Message"
           size="lg"
         >
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Message Type"
               value={communicationForm.type}
@@ -1180,9 +1180,9 @@ export default function MessagesPage() {
           />
 
           {/* Cost estimate */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Cost Estimate</h4>
-            <p className="text-sm text-gray-600">
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+            <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-1.5 sm:mb-2">Cost Estimate</h4>
+            <p className="text-xs sm:text-sm text-gray-600">
               {communicationForm.recipient_type === 'all' ? members.length :
                communicationForm.recipient_type === 'department' && communicationForm.department_id ? 
                'Department members' : 'Selected members'} × TZS {
@@ -1193,11 +1193,11 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsCommunicationModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsCommunicationModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleSendCommunication}>
+          <Button onClick={handleSendCommunication} className="w-full sm:w-auto">
             {communicationForm.scheduled_at ? 'Schedule Message' : 'Send Now'}
           </Button>
           </div>
@@ -1210,7 +1210,7 @@ export default function MessagesPage() {
           title="Edit Announcement"
         size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Input
             label="Title"
             value={announcementForm.title}
@@ -1224,11 +1224,11 @@ export default function MessagesPage() {
             value={announcementForm.content}
             onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
             placeholder="Enter announcement content"
-            rows={5}
+            rows={4}
             required
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Priority"
               value={announcementForm.priority}
@@ -1270,8 +1270,8 @@ export default function MessagesPage() {
           />
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button onClick={async () => {
@@ -1299,7 +1299,7 @@ export default function MessagesPage() {
             } catch (err: any) {
               setError(err.message);
             }
-          }}>
+          }} className="w-full sm:w-auto">
             Update Announcement
           </Button>
         </div>

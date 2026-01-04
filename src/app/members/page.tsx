@@ -849,19 +849,19 @@ export default function MembersPage() {
           size="md"
         >
           {selectedMember && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Member Photo & Basic Info */}
-              <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-gray-200">
                 <Avatar
                   src={selectedMember.photo_url}
                   alt={`${selectedMember.first_name} ${selectedMember.last_name}`}
                   size="xl"
                 />
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900">
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
                     {selectedMember.first_name} {selectedMember.middle_name && `${selectedMember.middle_name} `}{selectedMember.last_name}
                   </h3>
-                  <p className="text-gray-600 font-mono">{selectedMember.member_number}</p>
+                  <p className="text-sm sm:text-base text-gray-600 font-mono">{selectedMember.member_number}</p>
                   <div className="mt-2">
                     {getStatusBadge(selectedMember.status)}
                   </div>
@@ -870,20 +870,20 @@ export default function MembersPage() {
 
               {/* Contact Information */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Contact Information</h4>
+                <h4 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase mb-2 sm:mb-3">Contact Information</h4>
                 <div className="space-y-2">
-                  <div className="flex items-center text-gray-600">
-                    <Phone className="h-4 w-4 mr-3 text-gray-400" />
-                    <span>{selectedMember.phone}</span>
+                  <div className="flex items-center text-sm sm:text-base text-gray-600">
+                    <Phone className="h-4 w-4 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{selectedMember.phone}</span>
                   </div>
                   {selectedMember.email && (
-                    <div className="flex items-center text-gray-600">
-                      <Mail className="h-4 w-4 mr-3 text-gray-400" />
-                      <span>{selectedMember.email}</span>
+                    <div className="flex items-center text-sm sm:text-base text-gray-600">
+                      <Mail className="h-4 w-4 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{selectedMember.email}</span>
                     </div>
                   )}
-                  <div className="flex items-start text-gray-600">
-                    <MapPin className="h-4 w-4 mr-3 text-gray-400 mt-0.5" />
+                  <div className="flex items-start text-sm sm:text-base text-gray-600">
+                    <MapPin className="h-4 w-4 mr-2 sm:mr-3 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>{selectedMember.address}</span>
                   </div>
                 </div>
@@ -891,24 +891,24 @@ export default function MembersPage() {
 
               {/* Personal Information */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Personal Information</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase mb-2 sm:mb-3">Personal Information</h4>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Date of Birth</p>
-                    <p className="text-gray-900">{new Date(selectedMember.date_of_birth).toLocaleDateString()}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Date of Birth</p>
+                    <p className="text-sm sm:text-base text-gray-900">{new Date(selectedMember.date_of_birth).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Gender</p>
-                    <p className="text-gray-900 capitalize">{selectedMember.gender}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Gender</p>
+                    <p className="text-sm sm:text-base text-gray-900 capitalize">{selectedMember.gender}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Marital Status</p>
-                    <p className="text-gray-900 capitalize">{selectedMember.marital_status}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Marital Status</p>
+                    <p className="text-sm sm:text-base text-gray-900 capitalize">{selectedMember.marital_status}</p>
                   </div>
                   {selectedMember.occupation && (
                     <div>
-                      <p className="text-sm text-gray-500">Occupation</p>
-                      <p className="text-gray-900">{selectedMember.occupation}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Occupation</p>
+                      <p className="text-sm sm:text-base text-gray-900">{selectedMember.occupation}</p>
                     </div>
                   )}
                 </div>
@@ -916,16 +916,16 @@ export default function MembersPage() {
 
               {/* Membership Information */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Membership Information</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase mb-2 sm:mb-3">Membership Information</h4>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Membership Date</p>
-                    <p className="text-gray-900">{new Date(selectedMember.membership_date).toLocaleDateString()}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Membership Date</p>
+                    <p className="text-sm sm:text-base text-gray-900">{new Date(selectedMember.membership_date).toLocaleDateString()}</p>
                   </div>
                   {selectedMember.baptism_date && (
                     <div>
-                      <p className="text-sm text-gray-500">Baptism Date</p>
-                      <p className="text-gray-900">{new Date(selectedMember.baptism_date).toLocaleDateString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Baptism Date</p>
+                      <p className="text-sm sm:text-base text-gray-900">{new Date(selectedMember.baptism_date).toLocaleDateString()}</p>
                     </div>
                   )}
                 </div>
@@ -934,16 +934,16 @@ export default function MembersPage() {
               {/* Emergency Contact */}
               {selectedMember.emergency_contact_name && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Emergency Contact</h4>
+                  <h4 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase mb-2 sm:mb-3">Emergency Contact</h4>
                   <div className="space-y-2">
                     <div>
-                      <p className="text-sm text-gray-500">Name</p>
-                      <p className="text-gray-900">{selectedMember.emergency_contact_name}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Name</p>
+                      <p className="text-sm sm:text-base text-gray-900">{selectedMember.emergency_contact_name}</p>
                     </div>
                     {selectedMember.emergency_contact_phone && (
                       <div>
-                        <p className="text-sm text-gray-500">Phone</p>
-                        <p className="text-gray-900">{selectedMember.emergency_contact_phone}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Phone</p>
+                        <p className="text-sm sm:text-base text-gray-900">{selectedMember.emergency_contact_phone}</p>
                       </div>
                     )}
                   </div>
@@ -953,31 +953,33 @@ export default function MembersPage() {
               {/* Notes */}
               {selectedMember.notes && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">Notes</h4>
-                  <p className="text-gray-600 whitespace-pre-wrap">{selectedMember.notes}</p>
+                  <h4 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase mb-2 sm:mb-3">Notes</h4>
+                  <p className="text-sm sm:text-base text-gray-600 whitespace-pre-wrap">{selectedMember.notes}</p>
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowViewModal(false);
-                    setShowEditModal(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                 <Button
                   variant="ghost"
                   onClick={() => {
                     setShowViewModal(false);
                     setSelectedMember(null);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Close
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowEditModal(true);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
                 </Button>
               </div>
             </div>

@@ -1807,8 +1807,8 @@ export default function FinancePage() {
             title="Add New Transaction"
             size="lg"
           >
-            <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Transaction Type"
               value={formData.transaction_type}
@@ -1836,7 +1836,7 @@ export default function FinancePage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Member (Optional)"
               value={formData.member_id}
@@ -1862,11 +1862,11 @@ export default function FinancePage() {
               />
             ) : (
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg sm:rounded-xl bg-gray-50 text-sm text-gray-700">
                   {departmentName || "Unknown Department"}
                 </div>
-                <p className="text-xs text-gray-500">All transactions will be assigned to your department</p>
+                <p className="text-[10px] sm:text-xs text-gray-500">All transactions will be assigned to your department</p>
               </div>
             )}
 
@@ -1881,7 +1881,7 @@ export default function FinancePage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Payment Method"
               value={formData.payment_method}
@@ -1915,11 +1915,11 @@ export default function FinancePage() {
           />
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleAddTransaction}>
+          <Button onClick={handleAddTransaction} className="w-full sm:w-auto">
             Add Transaction
           </Button>
         </div>
@@ -1932,8 +1932,8 @@ export default function FinancePage() {
         title="Edit Transaction"
         size="lg"
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Transaction Type"
               value={formData.transaction_type}
@@ -1961,7 +1961,7 @@ export default function FinancePage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Member (Optional)"
               value={formData.member_id}
@@ -1987,8 +1987,8 @@ export default function FinancePage() {
               />
             ) : (
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg sm:rounded-xl bg-gray-50 text-sm text-gray-700">
                   {departmentName}
                 </div>
               </div>
@@ -2005,7 +2005,7 @@ export default function FinancePage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Payment Method"
               value={formData.payment_method}
@@ -2039,11 +2039,11 @@ export default function FinancePage() {
           />
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleEditTransaction}>
+          <Button onClick={handleEditTransaction} className="w-full sm:w-auto">
             Update Transaction
           </Button>
         </div>

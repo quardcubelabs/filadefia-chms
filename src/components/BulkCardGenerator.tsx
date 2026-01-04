@@ -190,7 +190,7 @@ export default function BulkCardGenerator({ members, onClose }: BulkCardGenerato
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Error Alert */}
       {error && (
         <Alert variant="error" onClose={() => setError(null)}>
@@ -199,17 +199,17 @@ export default function BulkCardGenerator({ members, onClose }: BulkCardGenerato
       )}
 
       {/* Info */}
-      <div className="bg-tag-blue-50 border border-tag-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <CreditCard className="h-6 w-6 text-tag-blue-600 flex-shrink-0 mt-1" />
+      <div className="bg-tag-blue-50 border border-tag-blue-200 rounded-lg p-3 sm:p-4">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-tag-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
           <div>
-            <h3 className="font-semibold text-tag-blue-900 mb-2">
+            <h3 className="font-semibold text-sm sm:text-base text-tag-blue-900 mb-1.5 sm:mb-2">
               Bulk Card Generation
             </h3>
-            <p className="text-sm text-tag-blue-700 mb-2">
+            <p className="text-xs sm:text-sm text-tag-blue-700 mb-1.5 sm:mb-2">
               Generate membership cards for {members.length} member{members.length !== 1 ? 's' : ''}.
             </p>
-            <ul className="text-sm text-tag-blue-600 space-y-1 list-disc list-inside">
+            <ul className="text-xs sm:text-sm text-tag-blue-600 space-y-0.5 sm:space-y-1 list-disc list-inside">
               <li>2 cards per page (A4 format)</li>
               <li>Each card includes member photo (or initials), details, and QR code</li>
               <li>Ready for printing on cardstock paper</li>
@@ -221,14 +221,14 @@ export default function BulkCardGenerator({ members, onClose }: BulkCardGenerato
 
       {/* Progress */}
       {generating && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-tag-gray-600">
+        <div className="space-y-1.5 sm:space-y-2">
+          <div className="flex justify-between text-xs sm:text-sm text-tag-gray-600">
             <span>Generating cards...</span>
             <span>{progress}%</span>
           </div>
-          <div className="w-full bg-tag-gray-200 rounded-full h-2">
+          <div className="w-full bg-tag-gray-200 rounded-full h-1.5 sm:h-2">
             <div
-              className="bg-gradient-to-r from-tag-red-500 to-tag-red-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-tag-red-500 to-tag-red-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -236,17 +236,19 @@ export default function BulkCardGenerator({ members, onClose }: BulkCardGenerato
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
         <Button
           variant="ghost"
           onClick={onClose}
           disabled={generating}
+          className="w-full sm:w-auto"
         >
           Cancel
         </Button>
         <Button
           onClick={generateCards}
           disabled={generating}
+          className="w-full sm:w-auto"
         >
           {generating ? (
             <>

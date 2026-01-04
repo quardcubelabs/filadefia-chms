@@ -1243,8 +1243,8 @@ export default function DocumentsPage() {
         title="Add Meeting Minutes"
         size="lg"
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {!isDepartmentLeader ? (
               <Select
                 label="Department"
@@ -1256,8 +1256,8 @@ export default function DocumentsPage() {
               />
             ) : (
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md sm:rounded-lg bg-gray-50 text-sm sm:text-base text-gray-700">
                   {departmentName}
                 </div>
               </div>
@@ -1286,13 +1286,13 @@ export default function DocumentsPage() {
             value={minutesForm.minutes}
             onChange={(e) => setMinutesForm({ ...minutesForm, minutes: e.target.value })}
             placeholder="Enter meeting minutes"
-            rows={6}
+            rows={4}
             required
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Attendees
               </label>
               <select
@@ -1302,8 +1302,8 @@ export default function DocumentsPage() {
                   const selected = Array.from(e.target.selectedOptions, option => option.value);
                   setMinutesForm({ ...minutesForm, attendees: selected });
                 }}
-                className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
-                size={5}
+                className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50 text-sm"
+                size={4}
               >
                 {members.map(member => (
                   <option key={member.id} value={member.id}>
@@ -1311,7 +1311,7 @@ export default function DocumentsPage() {
                   </option>
                 ))}
               </select>
-              <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
             </div>
 
             <Input
@@ -1323,8 +1323,8 @@ export default function DocumentsPage() {
           </div>
 
           {/* Attachment Upload */}
-          <div className="border-t pt-4 mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               <div className="flex items-center space-x-2">
                 <Upload className="h-4 w-4" />
                 <span>Attachment (Optional)</span>
@@ -1332,15 +1332,15 @@ export default function DocumentsPage() {
             </label>
             <div className="flex items-center space-x-4">
               <label className="flex-1">
-                <div className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+                <div className={`border-2 border-dashed rounded-lg p-3 sm:p-4 text-center cursor-pointer transition-colors ${
                   attachmentFile 
                     ? 'border-green-300 bg-green-50' 
                     : 'border-gray-300 hover:border-red-400 hover:bg-red-50'
                 }`}>
                   {attachmentFile ? (
                     <div className="flex items-center justify-center space-x-2">
-                      <File className="h-5 w-5 text-green-600" />
-                      <span className="text-green-700 font-medium">{attachmentFile.name}</span>
+                      <File className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <span className="text-green-700 font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{attachmentFile.name}</span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1355,8 +1355,8 @@ export default function DocumentsPage() {
                     </div>
                   ) : (
                     <div>
-                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-600 text-sm">Click to upload or drag and drop</p>
+                      <Upload className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-600 text-xs sm:text-sm">Click to upload or drag and drop</p>
                       <p className="text-gray-400 text-xs mt-1">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (Max 10MB)</p>
                     </div>
                   )}
@@ -1381,14 +1381,14 @@ export default function DocumentsPage() {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
           <Button variant="outline" onClick={() => {
             setIsMinutesModalOpen(false);
             setAttachmentFile(null);
-          }}>
+          }} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleCreateMinutes} disabled={uploadingAttachment}>
+          <Button onClick={handleCreateMinutes} disabled={uploadingAttachment} className="w-full sm:w-auto">
             {uploadingAttachment ? 'Uploading...' : 'Save Minutes'}
           </Button>
         </div>
@@ -1401,7 +1401,7 @@ export default function DocumentsPage() {
         title="Create Report"
         size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Input
             label="Report Title"
             value={reportForm.title}
@@ -1410,7 +1410,7 @@ export default function DocumentsPage() {
             required
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Report Type"
               value={reportForm.type}
@@ -1436,8 +1436,8 @@ export default function DocumentsPage() {
               />
             ) : (
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">Department</label>
+                <div className="px-3 py-2 border border-gray-300 rounded-md sm:rounded-lg bg-gray-50 text-sm sm:text-base text-gray-700">
                   {departmentName}
                 </div>
               </div>
@@ -1449,16 +1449,16 @@ export default function DocumentsPage() {
             value={reportForm.content}
             onChange={(e) => setReportForm({ ...reportForm, content: e.target.value })}
             placeholder="Enter report content"
-            rows={8}
+            rows={6}
             required
           />
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsReportModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsReportModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleCreateReport}>
+          <Button onClick={handleCreateReport} className="w-full sm:w-auto">
             Create Report
           </Button>
         </div>

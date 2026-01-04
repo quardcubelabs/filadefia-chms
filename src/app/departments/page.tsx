@@ -406,7 +406,7 @@ export default function DepartmentsPage() {
         title="Add New Department"
         size="md"
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Input
             label="Department Name *"
             placeholder="e.g., Youth Department"
@@ -436,7 +436,7 @@ export default function DepartmentsPage() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -445,6 +445,7 @@ export default function DepartmentsPage() {
                 setError(null);
               }}
               disabled={saving}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -452,6 +453,7 @@ export default function DepartmentsPage() {
               variant="primary"
               onClick={handleAddDepartment}
               disabled={saving || !formData.name.trim()}
+              className="w-full sm:w-auto"
             >
               {saving ? (
                 <>

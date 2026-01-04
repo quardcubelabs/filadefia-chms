@@ -51,11 +51,11 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full mx-2 sm:mx-4',
+    sm: 'sm:max-w-md',
+    md: 'sm:max-w-lg',
+    lg: 'sm:max-w-2xl',
+    xl: 'sm:max-w-4xl',
+    full: 'sm:max-w-full sm:mx-4',
   };
 
   return (
@@ -69,20 +69,20 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal */}
       <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
         <div 
-          className={`relative bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-300 w-full ${sizes[size]} transform transition-all max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden`}
+          className={`relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-300 w-full ${sizes[size]} transform transition-all max-h-[95vh] sm:max-h-[85vh] flex flex-col overflow-hidden`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {(title || description) && (
-            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex-shrink-0 bg-gray-50">
+            <div className="px-4 sm:px-6 py-3 sm:py-5 border-b border-gray-200 flex-shrink-0 bg-gray-50">
               <div className="flex items-start justify-between">
-                <div className="pr-8">
-                  {title && <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{title}</h3>}
-                  {description && <p className="mt-1 text-xs sm:text-sm text-gray-600">{description}</p>}
+                <div className="pr-10 sm:pr-8 flex-1 min-w-0">
+                  {title && <h3 className="text-base sm:text-xl font-semibold text-gray-900 truncate">{title}</h3>}
+                  {description && <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-gray-600 line-clamp-2">{description}</p>}
                 </div>
                 <button
                   onClick={onClose}
-                  className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                  className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 text-gray-500 hover:text-red-600 transition-colors p-1.5 sm:p-2 hover:bg-red-50 rounded-lg flex-shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Footer */}
           {footer && (
-            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-100 border-t border-gray-200 rounded-b-3xl flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-100 border-t border-gray-200 rounded-b-2xl sm:rounded-b-2xl flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
               {footer}
             </div>
           )}
@@ -140,21 +140,22 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       title={title}
       size="sm"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose} disabled={loading}>
+        <div className="flex flex-col-reverse sm:flex-row w-full sm:w-auto gap-2 sm:gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
             {cancelText}
           </Button>
           <Button 
             variant={variant} 
             onClick={onConfirm}
             loading={loading}
+            className="w-full sm:w-auto"
           >
             {confirmText}
           </Button>
-        </>
+        </div>
       }
     >
-      <p className="text-gray-700">{message}</p>
+      <p className="text-sm sm:text-base text-gray-700">{message}</p>
     </Modal>
   );
 };

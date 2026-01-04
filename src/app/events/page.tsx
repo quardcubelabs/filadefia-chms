@@ -836,7 +836,7 @@ export default function EventsPage() {
           title="Add New Event"
           size="lg"
         >
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <Input
               label="Event Title"
             value={formData.title}
@@ -853,7 +853,7 @@ export default function EventsPage() {
             rows={3}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Event Type"
               value={formData.event_type}
@@ -871,13 +871,13 @@ export default function EventsPage() {
 
             {isDepartmentLeader && departmentName ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Department
                 </label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <div className="px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg sm:rounded-xl bg-gray-50 text-sm text-gray-700">
                   {departmentName}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
                   Events will be created for your department
                 </p>
               </div>
@@ -904,7 +904,7 @@ export default function EventsPage() {
             ]}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="Start Date & Time"
               type="datetime-local"
@@ -929,7 +929,7 @@ export default function EventsPage() {
             required
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="Max Attendees (Optional)"
               type="number"
@@ -969,11 +969,11 @@ export default function EventsPage() {
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:space-x-3 mt-4 sm:mt-6">
-          <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleAddEvent}>
+          <Button onClick={handleAddEvent} className="w-full sm:w-auto">
             Create Event
           </Button>
         </div>
@@ -986,7 +986,7 @@ export default function EventsPage() {
         title="Edit Event"
         size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Input
             label="Event Title"
             value={formData.title}
@@ -1021,13 +1021,13 @@ export default function EventsPage() {
 
             {isDepartmentLeader && departmentName ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Department
                 </label>
-                <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                <div className="px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg sm:rounded-xl bg-gray-50 text-sm text-gray-700">
                   {departmentName}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
                   Editing events for your department
                 </p>
               </div>
@@ -1119,11 +1119,11 @@ export default function EventsPage() {
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:space-x-3 mt-6">
-          <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleEditEvent}>
+          <Button onClick={handleEditEvent} className="w-full sm:w-auto">
             Update Event
           </Button>
         </div>
