@@ -296,7 +296,7 @@ export default function RecordAttendancePage() {
           date: selectedDate,
           attendance_type: attendanceType,
           event_id: eventId || null,
-          recorded_by: user?.id
+          recorded_by: user?.profile?.id || null
         }
       };
 
