@@ -223,8 +223,8 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-tag-gray-900 flex items-center">
-          <Users className="h-5 w-5 mr-2 text-tag-red-600" />
+        <h3 className="text-lg font-bold text-gray-900 flex items-center">
+          <Users className="h-5 w-5 mr-2 text-red-600" />
           Department Assignments
         </h3>
         {!showAddForm && availableDepartments.length > 0 && (
@@ -254,12 +254,12 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
 
       {/* Add Department Form */}
       {showAddForm && (
-        <div className="bg-tag-gray-50 border border-tag-gray-200 rounded-lg p-4 space-y-4">
-          <h4 className="font-semibold text-tag-gray-900">Assign to Department</h4>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+          <h4 className="font-semibold text-gray-900">Assign to Department</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-tag-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Department
               </label>
               <Select
@@ -277,7 +277,7 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-tag-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Position
               </label>
               <Select
@@ -315,10 +315,10 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
       {/* Current Departments List */}
       <div className="space-y-3">
         {memberDepartments.length === 0 ? (
-          <div className="text-center py-8 bg-tag-gray-50 rounded-lg border border-dashed border-tag-gray-300">
-            <Users className="h-12 w-12 text-tag-gray-400 mx-auto mb-3" />
-            <p className="text-tag-gray-600 font-medium mb-2">No department assignments</p>
-            <p className="text-sm text-tag-gray-500 mb-4">
+          <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600 font-medium mb-2">No department assignments</p>
+            <p className="text-sm text-gray-500 mb-4">
               This member is not assigned to any departments yet
             </p>
             {availableDepartments.length > 0 && !showAddForm && (
@@ -335,21 +335,21 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
           memberDepartments.map((assignment) => (
             <div
               key={assignment.id}
-              className="flex items-center justify-between p-4 bg-white border border-tag-gray-200 rounded-lg hover:shadow-md transition-shadow"
+              className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h4 className="font-semibold text-tag-gray-900">
+                  <h4 className="font-semibold text-gray-900">
                     {assignment.department?.name}
                   </h4>
                   {getPositionBadge(assignment.position)}
                 </div>
                 {assignment.department?.swahili_name && (
-                  <p className="text-sm text-tag-gray-600 mb-1">
+                  <p className="text-sm text-gray-600 mb-1">
                     {assignment.department.swahili_name}
                   </p>
                 )}
-                <p className="text-xs text-tag-gray-500">
+                <p className="text-xs text-gray-500">
                   Joined: {new Date(assignment.joined_date).toLocaleDateString()}
                 </p>
               </div>
@@ -368,7 +368,7 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
                   onClick={() => handleRemoveDepartment(assignment.id)}
                   disabled={submitting}
                 >
-                  <Trash2 className="h-4 w-4 text-tag-red-600" />
+                  <Trash2 className="h-4 w-4 text-red-600" />
                 </Button>
               </div>
             </div>
@@ -378,8 +378,8 @@ export default function DepartmentAssignment({ memberId, supabase, onUpdate }: D
 
       {/* Summary */}
       {memberDepartments.length > 0 && (
-        <div className="flex items-center justify-center gap-2 text-sm text-tag-gray-600 pt-2 border-t border-tag-gray-200">
-          <CheckCircle className="h-4 w-4 text-tag-green-600" />
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-600 pt-2 border-t border-gray-200">
+          <CheckCircle className="h-4 w-4 text-green-600" />
           <span className="font-medium">
             Assigned to {memberDepartments.length} department{memberDepartments.length !== 1 ? 's' : ''}
           </span>

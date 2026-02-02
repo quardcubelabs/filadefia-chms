@@ -218,7 +218,7 @@ export default function PhotoUpload({
         </div>
 
         {/* Help Text */}
-        <p className="text-xs text-tag-gray-500 text-center max-w-xs">
+        <p className="text-xs text-gray-500 text-center max-w-xs">
           Upload a photo (JPEG, PNG, or WebP). Maximum file size: 5MB.
           <br />
           Recommended: Square image, at least 400x400 pixels.

@@ -42,13 +42,13 @@ export function Table<T extends Record<string, any>>({
     return (
       <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
         <div className="inline-block min-w-full align-middle">
-          <table className={`min-w-full divide-y divide-tag-gray-200 ${className}`}>
-            <thead className="bg-tag-gray-50">
+          <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
+            <thead className="bg-gray-50">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} whitespace-nowrap`}
+                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-700 ${bordered ? 'border-b border-gray-200' : ''} whitespace-nowrap`}
                     style={{ width: column.width }}
                   >
                     {column.header}
@@ -58,10 +58,10 @@ export function Table<T extends Record<string, any>>({
             </thead>
             <tbody>
               {[...Array(5)].map((_, i) => (
-                <tr key={i} className={striped && i % 2 === 0 ? 'bg-tag-gray-50' : ''}>
+                <tr key={i} className={striped && i % 2 === 0 ? 'bg-gray-50' : ''}>
                   {columns.map((column) => (
-                    <td key={column.key} className={`px-3 sm:px-4 py-3 sm:py-4 ${bordered ? 'border-b border-tag-gray-200' : ''}`}>
-                      <div className="h-4 bg-tag-gray-200 rounded animate-pulse"></div>
+                    <td key={column.key} className={`px-3 sm:px-4 py-3 sm:py-4 ${bordered ? 'border-b border-gray-200' : ''}`}>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                     </td>
                   ))}
                 </tr>
@@ -77,13 +77,13 @@ export function Table<T extends Record<string, any>>({
     return (
       <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
         <div className="inline-block min-w-full align-middle">
-          <table className={`min-w-full divide-y divide-tag-gray-200 ${className}`}>
-            <thead className="bg-tag-gray-50">
+          <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
+            <thead className="bg-gray-50">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
+                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-700 ${bordered ? 'border-b border-gray-200' : ''} ${
                       alignClasses[column.align || 'left']
                     } whitespace-nowrap`}
                     style={{ width: column.width }}
@@ -97,7 +97,7 @@ export function Table<T extends Record<string, any>>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className={`px-3 sm:px-4 py-8 sm:py-12 text-center text-tag-gray-500 ${bordered ? 'border-b border-tag-gray-200' : ''}`}
+                  className={`px-3 sm:px-4 py-8 sm:py-12 text-center text-gray-500 ${bordered ? 'border-b border-gray-200' : ''}`}
                 >
                   {emptyMessage}
                 </td>
@@ -112,13 +112,13 @@ export function Table<T extends Record<string, any>>({
   return (
     <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
       <div className="inline-block min-w-full align-middle">
-        <table className={`min-w-full divide-y divide-tag-gray-200 ${className}`}>
-          <thead className="bg-tag-gray-50">
+        <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
+          <thead className="bg-gray-50">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-tag-gray-700 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-700 ${bordered ? 'border-b border-gray-200' : ''} ${
                     alignClasses[column.align || 'left']
                   } whitespace-nowrap`}
                   style={{ width: column.width }}
@@ -128,21 +128,21 @@ export function Table<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-tag-gray-200">
+          <tbody className="bg-white divide-y divide-gray-200">
             {data.map((row, index) => (
               <tr
                 key={index}
                 onClick={() => onRowClick?.(row, index)}
                 className={`
-                  ${striped && index % 2 === 0 ? 'bg-tag-gray-50' : ''}
-                  ${hoverable ? 'hover:bg-tag-red-50 hover:shadow-sm transition-all duration-200' : ''}
+                  ${striped && index % 2 === 0 ? 'bg-gray-50' : ''}
+                  ${hoverable ? 'hover:bg-red-50 hover:shadow-sm transition-all duration-200' : ''}
                   ${onRowClick ? 'cursor-pointer' : ''}
                 `}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-tag-gray-900 ${bordered ? 'border-b border-tag-gray-200' : ''} ${
+                    className={`px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 ${bordered ? 'border-b border-gray-200' : ''} ${
                       alignClasses[column.align || 'left']
                     }`}
                   >
@@ -184,39 +184,39 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(1)}
           disabled={!canGoPrevious}
-          className="p-2 rounded-lg hover:bg-tag-red-50 hover:text-tag-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
-          <ChevronsLeft className="h-5 w-5 text-tag-gray-600" />
+          <ChevronsLeft className="h-5 w-5 text-gray-600" />
         </button>
       )}
 
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={!canGoPrevious}
-        className="p-2 rounded-lg hover:bg-tag-red-50 hover:text-tag-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
-        <ChevronLeft className="h-5 w-5 text-tag-gray-600" />
+        <ChevronLeft className="h-5 w-5 text-gray-600" />
       </button>
 
-      <span className="px-4 py-2 text-sm font-medium text-tag-gray-700">
+      <span className="px-4 py-2 text-sm font-medium text-gray-700">
         Page {currentPage} of {totalPages}
       </span>
 
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={!canGoNext}
-        className="p-2 rounded-lg hover:bg-tag-red-50 hover:text-tag-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
-        <ChevronRight className="h-5 w-5 text-tag-gray-600" />
+        <ChevronRight className="h-5 w-5 text-gray-600" />
       </button>
 
       {showFirstLast && (
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={!canGoNext}
-          className="p-2 rounded-lg hover:bg-tag-red-50 hover:text-tag-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
-          <ChevronsRight className="h-5 w-5 text-tag-gray-600" />
+          <ChevronsRight className="h-5 w-5 text-gray-600" />
         </button>
       )}
     </div>
@@ -224,3 +224,4 @@ export const Pagination: React.FC<PaginationProps> = ({
 };
 
 Pagination.displayName = 'Pagination';
+

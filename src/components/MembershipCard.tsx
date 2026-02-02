@@ -215,44 +215,44 @@ export default function MembershipCard({ member, className = '' }: MembershipCar
       )}
 
       {/* Preview Card */}
-      <div className="bg-gradient-to-br from-tag-gray-50 to-white border-2 border-tag-gray-200 rounded-lg p-6 shadow-md">
+      <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
         <div className="flex items-start gap-4 mb-4">
           <div className="flex-shrink-0">
-            <CreditCard className="h-12 w-12 text-tag-red-600" />
+            <CreditCard className="h-12 w-12 text-red-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-tag-gray-900 mb-1">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
               Membership Card
             </h3>
-            <p className="text-sm text-tag-gray-600 mb-3">
+            <p className="text-sm text-gray-600 mb-3">
               Generate a printable membership card with QR code for {member.first_name} {member.last_name}
             </p>
             
             {/* Card Details Preview */}
-            <div className="bg-white border border-tag-gray-200 rounded p-3 space-y-2 text-xs">
+            <div className="bg-white border border-gray-200 rounded p-3 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-tag-gray-600">Member Number:</span>
-                <span className="font-semibold text-tag-gray-900">{member.member_number}</span>
+                <span className="text-gray-600">Member Number:</span>
+                <span className="font-semibold text-gray-900">{member.member_number}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-tag-gray-600">Name:</span>
-                <span className="font-semibold text-tag-gray-900">
+                <span className="text-gray-600">Name:</span>
+                <span className="font-semibold text-gray-900">
                   {member.first_name} {member.middle_name || ''} {member.last_name}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-tag-gray-600">Phone:</span>
-                <span className="font-semibold text-tag-gray-900">{member.phone}</span>
+                <span className="text-gray-600">Phone:</span>
+                <span className="font-semibold text-gray-900">{member.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-tag-gray-600">Member Since:</span>
-                <span className="font-semibold text-tag-gray-900">
+                <span className="text-gray-600">Member Since:</span>
+                <span className="font-semibold text-gray-900">
                   {new Date(member.membership_date).toLocaleDateString()}
                 </span>
               </div>
-              <div className="flex items-center gap-2 pt-2 border-t border-tag-gray-200">
-                <QrCode className="h-4 w-4 text-tag-gray-400" />
-                <span className="text-tag-gray-500">Includes QR code with member details</span>
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                <QrCode className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-500">Includes QR code with member details</span>
               </div>
             </div>
           </div>
@@ -278,11 +278,11 @@ export default function MembershipCard({ member, className = '' }: MembershipCar
         </Button>
 
         {/* Instructions */}
-        <div className="mt-4 pt-4 border-t border-tag-gray-200">
-          <p className="text-xs text-tag-gray-600 mb-2 font-semibold">
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <p className="text-xs text-gray-600 mb-2 font-semibold">
             Printing Instructions:
           </p>
-          <ul className="text-xs text-tag-gray-600 space-y-1 list-disc list-inside">
+          <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
             <li>Card size: 85.6mm × 53.98mm (standard credit card size)</li>
             <li>Use high-quality cardstock paper (200-300 GSM)</li>
             <li>Print at 100% scale (do not fit to page)</li>

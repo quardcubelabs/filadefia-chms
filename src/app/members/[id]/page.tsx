@@ -309,8 +309,8 @@ export default function MemberProfilePage() {
           </Button>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-tag-gray-900 flex items-center">
-              <User className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-tag-red-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+              <User className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-red-600" />
               Member Profile
             </h1>
             
@@ -385,7 +385,7 @@ export default function MemberProfilePage() {
                   
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <h2 className="text-2xl font-bold text-tag-gray-900">
+                      <h2 className="text-2xl font-bold text-gray-900">
                         {member.first_name} {member.middle_name} {member.last_name}
                       </h2>
                       {getStatusBadge(member.status)}
@@ -394,25 +394,25 @@ export default function MemberProfilePage() {
                       )}
                     </div>
                     
-                    <p className="text-tag-gray-600 font-semibold mb-4">
+                    <p className="text-gray-600 font-semibold mb-4">
                       Member #{member.member_number}
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {member.phone && (
-                        <div className="flex items-center text-tag-gray-700">
-                          <Phone className="h-4 w-4 mr-2 text-tag-red-600" />
+                        <div className="flex items-center text-gray-700">
+                          <Phone className="h-4 w-4 mr-2 text-red-600" />
                           <span className="text-sm">{member.phone}</span>
                         </div>
                       )}
                       {member.email && (
-                        <div className="flex items-center text-tag-gray-700">
-                          <Mail className="h-4 w-4 mr-2 text-tag-red-600" />
+                        <div className="flex items-center text-gray-700">
+                          <Mail className="h-4 w-4 mr-2 text-red-600" />
                           <span className="text-sm">{member.email}</span>
                         </div>
                       )}
-                      <div className="flex items-center text-tag-gray-700">
-                        <Calendar className="h-4 w-4 mr-2 text-tag-red-600" />
+                      <div className="flex items-center text-gray-700">
+                        <Calendar className="h-4 w-4 mr-2 text-red-600" />
                         <span className="text-sm">Joined {new Date(member.membership_date).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -455,16 +455,16 @@ export default function MemberProfilePage() {
                 {/* Personal Information */}
                 <Card variant="default" className="lg:col-span-2">
                   <CardBody className="p-6">
-                    <h3 className="text-lg font-bold text-tag-gray-900 mb-6 flex items-center">
-                      <User className="h-5 w-5 mr-2 text-tag-red-600" />
+                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                      <User className="h-5 w-5 mr-2 text-red-600" />
                       Personal Information
                     </h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {member.date_of_birth && (
                         <div>
-                          <p className="text-sm font-semibold text-tag-gray-600 mb-1">Date of Birth</p>
-                          <p className="text-tag-gray-900">
+                          <p className="text-sm font-semibold text-gray-600 mb-1">Date of Birth</p>
+                          <p className="text-gray-900">
                             {new Date(member.date_of_birth).toLocaleDateString()} 
                             {calculateAge(member.date_of_birth) && ` (${calculateAge(member.date_of_birth)} years old)`}
                           </p>
@@ -473,22 +473,22 @@ export default function MemberProfilePage() {
                       
                       {member.gender && (
                         <div>
-                          <p className="text-sm font-semibold text-tag-gray-600 mb-1">Gender</p>
-                          <p className="text-tag-gray-900 capitalize">{member.gender}</p>
+                          <p className="text-sm font-semibold text-gray-600 mb-1">Gender</p>
+                          <p className="text-gray-900 capitalize">{member.gender}</p>
                         </div>
                       )}
                       
                       {member.marital_status && (
                         <div>
-                          <p className="text-sm font-semibold text-tag-gray-600 mb-1">Marital Status</p>
-                          <p className="text-tag-gray-900 capitalize">{member.marital_status}</p>
+                          <p className="text-sm font-semibold text-gray-600 mb-1">Marital Status</p>
+                          <p className="text-gray-900 capitalize">{member.marital_status}</p>
                         </div>
                       )}
                       
                       {member.baptism_date && (
                         <div>
-                          <p className="text-sm font-semibold text-tag-gray-600 mb-1">Baptism Date</p>
-                          <p className="text-tag-gray-900">{new Date(member.baptism_date).toLocaleDateString()}</p>
+                          <p className="text-sm font-semibold text-gray-600 mb-1">Baptism Date</p>
+                          <p className="text-gray-900">{new Date(member.baptism_date).toLocaleDateString()}</p>
                         </div>
                       )}
                     </div>
@@ -500,40 +500,40 @@ export default function MemberProfilePage() {
                   <Card variant="default">
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <History className="h-8 w-8 text-tag-blue-600" />
-                        <span className="text-3xl font-bold text-tag-gray-900">{totalAttendance}</span>
+                        <History className="h-8 w-8 text-blue-600" />
+                        <span className="text-3xl font-bold text-gray-900">{totalAttendance}</span>
                       </div>
-                      <p className="text-sm font-semibold text-tag-gray-600">Total Attendance</p>
+                      <p className="text-sm font-semibold text-gray-600">Total Attendance</p>
                     </CardBody>
                   </Card>
 
                   <Card variant="default">
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <DollarSign className="h-8 w-8 text-tag-green-600" />
-                        <span className="text-3xl font-bold text-tag-gray-900">
+                        <DollarSign className="h-8 w-8 text-green-600" />
+                        <span className="text-3xl font-bold text-gray-900">
                           {formatContribution(totalContributions)}
                         </span>
                       </div>
-                      <p className="text-sm font-semibold text-tag-gray-600">Total Contributions</p>
+                      <p className="text-sm font-semibold text-gray-600">Total Contributions</p>
                     </CardBody>
                   </Card>
 
                   <Card variant="default">
                     <CardBody className="p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <Users className="h-8 w-8 text-tag-red-600" />
-                        <span className="text-3xl font-bold text-tag-gray-900">{departmentCount}</span>
+                        <Users className="h-8 w-8 text-red-600" />
+                        <span className="text-3xl font-bold text-gray-900">{departmentCount}</span>
                       </div>
-                      <p className="text-sm font-semibold text-tag-gray-600">Departments</p>
+                      <p className="text-sm font-semibold text-gray-600">Departments</p>
                     </CardBody>
                   </Card>
 
                   {/* Photo Management */}
                   <Card variant="default">
                     <CardBody className="p-6">
-                      <h3 className="text-lg font-bold text-tag-gray-900 mb-4 flex items-center">
-                        <User className="h-5 w-5 mr-2 text-tag-red-600" />
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <User className="h-5 w-5 mr-2 text-red-600" />
                         Member Photo
                       </h3>
                       <PhotoUpload
@@ -555,38 +555,38 @@ export default function MemberProfilePage() {
                 {/* Contact Information */}
                 <Card variant="default">
                   <CardBody className="p-6">
-                    <h3 className="text-lg font-bold text-tag-gray-900 mb-6 flex items-center">
-                      <Phone className="h-5 w-5 mr-2 text-tag-red-600" />
+                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                      <Phone className="h-5 w-5 mr-2 text-red-600" />
                       Contact Information
                     </h3>
                     
                     <div className="space-y-4">
                       {member.phone && (
                         <div className="flex items-start">
-                          <Phone className="h-5 w-5 mr-3 text-tag-gray-400 mt-0.5" />
+                          <Phone className="h-5 w-5 mr-3 text-gray-400 mt-0.5" />
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600">Phone</p>
-                            <p className="text-tag-gray-900">{member.phone}</p>
+                            <p className="text-sm font-semibold text-gray-600">Phone</p>
+                            <p className="text-gray-900">{member.phone}</p>
                           </div>
                         </div>
                       )}
                       
                       {member.email && (
                         <div className="flex items-start">
-                          <Mail className="h-5 w-5 mr-3 text-tag-gray-400 mt-0.5" />
+                          <Mail className="h-5 w-5 mr-3 text-gray-400 mt-0.5" />
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600">Email</p>
-                            <p className="text-tag-gray-900">{member.email}</p>
+                            <p className="text-sm font-semibold text-gray-600">Email</p>
+                            <p className="text-gray-900">{member.email}</p>
                           </div>
                         </div>
                       )}
                       
                       {(member.address || member.city || member.state || member.country) && (
                         <div className="flex items-start">
-                          <MapPin className="h-5 w-5 mr-3 text-tag-gray-400 mt-0.5" />
+                          <MapPin className="h-5 w-5 mr-3 text-gray-400 mt-0.5" />
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600">Address</p>
-                            <p className="text-tag-gray-900">
+                            <p className="text-sm font-semibold text-gray-600">Address</p>
+                            <p className="text-gray-900">
                               {member.address && <>{member.address}<br /></>}
                               {member.city && `${member.city}, `}
                               {member.state} {member.postal_code}
@@ -603,23 +603,23 @@ export default function MemberProfilePage() {
                 {(member.occupation || member.employer) && (
                   <Card variant="default">
                     <CardBody className="p-6">
-                      <h3 className="text-lg font-bold text-tag-gray-900 mb-6 flex items-center">
-                        <Briefcase className="h-5 w-5 mr-2 text-tag-red-600" />
+                      <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                        <Briefcase className="h-5 w-5 mr-2 text-red-600" />
                         Employment
                       </h3>
                       
                       <div className="space-y-4">
                         {member.occupation && (
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600 mb-1">Occupation</p>
-                            <p className="text-tag-gray-900">{member.occupation}</p>
+                            <p className="text-sm font-semibold text-gray-600 mb-1">Occupation</p>
+                            <p className="text-gray-900">{member.occupation}</p>
                           </div>
                         )}
                         
                         {member.employer && (
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600 mb-1">Employer</p>
-                            <p className="text-tag-gray-900">{member.employer}</p>
+                            <p className="text-sm font-semibold text-gray-600 mb-1">Employer</p>
+                            <p className="text-gray-900">{member.employer}</p>
                           </div>
                         )}
                       </div>
@@ -631,30 +631,30 @@ export default function MemberProfilePage() {
                 {(member.emergency_contact_name || member.emergency_contact_phone) && (
                   <Card variant="default">
                     <CardBody className="p-6">
-                      <h3 className="text-lg font-bold text-tag-gray-900 mb-6 flex items-center">
-                        <Heart className="h-5 w-5 mr-2 text-tag-red-600" />
+                      <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                        <Heart className="h-5 w-5 mr-2 text-red-600" />
                         Emergency Contact
                       </h3>
                       
                       <div className="space-y-4">
                         {member.emergency_contact_name && (
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600 mb-1">Name</p>
-                            <p className="text-tag-gray-900">{member.emergency_contact_name}</p>
+                            <p className="text-sm font-semibold text-gray-600 mb-1">Name</p>
+                            <p className="text-gray-900">{member.emergency_contact_name}</p>
                           </div>
                         )}
                         
                         {member.emergency_contact_phone && (
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600 mb-1">Phone</p>
-                            <p className="text-tag-gray-900">{member.emergency_contact_phone}</p>
+                            <p className="text-sm font-semibold text-gray-600 mb-1">Phone</p>
+                            <p className="text-gray-900">{member.emergency_contact_phone}</p>
                           </div>
                         )}
                         
                         {member.emergency_contact_relationship && (
                           <div>
-                            <p className="text-sm font-semibold text-tag-gray-600 mb-1">Relationship</p>
-                            <p className="text-tag-gray-900 capitalize">{member.emergency_contact_relationship}</p>
+                            <p className="text-sm font-semibold text-gray-600 mb-1">Relationship</p>
+                            <p className="text-gray-900 capitalize">{member.emergency_contact_relationship}</p>
                           </div>
                         )}
                       </div>
@@ -684,11 +684,11 @@ export default function MemberProfilePage() {
                 {member.notes && (
                   <Card variant="default" className="lg:col-span-3">
                     <CardBody className="p-6">
-                      <h3 className="text-lg font-bold text-tag-gray-900 mb-4 flex items-center">
-                        <FileText className="h-5 w-5 mr-2 text-tag-red-600" />
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <FileText className="h-5 w-5 mr-2 text-red-600" />
                         Notes
                       </h3>
-                      <p className="text-tag-gray-700 whitespace-pre-wrap">{member.notes}</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{member.notes}</p>
                     </CardBody>
                   </Card>
                 )}
