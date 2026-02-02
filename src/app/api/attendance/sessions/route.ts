@@ -31,7 +31,38 @@ export async function GET(request: NextRequest) {
       sessionQuery = sessionQuery.eq('attendance_type', attendanceType);
     }
 
-    const { data: sessionData } = await sessionQuery;
+    const { data: sessionData, error: sessionError } = await sessionQuery;
+    
+    if (sessionError) {
+      console.error('Error fetching attendance_sessions:', sessionError);
+    }
+    console.log('attendance_sessions data:', sessionData?.length || 0, 'records');
+
+    // Also check qr_attendance_sessions table (where manual recording creates sessions)
+    let qrSessionQuery = supabase
+      .from('qr_attendance_sessions')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (startDate) {
+      qrSessionQuery = qrSessionQuery.gte('date', startDate);
+    }
+    if (endDate) {
+      qrSessionQuery = qrSessionQuery.lte('date', endDate);
+    }
+    if (attendanceType) {
+      qrSessionQuery = qrSessionQuery.eq('attendance_type', attendanceType);
+    }
+
+    const { data: qrSessionData, error: qrSessionError } = await qrSessionQuery;
+    
+    if (qrSessionError) {
+      console.error('Error fetching qr_attendance_sessions:', qrSessionError);
+    }
+    console.log('qr_attendance_sessions data:', qrSessionData?.length || 0, 'records');
+    if (qrSessionData && qrSessionData.length > 0) {
+      console.log('QR Sessions sample:', qrSessionData.slice(0, 3).map(s => ({ id: s.id, date: s.date, type: s.attendance_type })));
+    }
 
     // Also get attendance records for sessions without session records
     let query = supabase
@@ -56,11 +87,13 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching sessions:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    
+    console.log('attendance records:', data?.length || 0, 'records');
 
     // Group by date and type for unique sessions
     const sessionsMap = new Map();
     
-    // Start with existing session records (these include QR data)
+    // Start with existing session records from attendance_sessions (these include QR data)
     if (sessionData) {
       for (const session of sessionData) {
         const key = `${session.date}-${session.attendance_type}`;
@@ -82,6 +115,33 @@ export async function GET(request: NextRequest) {
           qr_check_ins: session.qr_check_ins || 0,
           hasQRCode: !!session.qr_code_data_url
         });
+      }
+    }
+
+    // Also add sessions from qr_attendance_sessions table (created by manual recording)
+    if (qrSessionData) {
+      for (const session of qrSessionData) {
+        const key = `${session.date}-${session.attendance_type}`;
+        if (!sessionsMap.has(key)) {
+          sessionsMap.set(key, {
+            id: session.id,
+            date: session.date,
+            attendance_type: session.attendance_type,
+            event_id: session.event_id,
+            session_name: session.session_name,
+            total_records: 0,
+            present_count: session.check_ins || 0,
+            absent_count: 0,
+            // QR related fields
+            qr_code_data_url: null,
+            qr_session_id: session.id,
+            qr_check_in_url: null,
+            qr_expires_at: session.expires_at,
+            qr_is_active: session.is_active && session.expires_at ? new Date(session.expires_at) > new Date() : false,
+            qr_check_ins: session.check_ins || 0,
+            hasQRCode: false
+          });
+        }
       }
     }
     
@@ -147,6 +207,11 @@ export async function GET(request: NextRequest) {
 
     // Sort by date descending
     sessions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    console.log('Returning sessions:', sessions.length, 'total');
+    if (sessions.length > 0) {
+      console.log('First 5 sessions:', sessions.slice(0, 5).map(s => ({ date: s.date, type: s.attendance_type, present: s.present_count })));
+    }
 
     return NextResponse.json({ data: sessions });
   } catch (error) {

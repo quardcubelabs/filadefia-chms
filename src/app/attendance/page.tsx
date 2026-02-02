@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Users,
   UserCheck,
@@ -62,6 +62,7 @@ interface QuickAction {
 
 export default function AttendancePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
   
@@ -126,6 +127,39 @@ export default function AttendancePage() {
     loadAttendanceStats();
   }, [user, authLoading, router, departmentId]);
 
+  // Refresh data when refresh param changes (after recording attendance)
+  useEffect(() => {
+    const refreshParam = searchParams.get('refresh');
+    if (refreshParam && user && !authLoading) {
+      loadQRSessions();
+      // Clear the refresh param from URL without triggering navigation
+      window.history.replaceState({}, '', '/attendance');
+    }
+  }, [searchParams, user, authLoading]);
+
+  // Refresh data when page becomes visible (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user && !authLoading) {
+        loadQRSessions();
+      }
+    };
+
+    const handleFocus = () => {
+      if (user && !authLoading) {
+        loadQRSessions();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, authLoading]);
+
   const loadAttendanceStats = async () => {
     try {
       setLoading(true);
@@ -182,10 +216,12 @@ export default function AttendancePage() {
         const sessionsData = await response.json();
         const sessions = sessionsData.data || [];
         
-        // Replace recent sessions with the full session data that includes QR info
+        console.log('Sessions loaded:', sessions.length, 'First 5:', sessions.slice(0, 5).map((s: any) => ({ date: s.date, type: s.attendance_type })));
+        
+        // Get the first 5 sessions (API returns sorted by date descending, most recent first)
         setStats(prevStats => ({
           ...prevStats,
-          recentSessions: sessions.slice(-5).reverse().map((session: any) => ({
+          recentSessions: sessions.slice(0, 5).map((session: any) => ({
             id: session.id || session.qr_session_id || `${session.date}_${session.attendance_type}`,
             date: session.date,
             attendance_type: session.attendance_type,

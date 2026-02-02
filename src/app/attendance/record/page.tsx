@@ -321,7 +321,8 @@ export default function RecordAttendancePage() {
       }
 
       alert('Attendance saved successfully!');
-      router.push('/attendance');
+      // Use replace with timestamp to trigger refresh on attendance page
+      router.replace(`/attendance?refresh=${Date.now()}`);
     } catch (error) {
       console.error('Error saving attendance:', error);
       alert('Failed to save attendance. Please try again.');
@@ -398,6 +399,7 @@ export default function RecordAttendancePage() {
                 <option value="midweek_fellowship">Midweek Fellowship</option>
                 <option value="special_event">Special Event</option>
                 <option value="department_meeting">Department Meeting</option>
+                <option value="zone_meeting">Zone Meeting</option>
               </select>
             </div>
 

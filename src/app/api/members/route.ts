@@ -26,9 +26,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'active';
     const departmentId = searchParams.get('department_id');
+    const zoneId = searchParams.get('zone_id');
     const includeAttendanceStats = searchParams.get('include_attendance_stats') === 'true';
     
-    console.log('API Parameters:', { status, departmentId, includeAttendanceStats });
+    console.log('API Parameters:', { status, departmentId, zoneId, includeAttendanceStats });
 
     let query = supabase
       .from('members')
@@ -40,6 +41,9 @@ export async function GET(request: NextRequest) {
     }
     
     query = query.order('first_name', { ascending: true });
+
+    // Track member IDs to filter by (for department and zone filters)
+    let memberIdsToFilter: string[] | null = null;
 
     if (departmentId) {
       // First get the member IDs from department_members
@@ -55,15 +59,48 @@ export async function GET(request: NextRequest) {
       }
 
       // Extract the member IDs
-      const memberIds = departmentMembers?.map(dm => dm.member_id) || [];
+      memberIdsToFilter = departmentMembers?.map(dm => dm.member_id) || [];
       
-      // Filter members by the department member IDs
-      if (memberIds.length > 0) {
-        query = query.in('id', memberIds);
-      } else {
-        // No members in this department, return empty result
+      // No members in this department, return empty result
+      if (memberIdsToFilter.length === 0) {
         return NextResponse.json({ data: [] });
       }
+    }
+
+    if (zoneId) {
+      // Get the member IDs from zone_members
+      const { data: zoneMembers, error: zoneError } = await supabase
+        .from('zone_members')
+        .select('member_id')
+        .eq('zone_id', zoneId)
+        .eq('is_active', true);
+
+      if (zoneError) {
+        console.error('Error fetching zone members:', zoneError);
+        return NextResponse.json({ error: zoneError.message }, { status: 500 });
+      }
+
+      const zoneMemberIds = zoneMembers?.map(zm => zm.member_id) || [];
+      
+      if (zoneMemberIds.length === 0) {
+        // No members in this zone, return empty result
+        return NextResponse.json({ data: [] });
+      }
+
+      // If we already have department filter, intersect the arrays
+      if (memberIdsToFilter) {
+        memberIdsToFilter = memberIdsToFilter.filter(id => zoneMemberIds.includes(id));
+        if (memberIdsToFilter.length === 0) {
+          return NextResponse.json({ data: [] });
+        }
+      } else {
+        memberIdsToFilter = zoneMemberIds;
+      }
+    }
+
+    // Apply member ID filter if we have one
+    if (memberIdsToFilter && memberIdsToFilter.length > 0) {
+      query = query.in('id', memberIdsToFilter);
     }
 
     let { data, error } = await query;

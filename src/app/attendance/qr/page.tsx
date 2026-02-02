@@ -232,7 +232,8 @@ export default function QRAttendancePage() {
           'sunday_service': 'sunday_service',
           'midweek_fellowship': 'midweek_fellowship', 
           'special_event': 'special_event',
-          'department_meeting': 'department_meeting'
+          'department_meeting': 'department_meeting',
+          'zone_meeting': 'zone_meeting'
         };
         
         setAttendanceType(typeMapping[type] || 'sunday_service');
@@ -537,6 +538,7 @@ export default function QRAttendancePage() {
                   <option value="midweek_fellowship">Midweek Fellowship</option>
                   <option value="special_event">Special Event</option>
                   <option value="department_meeting">Department Meeting</option>
+                  <option value="zone_meeting">Zone Meeting</option>
                 </select>
               </div>
 

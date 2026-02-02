@@ -18,7 +18,7 @@ CREATE TYPE member_status AS ENUM ('active', 'visitor', 'transferred', 'inactive
 CREATE TYPE marital_status AS ENUM ('single', 'married', 'divorced', 'widowed');
 CREATE TYPE gender AS ENUM ('male', 'female');
 CREATE TYPE department_position AS ENUM ('chairperson', 'secretary', 'treasurer', 'coordinator', 'member');
-CREATE TYPE attendance_type AS ENUM ('sunday_service', 'midweek_fellowship', 'special_event', 'department_meeting');
+CREATE TYPE attendance_type AS ENUM ('sunday_service', 'midweek_fellowship', 'special_event', 'department_meeting', 'zone_meeting');
 CREATE TYPE transaction_type AS ENUM ('tithe', 'offering', 'donation', 'project', 'pledge', 'mission', 'welfare', 'expense');
 CREATE TYPE event_type AS ENUM ('conference', 'crusade', 'seminar', 'prayer_night', 'workshop', 'fellowship');
 CREATE TYPE notification_type AS ENUM ('sms', 'email', 'whatsapp');
