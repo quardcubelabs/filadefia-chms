@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/Toast';
 import { Visitor, VisitorStats } from '@/types';
 import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
@@ -41,6 +42,7 @@ interface VisitorWithProfile extends Visitor {
 export default function VisitorsPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
+  const toast = useToast();
   const [visitors, setVisitors] = useState<VisitorWithProfile[]>([]);
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,7 +131,6 @@ export default function VisitorsPage() {
     e.preventDefault();
     try {
       setSaving(true);
-      console.log('Submitting visitor data:', formData);
       
       const response = await fetch('/api/visitors', {
         method: 'POST',
@@ -138,7 +139,6 @@ export default function VisitorsPage() {
       });
       
       const result = await response.json();
-      console.log('API response:', result);
       
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'Failed to save visitor');
@@ -148,9 +148,10 @@ export default function VisitorsPage() {
       await fetchStats();
       setIsAddModalOpen(false);
       resetForm();
+      toast.success('Visitor Added', `${formData.first_name} ${formData.last_name} has been added successfully`);
     } catch (err: any) {
       console.error('Error adding visitor:', err);
-      alert(`Error: ${err.message}`);
+      toast.error('Failed to Add Visitor', err.message);
     } finally {
       setSaving(false);
     }
@@ -177,9 +178,10 @@ export default function VisitorsPage() {
       await fetchStats();
       setSelectedVisitor(null);
       resetForm();
+      toast.success('Visitor Updated', 'Visitor information has been updated successfully');
     } catch (err: any) {
       console.error('Error updating visitor:', err);
-      alert(`Error: ${err.message}`);
+      toast.error('Failed to Update Visitor', err.message);
     } finally {
       setSaving(false);
     }
@@ -200,9 +202,10 @@ export default function VisitorsPage() {
       
       await fetchVisitors();
       await fetchStats();
+      toast.success('Visitor Deleted', 'The visitor has been removed successfully');
     } catch (err: any) {
       console.error('Error deleting visitor:', err);
-      alert(`Error: ${err.message}`);
+      toast.error('Failed to Delete Visitor', err.message);
     }
   };
 
@@ -224,9 +227,10 @@ export default function VisitorsPage() {
       
       await fetchVisitors();
       await fetchStats();
+      toast.success('Follow-up Marked', `${visitor.first_name} ${visitor.last_name} has been marked as followed up`);
     } catch (err: any) {
       console.error('Error marking follow-up:', err);
-      alert(`Error: ${err.message}`);
+      toast.error('Failed to Mark Follow-up', err.message);
     }
   };
 
@@ -234,7 +238,6 @@ export default function VisitorsPage() {
     if (!confirm(`Convert ${visitor.first_name} ${visitor.last_name} to a member?\n\nThis will create a new member record with their information.`)) return;
     
     try {
-      // Use the dedicated convert endpoint that creates a member
       const response = await fetch(`/api/visitors/${visitor.id}/convert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -247,10 +250,10 @@ export default function VisitorsPage() {
       
       await fetchVisitors();
       await fetchStats();
-      alert(`✅ ${visitor.first_name} ${visitor.last_name} has been successfully added to members!`);
+      toast.success('Converted to Member', `${visitor.first_name} ${visitor.last_name} has been added to members!`);
     } catch (err: any) {
       console.error('Error converting visitor:', err);
-      alert(`Error: ${err.message}`);
+      toast.error('Failed to Convert', err.message);
     }
   };
 

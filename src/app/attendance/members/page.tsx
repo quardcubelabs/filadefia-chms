@@ -22,6 +22,7 @@ import {
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useToast } from '@/components/Toast';
 
 interface Member {
   id: string;
@@ -55,6 +56,7 @@ export default function AttendanceMembersPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const toast = useToast();
   
   const [members, setMembers] = useState<MemberWithStats[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<MemberWithStats[]>([]);
@@ -104,14 +106,14 @@ export default function AttendanceMembersPage() {
         
         // Show user-friendly error message
         if (data.suggestion) {
-          alert(`Error loading members: ${data.error}\n\nSuggestion: ${data.suggestion}`);
+          toast.error('Load Error', `${data.error}. ${data.suggestion}`);
         } else {
-          alert(`Failed to load members: ${data.error || 'Unknown error'}`);
+          toast.error('Load Error', data.error || 'Failed to load members');
         }
       }
     } catch (error) {
       console.error('Error loading members:', error);
-      alert('Network error loading members. Please check your connection and try again.');
+      toast.error('Network Error', 'Network error loading members. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

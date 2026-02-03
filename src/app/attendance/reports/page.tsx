@@ -40,6 +40,7 @@ import {
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useToast } from '@/components/Toast';
 
 interface AttendanceStats {
   overview: {
@@ -84,6 +85,7 @@ export default function AttendanceReportsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const toast = useToast();
   
   const [stats, setStats] = useState<AttendanceStats | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -135,7 +137,7 @@ export default function AttendanceReportsPage() {
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
-      alert('Failed to load departments. Please refresh the page.');
+      toast.error('Load Failed', 'Failed to load departments. Please refresh the page.');
     }
   };
 
@@ -165,11 +167,11 @@ export default function AttendanceReportsPage() {
         setStats(data.data);
       } else {
         console.error('Failed to load attendance stats:', data.error);
-        alert('Failed to load attendance statistics.');
+        toast.error('Load Failed', 'Failed to load attendance statistics.');
       }
     } catch (error) {
       console.error('Error loading attendance stats:', error);
-      alert('Failed to load attendance statistics. Please try again.');
+      toast.error('Load Failed', 'Failed to load attendance statistics. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -360,9 +362,10 @@ export default function AttendanceReportsPage() {
       link.href = URL.createObjectURL(blob);
       link.download = `attendance-report-${selectedPeriod}-${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
+      toast.success('Export Complete', 'Attendance report has been downloaded');
     } catch (error) {
       console.error('Error exporting report:', error);
-      alert('Failed to export report');
+      toast.error('Export Failed', 'Failed to export report');
     }
   };
 

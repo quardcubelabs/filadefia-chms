@@ -19,6 +19,7 @@ import {
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useToast } from '@/components/Toast';
 
 interface AttendanceStats {
   totalMembers: number;
@@ -79,6 +80,7 @@ function AttendancePageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const toast = useToast();
   
   const [stats, setStats] = useState<AttendanceStats>({
     totalMembers: 0,
@@ -216,7 +218,7 @@ function AttendancePageContent() {
       }
     } catch (error) {
       console.error('Error loading attendance stats:', error);
-      alert('Failed to load attendance statistics. Please try again.');
+      toast.error('Load Failed', 'Failed to load attendance statistics. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -319,15 +321,15 @@ function AttendancePageContent() {
       const result = await response.json();
 
       if (response.ok) {
-        alert(`Migration successful! Created QR codes for ${result.data.migrated_sessions} sessions.`);
+        toast.success('Migration Complete', `Created QR codes for ${result.data.migrated_sessions} sessions.`);
         // Reload the page to show updated sessions
         await loadAttendanceStats();
       } else {
-        alert(`Migration failed: ${result.error}`);
+        toast.error('Migration Failed', result.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Migration error:', error);
-      alert('Migration failed. Please try again.');
+      toast.error('Migration Failed', 'Please try again.');
     } finally {
       setLoading(false);
     }

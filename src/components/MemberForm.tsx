@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button, Input, TextArea, Select } from '@/components/ui';
 import { User, Phone, Mail, MapPin, Calendar, Briefcase, Users as UsersIcon, Upload, Building2, X, Map } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/Toast';
 
 interface Department {
   id: string;
@@ -50,6 +51,7 @@ interface MemberFormProps {
 
 export default function MemberForm({ initialData, onSubmit, onCancel, isEditing = false, loading = false }: MemberFormProps) {
   const { supabase } = useAuth();
+  const toast = useToast();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
@@ -135,7 +137,7 @@ export default function MemberForm({ initialData, onSubmit, onCancel, isEditing 
     
     // Check if department is already added
     if (formData.department_ids.includes(selectedDepartmentId)) {
-      alert('This department is already added');
+      toast.warning('Already Added', 'This department is already added');
       return;
     }
 

@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/Toast';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import MainLayout from '@/components/MainLayout';
 import MemberForm from '@/components/MemberForm';
@@ -42,6 +43,7 @@ interface Member {
 export default function MembersPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
+  const toast = useToast();
   const { 
     departmentId, 
     departmentName, 
@@ -252,7 +254,7 @@ export default function MembersPage() {
         if (deptError) {
           console.error('Error adding department assignments:', deptError);
           // Don't throw error, just log it - member was created successfully
-          alert(`Member added but some department assignments failed: ${deptError.message}`);
+          toast.warning('Department Assignment Failed', `Member added but some department assignments failed: ${deptError.message}`);
         } else {
           console.log('Department assignments added successfully');
         }
@@ -274,7 +276,7 @@ export default function MembersPage() {
 
         if (zoneError) {
           console.error('Error adding zone assignment:', zoneError);
-          alert(`Member added but zone assignment failed: ${zoneError.message}`);
+          toast.warning('Zone Assignment Failed', `Member added but zone assignment failed: ${zoneError.message}`);
         } else {
           console.log('Zone assignment added successfully');
         }
@@ -287,11 +289,11 @@ export default function MembersPage() {
       setSelectedMember(null);
       
       // Show success message
-      alert('Member added successfully!');
+      toast.success('Member Added', `${formData.first_name} ${formData.last_name} has been added successfully`);
     } catch (err: any) {
       console.error('Error adding member:', err);
       setError(err.message || 'Failed to add member');
-      alert(`Error: ${err.message || 'Failed to add member'}`);
+      toast.error('Failed to Add Member', err.message || 'Failed to add member');
     } finally {
       setSubmitting(false);
     }
@@ -387,11 +389,11 @@ export default function MembersPage() {
       setShowEditModal(false);
       setSelectedMember(null);
       
-      alert('Member updated successfully!');
+      toast.success('Member Updated', `${formData.first_name} ${formData.last_name}'s information has been updated`);
     } catch (err: any) {
       console.error('Error updating member:', err);
       setError(err.message || 'Failed to update member');
-      alert(`Error: ${err.message || 'Failed to update member'}`);
+      toast.error('Update Failed', err.message || 'Failed to update member');
     } finally {
       setSubmitting(false);
     }
@@ -421,11 +423,11 @@ export default function MembersPage() {
       setShowDeleteConfirm(false);
       setMemberToDelete(null);
       
-      alert('Member deleted successfully!');
+      toast.success('Member Deleted', `${memberToDelete.first_name} ${memberToDelete.last_name} has been removed`);
     } catch (err: any) {
       console.error('Error deleting member:', err);
       setError(err.message || 'Failed to delete member');
-      alert(`Error: ${err.message || 'Failed to delete member'}`);
+      toast.error('Delete Failed', err.message || 'Failed to delete member');
     } finally {
       setSubmitting(false);
     }

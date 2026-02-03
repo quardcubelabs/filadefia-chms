@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button, Alert } from '@/components/ui';
 import { Upload, Download, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { useToast } from '@/components/Toast';
 
 interface ImportResult {
   success: boolean;
@@ -18,6 +19,7 @@ interface CSVImportProps {
 }
 
 export default function CSVImport({ onImport, onClose }: CSVImportProps) {
+  const toast = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<ImportResult[]>([]);
@@ -85,7 +87,7 @@ export default function CSVImport({ onImport, onClose }: CSVImportProps) {
     if (!selectedFile) return;
 
     if (!selectedFile.name.endsWith('.csv')) {
-      alert('Please select a CSV file');
+      toast.warning('Invalid File', 'Please select a CSV file');
       return;
     }
 

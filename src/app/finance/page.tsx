@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import MainLayout from '@/components/MainLayout';
+import { useToast } from '@/components/Toast';
 import { 
   Button, 
   Card, 
@@ -127,6 +128,7 @@ export default function FinancePage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase, signOut } = useAuth();
   const { isDepartmentLeader, departmentId, departmentName, loading: departmentLoading } = useDepartmentAccess();
+  const toast = useToast();
   
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -333,10 +335,12 @@ export default function FinancePage() {
       }
       
       setSuccess('Sample financial data added successfully!');
+      toast.success('Data Seeded', 'Sample financial data added successfully!');
       loadTransactions();
     } catch (err: any) {
       console.error('Seeding error:', err);
       setError(`Failed to seed data: ${err.message}`);
+      toast.error('Seed Failed', `Failed to seed data: ${err.message}`);
     } finally {
       setSeeding(false);
     }
@@ -469,12 +473,14 @@ export default function FinancePage() {
       if (error) throw error;
 
       setSuccess('Transaction added successfully!');
+      toast.success('Transaction Added', 'The transaction has been recorded successfully!');
       setIsAddModalOpen(false);
       resetForm();
       loadTransactions();
     } catch (err: any) {
       console.error('Error adding transaction:', err);
       setError(err.message);
+      toast.error('Add Failed', err.message || 'Failed to add transaction');
     }
   };
 
@@ -502,6 +508,7 @@ export default function FinancePage() {
       if (error) throw error;
 
       setSuccess('Transaction updated successfully!');
+      toast.success('Transaction Updated', 'The transaction has been updated successfully!');
       setIsEditModalOpen(false);
       setSelectedTransaction(null);
       resetForm();
@@ -509,6 +516,7 @@ export default function FinancePage() {
     } catch (err: any) {
       console.error('Error updating transaction:', err);
       setError(err.message);
+      toast.error('Update Failed', err.message || 'Failed to update transaction');
     }
   };
 
@@ -524,12 +532,14 @@ export default function FinancePage() {
       if (error) throw error;
 
       setSuccess('Transaction deleted successfully!');
+      toast.success('Transaction Deleted', 'The transaction has been deleted!');
       setIsDeleteModalOpen(false);
       setSelectedTransaction(null);
       loadTransactions();
     } catch (err: any) {
       console.error('Error deleting transaction:', err);
       setError(err.message);
+      toast.error('Delete Failed', err.message || 'Failed to delete transaction');
     }
   };
 
@@ -549,10 +559,12 @@ export default function FinancePage() {
       if (error) throw error;
 
       setSuccess('Transaction verified successfully!');
+      toast.success('Transaction Verified', 'The transaction has been verified!');
       loadTransactions();
     } catch (err: any) {
       console.error('Error verifying transaction:', err);
       setError(err.message);
+      toast.error('Verification Failed', err.message || 'Failed to verify transaction');
     }
   };
 

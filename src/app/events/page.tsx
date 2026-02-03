@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import MainLayout from '@/components/MainLayout';
+import { useToast } from '@/components/Toast';
 import { 
   Button, 
   Card, 
@@ -91,6 +92,7 @@ export default function EventsPage() {
     isDepartmentLeader, 
     canAccessAllDepartments 
   } = useDepartmentAccess();
+  const toast = useToast();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -437,12 +439,14 @@ export default function EventsPage() {
       if (error) throw error;
 
       setSuccess('Event created successfully!');
+      toast.success('Event Created', 'The event has been created successfully!');
       setIsAddModalOpen(false);
       resetForm();
       loadEvents();
     } catch (err: any) {
       console.error('Error adding event:', err);
       setError(err.message);
+      toast.error('Create Failed', err.message || 'Failed to create event');
     }
   };
 
@@ -473,6 +477,7 @@ export default function EventsPage() {
       if (error) throw error;
 
       setSuccess('Event updated successfully!');
+      toast.success('Event Updated', 'The event has been updated successfully!');
       setIsEditModalOpen(false);
       setSelectedEvent(null);
       resetForm();
@@ -480,6 +485,7 @@ export default function EventsPage() {
     } catch (err: any) {
       console.error('Error updating event:', err);
       setError(err.message);
+      toast.error('Update Failed', err.message || 'Failed to update event');
     }
   };
 
@@ -495,12 +501,14 @@ export default function EventsPage() {
       if (error) throw error;
 
       setSuccess('Event deleted successfully!');
+      toast.success('Event Deleted', 'The event has been deleted!');
       setIsDeleteModalOpen(false);
       setSelectedEvent(null);
       loadEvents();
     } catch (err: any) {
       console.error('Error deleting event:', err);
       setError(err.message);
+      toast.error('Delete Failed', err.message || 'Failed to delete event');
     }
   };
 

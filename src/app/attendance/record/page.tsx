@@ -14,6 +14,7 @@ import {
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useToast } from '@/components/Toast';
 
 interface Member {
   id: string;
@@ -45,6 +46,7 @@ export default function RecordAttendancePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const toast = useToast();
   
   const [members, setMembers] = useState<Member[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -128,7 +130,7 @@ export default function RecordAttendancePage() {
         console.error('Department API error:', deptData.error);
         // Set empty departments array to allow continuation
         setDepartments([]);
-        alert(`Failed to load departments: ${deptData.error || 'Unknown error'}`);
+        toast.error('Load Failed', deptData.error || 'Failed to load departments');
         return;
       }
       
@@ -137,7 +139,7 @@ export default function RecordAttendancePage() {
         
         // Show message if no departments found
         if (deptData.data.length === 0 && deptData.message) {
-          alert(deptData.message);
+          toast.info('No Departments', deptData.message);
         }
       }
 
@@ -159,7 +161,7 @@ export default function RecordAttendancePage() {
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
-      alert('Failed to load departments. Please refresh the page.');
+      toast.error('Load Failed', 'Failed to load departments. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -197,7 +199,7 @@ export default function RecordAttendancePage() {
       }
     } catch (error) {
       console.error('Error loading members:', error);
-      alert('Failed to load members. Please try again.');
+      toast.error('Load Failed', 'Failed to load members. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -320,12 +322,12 @@ export default function RecordAttendancePage() {
         throw new Error(result.error);
       }
 
-      alert('Attendance saved successfully!');
+      toast.success('Attendance Saved', 'Attendance has been recorded successfully!');
       // Use replace with timestamp to trigger refresh on attendance page
       router.replace(`/attendance?refresh=${Date.now()}`);
     } catch (error) {
       console.error('Error saving attendance:', error);
-      alert('Failed to save attendance. Please try again.');
+      toast.error('Save Failed', 'Failed to save attendance. Please try again.');
     } finally {
       setSaving(false);
     }

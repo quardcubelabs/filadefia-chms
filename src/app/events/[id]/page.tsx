@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/Sidebar';
+import { useToast } from '@/components/Toast';
 import { 
   Button, 
   Card, 
@@ -92,6 +93,7 @@ export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
+  const toast = useToast();
   
   const [event, setEvent] = useState<Event | null>(null);
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
@@ -709,9 +711,9 @@ GRANT ALL ON event_registrations TO authenticated, anon, service_role;`;
                     // Copy to clipboard if available
                     if (navigator.clipboard) {
                       navigator.clipboard.writeText(migrationSQL);
-                      alert('Migration SQL copied to clipboard! Paste it in Supabase SQL Editor.');
+                      toast.success('Copied', 'Migration SQL copied to clipboard! Paste it in Supabase SQL Editor.');
                     } else {
-                      alert('Check console for migration SQL to copy to Supabase SQL Editor');
+                      toast.info('Check Console', 'Check console for migration SQL to copy to Supabase SQL Editor');
                     }
                   }}
                   className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"

@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import MainLayout from '@/components/MainLayout';
 import { Card, Button, Input, Select, Modal } from '@/components/ui';
+import { useToast } from '@/components/Toast';
 import { 
   User, 
   Mail, 
@@ -37,6 +38,7 @@ import {
 
 export default function SettingsPage() {
   const { user, loading: authLoading, signOut, supabase } = useAuth();
+  const toast = useToast();
   const [darkMode] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -241,6 +243,7 @@ export default function SettingsPage() {
 
       setUploadProgress(100);
       setMessage({ type: 'success', text: 'Profile photo updated successfully!' });
+      toast.success('Photo Updated', 'Profile photo updated successfully!');
       setShowPhotoModal(false);
       setSelectedPhoto(null);
       setPhotoPreview(null);
@@ -254,6 +257,7 @@ export default function SettingsPage() {
         type: 'error', 
         text: `Failed to update profile photo: ${errorMsg}. Check console for details.` 
       });
+      toast.error('Upload Failed', `Failed to update profile photo: ${errorMsg}`);
     } finally {
       setIsSaving(false);
       setUploadProgress(0);
@@ -275,10 +279,12 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast.success('Profile Updated', 'Your profile has been updated!');
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       setMessage({ type: 'error', text: 'Failed to update profile.' });
+      toast.error('Update Failed', 'Failed to update profile.');
     } finally {
       setIsSaving(false);
     }
@@ -302,20 +308,24 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Settings updated successfully!' });
+      toast.success('Settings Saved', 'Settings updated successfully!');
     } catch (error) {
       console.error('Error updating settings:', error);
       setMessage({ type: 'error', text: 'Failed to update settings.' });
+      toast.error('Update Failed', 'Failed to update settings.');
     }
   };
 
   const handlePasswordChange = async () => {
     if (passwords.new !== passwords.confirm) {
       setMessage({ type: 'error', text: 'New passwords do not match.' });
+      toast.warning('Password Mismatch', 'New passwords do not match.');
       return;
     }
 
     if (passwords.new.length < 8) {
       setMessage({ type: 'error', text: 'Password must be at least 8 characters long.' });
+      toast.warning('Password Too Short', 'Password must be at least 8 characters long.');
       return;
     }
 
@@ -330,11 +340,13 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Password updated successfully!' });
+      toast.success('Password Updated', 'Your password has been changed!');
       setShowPasswordModal(false);
       setPasswords({ current: '', new: '', confirm: '' });
     } catch (error) {
       console.error('Error updating password:', error);
       setMessage({ type: 'error', text: 'Failed to update password.' });
+      toast.error('Update Failed', 'Failed to update password.');
     } finally {
       setIsSaving(false);
     }
@@ -346,11 +358,13 @@ export default function SettingsPage() {
 
     if (file.size > 5 * 1024 * 1024) {
       setMessage({ type: 'error', text: 'File size must be less than 5MB.' });
+      toast.warning('File Too Large', 'File size must be less than 5MB.');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
       setMessage({ type: 'error', text: 'Please select an image file.' });
+      toast.warning('Invalid File Type', 'Please select an image file.');
       return;
     }
 

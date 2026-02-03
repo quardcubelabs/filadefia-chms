@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
 import AttendanceCard from '@/components/AttendanceCard';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useToast } from '@/components/Toast';
 
 import { 
   Building2,
@@ -39,6 +40,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, status, signOut, supabase } = useAuth();
   const { departmentId, isDepartmentLeader, loading: deptAccessLoading } = useDepartmentAccess();
+  const toast = useToast();
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -612,9 +614,10 @@ export default function DashboardPage() {
       setShowRatingModal(false);
       setSelectedLeaderForRating(null);
       setRatingReview('');
+      toast.success('Rating Submitted', 'Thank you for rating this leader!');
     } catch (error: any) {
       console.error('Error submitting rating:', error);
-      alert(`Failed to submit rating: ${error.message}`);
+      toast.error('Rating Failed', error.message || 'Failed to submit rating');
     } finally {
       setSavingRating(false);
     }
@@ -700,11 +703,11 @@ export default function DashboardPage() {
       // Refresh user profile
       await fetchUserProfile();
       
-      alert('Profile photo updated successfully!');
+      toast.success('Photo Updated', 'Profile photo updated successfully!');
     } catch (error: any) {
       console.error('Error uploading photo:', error);
       const errorMessage = error.message || 'Unknown error occurred';
-      alert(`Error uploading photo: ${errorMessage}\n\nPlease check browser console for details.`);
+      toast.error('Upload Failed', `Error uploading photo: ${errorMessage}`);
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -733,10 +736,10 @@ export default function DashboardPage() {
       // Refresh user profile
       await fetchUserProfile();
       
-      alert('Profile updated successfully!');
+      toast.success('Profile Updated', 'Your profile has been updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Error updating profile. Please try again.');
+      toast.error('Update Failed', 'Error updating profile. Please try again.');
     } finally {
       setIsUpdatingProfile(false);
     }

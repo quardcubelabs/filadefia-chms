@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
 import { Modal, Input, TextArea, Button } from '@/components/ui';
+import { useToast } from '@/components/Toast';
 import { 
   Users, Building2, UserCheck, TrendingUp, ArrowRight, 
   Music, Heart, Briefcase, BookOpen, Globe, Phone, Plus, Edit, X
@@ -40,6 +41,7 @@ interface DepartmentStats {
 export default function DepartmentsPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
+  const toast = useToast();
   const [departments, setDepartments] = useState<DepartmentStats[]>([]);
   const [uniqueMemberCount, setUniqueMemberCount] = useState<number>(0); // Unique members across all departments
   const [loading, setLoading] = useState(true);
@@ -172,11 +174,13 @@ export default function DepartmentsPage() {
   const handleAddDepartment = async () => {
     if (!formData.name.trim()) {
       setError('Department name is required');
+      toast.warning('Required Field', 'Department name is required');
       return;
     }
 
     if (!supabase) {
       setError('Database connection not available');
+      toast.error('Connection Error', 'Database connection not available');
       return;
     }
 
@@ -200,6 +204,7 @@ export default function DepartmentsPage() {
       // Reset form and close modal
       setFormData({ name: '', swahili_name: '', description: '' });
       setIsAddModalOpen(false);
+      toast.success('Department Added', `${formData.name} has been created successfully!`);
       
       // Refresh departments list
       await fetchDepartments();
@@ -207,6 +212,7 @@ export default function DepartmentsPage() {
     } catch (err: any) {
       console.error('Error adding department:', err);
       setError(err.message || 'Failed to add department');
+      toast.error('Add Failed', err.message || 'Failed to add department');
     } finally {
       setSaving(false);
     }

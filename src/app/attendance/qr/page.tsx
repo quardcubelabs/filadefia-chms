@@ -22,6 +22,7 @@ import {
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
+import { useToast } from '@/components/Toast';
 
 interface QRSession {
   session_id: string;
@@ -47,6 +48,7 @@ export default function QRAttendancePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { departmentId, isDepartmentLeader } = useDepartmentAccess();
+  const toast = useToast();
   
   const [currentSession, setCurrentSession] = useState<QRSession | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -271,13 +273,13 @@ export default function QRAttendancePage() {
             setSessionName(existingSession.session_name || '');
             setSelectedDepartment(existingSession.department_id || '');
             
-            alert('This session does not have a QR code yet. You can generate one using the form below.');
+            toast.info('No QR Code', 'This session does not have a QR code yet. You can generate one using the form below.');
           }
         }
       }
     } catch (error) {
       console.error('Error loading existing session:', error);
-      alert('Failed to load session. Please try again.');
+      toast.error('Load Failed', 'Failed to load session. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -359,7 +361,7 @@ export default function QRAttendancePage() {
 
   const createQRSession = async () => {
     if (!user?.id) {
-      alert('User not logged in. Please refresh the page and try again.');
+      toast.error('Not Logged In', 'Please refresh the page and try again.');
       return;
     }
 
@@ -413,7 +415,7 @@ export default function QRAttendancePage() {
       }
     } catch (error) {
       console.error('Error creating QR session:', error);
-      alert('Failed to create QR session. Please try again.');
+      toast.error('Create Failed', 'Failed to create QR session. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -436,19 +438,19 @@ export default function QRAttendancePage() {
 
       if (response.ok) {
         setCurrentSession(null);
-        alert('QR session closed successfully');
+        toast.success('Session Closed', 'QR session has been closed successfully');
       }
     } catch (error) {
       console.error('Error closing session:', error);
-      alert('Failed to close session');
+      toast.error('Close Failed', 'Failed to close session');
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      alert('Copied to clipboard!');
+      toast.success('Copied', 'Copied to clipboard!');
     }).catch(() => {
-      alert('Failed to copy to clipboard');
+      toast.error('Copy Failed', 'Failed to copy to clipboard');
     });
   };
 

@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
+import { useToast } from '@/components/Toast';
 import { 
   Users, MapPin, UserCheck, TrendingUp, 
   Plus, Edit, Trash2, X
@@ -42,6 +43,7 @@ interface Member {
 export default function ZonesPage() {
   const router = useRouter();
   const { user, loading: authLoading, supabase } = useAuth();
+  const toast = useToast();
   const [zones, setZones] = useState<ZoneStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +146,7 @@ export default function ZonesPage() {
   const handleAddZone = async () => {
     if (!formData.name.trim()) {
       setError('Zone name is required');
+      toast.warning('Required Field', 'Zone name is required');
       return;
     }
 
@@ -164,10 +167,12 @@ export default function ZonesPage() {
 
       setShowAddModal(false);
       setFormData({ name: '', swahili_name: '', description: '' });
+      toast.success('Zone Added', `${formData.name} has been created successfully!`);
       fetchZones();
     } catch (err: any) {
       console.error('Error adding zone:', err);
       setError(err.message || 'Failed to add zone');
+      toast.error('Add Failed', err.message || 'Failed to add zone');
     } finally {
       setSaving(false);
     }
@@ -176,6 +181,7 @@ export default function ZonesPage() {
   const handleEditZone = async () => {
     if (!selectedZone || !formData.name.trim()) {
       setError('Zone name is required');
+      toast.warning('Required Field', 'Zone name is required');
       return;
     }
 
@@ -198,10 +204,12 @@ export default function ZonesPage() {
       setShowEditModal(false);
       setSelectedZone(null);
       setFormData({ name: '', swahili_name: '', description: '' });
+      toast.success('Zone Updated', `${formData.name} has been updated!`);
       fetchZones();
     } catch (err: any) {
       console.error('Error updating zone:', err);
       setError(err.message || 'Failed to update zone');
+      toast.error('Update Failed', err.message || 'Failed to update zone');
     } finally {
       setSaving(false);
     }
@@ -222,10 +230,12 @@ export default function ZonesPage() {
 
       if (deleteError) throw deleteError;
 
+      toast.success('Zone Deleted', 'The zone has been removed!');
       fetchZones();
     } catch (err: any) {
       console.error('Error deleting zone:', err);
       setError(err.message || 'Failed to delete zone');
+      toast.error('Delete Failed', err.message || 'Failed to delete zone');
     }
   };
 
