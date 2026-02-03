@@ -18,7 +18,8 @@ import {
   UserCheck,
   MapPin,
   X,
-  Briefcase
+  Briefcase,
+  UserPlus
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -58,6 +59,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
     const baseNavItems = [
       { icon: <Home className="h-5 w-5" />, label: dashboardLabel, href: dashboardHref },
       { icon: <Users className="h-5 w-5" />, label: 'Members', href: '/members' },
+      { icon: <UserPlus className="h-5 w-5" />, label: 'Visitors', href: '/visitors' },
       { icon: <UserCheck className="h-5 w-5" />, label: 'Attendance', href: '/attendance' },
       { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events' },
       { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages' },

@@ -124,6 +124,25 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, status, isDataLoaded, isDepartmentLeader, departmentId, deptAccessLoading]);
 
+  // Sort department leaders by rating when ratings are loaded
+  useEffect(() => {
+    if (departmentLeaders.length > 0 && Object.keys(leaderRatings).length >= 0) {
+      const sortedLeaders = [...departmentLeaders].sort((a, b) => {
+        const ratingA = leaderRatings[a.id]?.average || 0;
+        const ratingB = leaderRatings[b.id]?.average || 0;
+        return ratingB - ratingA; // Sort descending (highest first)
+      });
+      
+      // Only update if order changed to prevent infinite loop
+      const currentOrder = departmentLeaders.map(l => l.id).join(',');
+      const newOrder = sortedLeaders.map(l => l.id).join(',');
+      
+      if (currentOrder !== newOrder) {
+        setDepartmentLeaders(sortedLeaders);
+      }
+    }
+  }, [leaderRatings]); // Only re-sort when ratings change
+
   // Close dropdowns when clicking outside
 
 
@@ -309,7 +328,7 @@ export default function DashboardPage() {
         return;
       }
 
-      // Fetch departments with their leaders
+      // Fetch departments with their leaders (get all, will sort by rating)
       const { data: departmentLeadersData, error } = await supabase
         .from('departments')
         .select(`
@@ -324,8 +343,7 @@ export default function DashboardPage() {
           )
         `)
         .eq('is_active', true)
-        .not('leader_id', 'is', null)
-        .limit(3);
+        .not('leader_id', 'is', null);
 
       if (error) {
         console.error('Error fetching department leaders:', error);
@@ -556,10 +574,20 @@ export default function DashboardPage() {
   };
 
   const submitRating = async () => {
-    if (!selectedLeaderForRating || !user?.profile?.id) return;
+    if (!selectedLeaderForRating || !user?.profile?.id) {
+      console.error('Missing leader or user profile:', { leader: selectedLeaderForRating, profileId: user?.profile?.id });
+      return;
+    }
 
     try {
       setSavingRating(true);
+      console.log('Submitting rating:', {
+        leader_id: selectedLeaderForRating.id,
+        department_id: selectedLeaderForRating.departmentId,
+        rated_by: user.profile.id,
+        rating: ratingValue
+      });
+
       const response = await fetch('/api/leader-ratings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -572,14 +600,21 @@ export default function DashboardPage() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to submit rating');
+      const result = await response.json();
+      console.log('Rating response:', result);
 
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to submit rating');
+      }
+
+      // Refresh ratings after successful submission
       await fetchLeaderRatings();
       setShowRatingModal(false);
       setSelectedLeaderForRating(null);
+      setRatingReview('');
     } catch (error: any) {
       console.error('Error submitting rating:', error);
-      alert('Failed to submit rating. Please try again.');
+      alert(`Failed to submit rating: ${error.message}`);
     } finally {
       setSavingRating(false);
     }
@@ -1447,19 +1482,30 @@ export default function DashboardPage() {
 
                 <div className="space-y-4">
                   {departmentLeaders.length > 0 ? (
-                    departmentLeaders.map((leader: any) => {
+                    departmentLeaders.slice(0, 3).map((leader: any, index: number) => {
                       const rating = leaderRatings[leader.id];
                       const avgRating = rating?.average || 0;
                       const fullStars = Math.floor(avgRating);
                       const hasHalfStar = avgRating % 1 >= 0.5;
                       
+                      // Rank badge colors: Gold, Silver, Bronze for top 3
+                      const rankColors = [
+                        'bg-yellow-500', // 1st - Gold
+                        'bg-gray-400',   // 2nd - Silver
+                        'bg-amber-600'   // 3rd - Bronze
+                      ];
+                      
                       return (
-                        <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-tag-gray-900' : 'hover:bg-tag-gray-50'} transition-colors cursor-pointer`}>
+                        <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors cursor-pointer`}>
                           <div className="flex items-center space-x-3">
                             <div className="relative">
-                              {/* Badge positioned on left side - Blue */}
-                              <div className="absolute -top-1 -left-1 h-6 w-6 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center z-10">
-                                <Crown className="text-white h-3.5 w-3.5" />
+                              {/* Rank Badge - shows position based on rating */}
+                              <div className={`absolute -top-1 -left-1 h-6 w-6 ${rankColors[index]} rounded-full border-2 border-white flex items-center justify-center z-10`}>
+                                {index < 3 ? (
+                                  <Crown className="text-white h-3.5 w-3.5" />
+                                ) : (
+                                  <span className="text-white text-xs font-bold">{index + 1}</span>
+                                )}
                               </div>
                               <img
                                 src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
@@ -1468,7 +1514,14 @@ export default function DashboardPage() {
                               />
                             </div>
                             <div>
-                              <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
+                                {index === 0 && avgRating > 0 && (
+                                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
+                                    Top Rated
+                                  </span>
+                                )}
+                              </div>
                               <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
                               <div className="flex items-center mt-1">
                                 {/* Orange Stars */}
@@ -1480,7 +1533,7 @@ export default function DashboardPage() {
                                   ))}
                                 </div>
                                 <span className={`text-xs ${textSecondary} ml-2`}>
-                                  {avgRating > 0 ? `${avgRating.toFixed(1)} (${rating?.count || 0})` : leader.departmentName}
+                                  {avgRating > 0 ? `${avgRating.toFixed(1)} (${rating?.count || 0} reviews)` : 'No ratings yet'}
                                 </span>
                               </div>
                             </div>

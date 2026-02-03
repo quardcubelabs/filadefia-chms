@@ -4,9 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 // GET - Fetch ratings for a leader or all leaders
 export async function GET(request: NextRequest) {
   try {
+    // Use service role to bypass RLS for reading ratings
+    const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
     const searchParams = request.nextUrl.searchParams;
@@ -63,6 +65,7 @@ export async function POST(request: NextRequest) {
   try {
     const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
+      console.error('NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured');
       throw new Error('Service role key is not set');
     }
 
