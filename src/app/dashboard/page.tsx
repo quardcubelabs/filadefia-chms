@@ -13,7 +13,14 @@ import {
   Crown,
   Users,
   ChevronDown,
-  MapPin
+  MapPin,
+  Activity,
+  UserPlus,
+  DollarSign,
+  Calendar,
+  Bell,
+  Star,
+  X
 } from 'lucide-react';
 
 // Loading component to prevent blank pages
@@ -53,7 +60,22 @@ export default function DashboardPage() {
     converted: 0,
     conversion_rate: 0
   });
+  const [recentActivities, setRecentActivities] = useState<Array<{
+    id: string;
+    type: 'member' | 'finance' | 'attendance' | 'visitor' | 'event';
+    title: string;
+    description: string;
+    timestamp: string;
+    icon: string;
+    link: string;
+  }>>([]);
   const [departmentLeaders, setDepartmentLeaders] = useState<any[]>([]);
+  const [leaderRatings, setLeaderRatings] = useState<Record<string, { average: number; count: number }>>({});
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedLeaderForRating, setSelectedLeaderForRating] = useState<any>(null);
+  const [ratingValue, setRatingValue] = useState(5);
+  const [ratingReview, setRatingReview] = useState('');
+  const [savingRating, setSavingRating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -93,7 +115,9 @@ export default function DashboardPage() {
         fetchDepartmentLeaders(),
         fetchUserProfile(),
         fetchZonesData(),
-        fetchVisitorStats()
+        fetchVisitorStats(),
+        fetchRecentActivities(),
+        fetchLeaderRatings()
       ]).finally(() => {
         clearTimeout(loadingTimeout);
       });
@@ -311,6 +335,7 @@ export default function DashboardPage() {
       // Transform the data for display
       const formattedLeaders = departmentLeadersData?.map((dept: any) => ({
         id: dept.leader?.id || dept.leader_id,
+        departmentId: dept.id,
         name: dept.leader ? `${dept.leader.first_name} ${dept.leader.last_name}` : 'Unknown Leader',
         role: `${dept.name} Leader`,
         departmentName: dept.name,
@@ -425,6 +450,138 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       console.error('Error fetching visitor stats:', error.message || error);
+    }
+  };
+
+  const fetchRecentActivities = async () => {
+    try {
+      if (!supabase) return;
+
+      const activities: Array<{
+        id: string;
+        type: 'member' | 'finance' | 'attendance' | 'visitor' | 'event';
+        title: string;
+        description: string;
+        timestamp: string;
+        icon: string;
+        link: string;
+      }> = [];
+
+      // Fetch recent members
+      const { data: recentMembers } = await supabase
+        .from('members')
+        .select('id, first_name, last_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      recentMembers?.forEach(member => {
+        activities.push({
+          id: `member-${member.id}`,
+          type: 'member',
+          title: 'New Member',
+          description: `${member.first_name} ${member.last_name} joined the church`,
+          timestamp: member.created_at,
+          icon: 'user-plus',
+          link: `/members/${member.id}`
+        });
+      });
+
+      // Fetch recent transactions
+      const { data: recentTransactions } = await supabase
+        .from('financial_transactions')
+        .select('id, transaction_type, amount, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      recentTransactions?.forEach(tx => {
+        activities.push({
+          id: `finance-${tx.id}`,
+          type: 'finance',
+          title: tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1),
+          description: `TZS ${tx.amount.toLocaleString()} recorded`,
+          timestamp: tx.created_at,
+          icon: 'dollar-sign',
+          link: `/finance?transaction=${tx.id}`
+        });
+      });
+
+      // Fetch recent visitors
+      const { data: recentVisitors } = await supabase
+        .from('visitors')
+        .select('id, first_name, last_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      recentVisitors?.forEach(visitor => {
+        activities.push({
+          id: `visitor-${visitor.id}`,
+          type: 'visitor',
+          title: 'New Visitor',
+          description: `${visitor.first_name} ${visitor.last_name} visited`,
+          timestamp: visitor.created_at,
+          icon: 'bell',
+          link: `/visitors?id=${visitor.id}`
+        });
+      });
+
+      // Sort all activities by timestamp and take top 5
+      activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setRecentActivities(activities.slice(0, 5));
+    } catch (error: any) {
+      console.error('Error fetching recent activities:', error.message || error);
+    }
+  };
+
+  const fetchLeaderRatings = async () => {
+    try {
+      const response = await fetch('/api/leader-ratings');
+      if (!response.ok) {
+        console.error('Failed to fetch leader ratings');
+        return;
+      }
+      const result = await response.json();
+      if (result.success && result.data) {
+        setLeaderRatings(result.data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching leader ratings:', error.message || error);
+    }
+  };
+
+  const openRatingModal = (leader: any) => {
+    setSelectedLeaderForRating(leader);
+    setRatingValue(leaderRatings[leader.id]?.average ? Math.round(leaderRatings[leader.id].average) : 5);
+    setRatingReview('');
+    setShowRatingModal(true);
+  };
+
+  const submitRating = async () => {
+    if (!selectedLeaderForRating || !user?.profile?.id) return;
+
+    try {
+      setSavingRating(true);
+      const response = await fetch('/api/leader-ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leader_id: selectedLeaderForRating.id,
+          department_id: selectedLeaderForRating.departmentId,
+          rated_by: user.profile.id,
+          rating: ratingValue,
+          review: ratingReview || null
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to submit rating');
+
+      await fetchLeaderRatings();
+      setShowRatingModal(false);
+      setSelectedLeaderForRating(null);
+    } catch (error: any) {
+      console.error('Error submitting rating:', error);
+      alert('Failed to submit rating. Please try again.');
+    } finally {
+      setSavingRating(false);
     }
   };
 
@@ -1126,6 +1283,53 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Recent Activity Card */}
+              <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm w-full`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-lg font-semibold ${textPrimary}`}>Recent Activity</h3>
+                  <span className={`text-sm ${textSecondary}`}>Last 7 days</span>
+                </div>
+
+                <div className="space-y-4">
+                  {recentActivities.length > 0 ? (
+                    recentActivities.slice(0, 4).map((activity) => (
+                      <div 
+                        key={activity.id} 
+                        onClick={() => activity.link && router.push(activity.link)}
+                        className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors cursor-pointer`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2.5 rounded-xl flex-shrink-0 ${
+                            activity.type === 'member' ? (darkMode ? 'bg-green-900/30' : 'bg-green-100') :
+                            activity.type === 'finance' ? (darkMode ? 'bg-blue-900/30' : 'bg-blue-100') :
+                            activity.type === 'visitor' ? (darkMode ? 'bg-purple-900/30' : 'bg-purple-100') :
+                            activity.type === 'attendance' ? (darkMode ? 'bg-orange-900/30' : 'bg-orange-100') :
+                            (darkMode ? 'bg-gray-800' : 'bg-gray-100')
+                          }`}>
+                            {activity.type === 'member' && <UserPlus className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />}
+                            {activity.type === 'finance' && <DollarSign className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />}
+                            {activity.type === 'visitor' && <Bell className={`w-5 h-5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />}
+                            {activity.type === 'attendance' && <Calendar className={`w-5 h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />}
+                            {activity.type === 'event' && <Calendar className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />}
+                          </div>
+                          <div>
+                            <p className={`font-semibold ${textPrimary}`}>{activity.title}</p>
+                            <p className={`text-sm ${textSecondary}`}>{activity.description}</p>
+                          </div>
+                        </div>
+                        <span className={`text-xs ${textSecondary} flex-shrink-0`}>
+                          {new Date(activity.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={`text-center py-8 ${textSecondary}`}>
+                      {loading ? 'Loading activities...' : 'No recent activity'}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Right Column */}
@@ -1235,7 +1439,7 @@ export default function DashboardPage() {
               <div className={`${cardBg} rounded-3xl p-6 border ${borderColor} shadow-sm`}>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className={`text-lg font-semibold ${textPrimary}`}>Best Department Leaders</h3>
-                  <button className="text-sm text-red-600 hover:text-red-700 flex items-center">
+                  <button className="text-sm text-blue-600 hover:text-blue-700 flex items-center">
                     See all
                     <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                   </button>
@@ -1243,39 +1447,67 @@ export default function DashboardPage() {
 
                 <div className="space-y-4">
                   {departmentLeaders.length > 0 ? (
-                    departmentLeaders.map((leader: any) => (
-                      <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-tag-gray-900' : 'hover:bg-tag-gray-50'} transition-colors cursor-pointer`}>
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            {/* Badge positioned on left side */}
-                            <div className="absolute -top-1 -left-1 h-6 w-6 bg-red-600 rounded-full border-2 border-white flex items-center justify-center z-10">
-                              <Crown className="text-white h-3.5 w-3.5" />
-                            </div>
-                            <img
-                              src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
-                              alt={leader.name}
-                              className="h-12 w-12 rounded-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
-                            <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
-                            <div className="flex items-center mt-1">
-                              <div className="flex text-blue-400 text-xs">
-                                {'★'.repeat(5)}
+                    departmentLeaders.map((leader: any) => {
+                      const rating = leaderRatings[leader.id];
+                      const avgRating = rating?.average || 0;
+                      const fullStars = Math.floor(avgRating);
+                      const hasHalfStar = avgRating % 1 >= 0.5;
+                      
+                      return (
+                        <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-tag-gray-900' : 'hover:bg-tag-gray-50'} transition-colors cursor-pointer`}>
+                          <div className="flex items-center space-x-3">
+                            <div className="relative">
+                              {/* Badge positioned on left side - Blue */}
+                              <div className="absolute -top-1 -left-1 h-6 w-6 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center z-10">
+                                <Crown className="text-white h-3.5 w-3.5" />
                               </div>
-                              <span className={`text-xs ${textSecondary} ml-2`}>{leader.departmentName}</span>
+                              <img
+                                src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
+                                alt={leader.name}
+                                className="h-12 w-12 rounded-full object-cover"
+                              />
                             </div>
+                            <div>
+                              <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
+                              <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
+                              <div className="flex items-center mt-1">
+                                {/* Orange Stars */}
+                                <div className="flex text-orange-400 text-xs">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span key={star} className={star <= fullStars ? 'text-orange-400' : (star === fullStars + 1 && hasHalfStar ? 'text-orange-300' : 'text-gray-300')}>
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                                <span className={`text-xs ${textSecondary} ml-2`}>
+                                  {avgRating > 0 ? `${avgRating.toFixed(1)} (${rating?.count || 0})` : leader.departmentName}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {(user?.profile?.role === 'administrator' || user?.profile?.role === 'pastor') && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openRatingModal(leader);
+                                }}
+                                className="px-3 py-2 bg-orange-100 border border-orange-400 text-orange-600 rounded-xl text-sm font-medium hover:bg-orange-200 transition-colors"
+                                title="Rate this leader"
+                              >
+                                <Star className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleViewDepartmentLeader(leader.id)}
+                              className="px-5 py-2 bg-blue-100 border border-blue-600 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-200 hover:text-blue-800 transition-colors"
+                            >
+                              View
+                            </button>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => handleViewDepartmentLeader(leader.id)}
-                          className="px-5 py-2 bg-red-100 border border-red-600 text-red-700 rounded-xl text-sm font-medium hover:bg-red-200 hover:text-red-800 transition-colors"
-                        >
-                          View
-                        </button>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className={`text-center py-8 ${textSecondary}`}>
                       {loading ? 'Loading department leaders...' : 'No department leaders found'}
@@ -1287,6 +1519,94 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Rating Modal */}
+      {showRatingModal && selectedLeaderForRating && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`${cardBg} rounded-2xl shadow-xl max-w-md w-full`}>
+            <div className={`p-6 border-b ${borderColor}`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`text-xl font-bold ${textPrimary}`}>Rate Department Leader</h2>
+                <button
+                  onClick={() => {
+                    setShowRatingModal(false);
+                    setSelectedLeaderForRating(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* Leader Info */}
+              <div className="flex items-center gap-4 mb-6">
+                <img
+                  src={selectedLeaderForRating.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedLeaderForRating.name}`}
+                  alt={selectedLeaderForRating.name}
+                  className="h-16 w-16 rounded-full object-cover"
+                />
+                <div>
+                  <p className={`font-semibold text-lg ${textPrimary}`}>{selectedLeaderForRating.name}</p>
+                  <p className={`text-sm ${textSecondary}`}>{selectedLeaderForRating.departmentName}</p>
+                </div>
+              </div>
+
+              {/* Star Rating */}
+              <div className="mb-6">
+                <label className={`block text-sm font-medium ${textPrimary} mb-3`}>Your Rating</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRatingValue(star)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`h-10 w-10 ${star <= ratingValue ? 'text-orange-400 fill-orange-400' : 'text-gray-300'}`}
+                      />
+                    </button>
+                  ))}
+                  <span className={`ml-2 text-lg font-semibold ${textPrimary}`}>{ratingValue}/5</span>
+                </div>
+              </div>
+
+              {/* Review Text */}
+              <div className="mb-6">
+                <label className={`block text-sm font-medium ${textPrimary} mb-2`}>Review (Optional)</label>
+                <textarea
+                  value={ratingReview}
+                  onChange={(e) => setRatingReview(e.target.value)}
+                  placeholder="Share your thoughts about this leader's performance..."
+                  rows={4}
+                  className={`w-full px-4 py-3 border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputBg} ${textPrimary}`}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowRatingModal(false);
+                    setSelectedLeaderForRating(null);
+                  }}
+                  className={`flex-1 px-4 py-3 border ${borderColor} rounded-xl font-medium ${textSecondary} hover:bg-gray-50 transition-colors`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitRating}
+                  disabled={savingRating}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {savingRating ? 'Submitting...' : 'Submit Rating'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Modal */}
       {showProfileModal && (
