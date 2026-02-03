@@ -114,7 +114,7 @@ export default function AttendanceCard({
 
   if (loading) {
     return (
-      <div className={`${noWrapper ? '' : 'rounded-lg shadow-sm border p-6 bg-white border-gray-200'} ${className}`}>
+      <div className={`${noWrapper ? '' : 'rounded-3xl shadow-sm border p-6 bg-white border-gray-200'} ${className}`}>
         <div className="animate-pulse">
           <div className="flex items-center justify-between mb-4">
             <div className="h-5 rounded w-32 bg-gray-200"></div>
@@ -135,7 +135,7 @@ export default function AttendanceCard({
 
   if (error) {
     return (
-      <div className={`${noWrapper ? '' : 'rounded-lg shadow-sm border p-6 bg-white border-red-200'} ${className}`}>
+      <div className={`${noWrapper ? '' : 'rounded-3xl shadow-sm border p-6 bg-white border-red-200'} ${className}`}>
         <div className="flex items-center space-x-3">
           <UserX className="w-8 h-8 text-red-600" />
           <div>
@@ -155,7 +155,7 @@ export default function AttendanceCard({
 
   if (!stats) {
     return (
-      <div className={`${noWrapper ? '' : 'rounded-lg shadow-sm border p-6 bg-white border-gray-200'} ${className}`}>
+      <div className={`${noWrapper ? '' : 'rounded-3xl shadow-sm border p-6 bg-white border-gray-200'} ${className}`}>
         <div className="text-center py-8">
           <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
           <h3 className="text-lg font-medium mb-2 text-gray-900">No Attendance Data</h3>
@@ -186,7 +186,7 @@ export default function AttendanceCard({
   const attendanceRate = stats.overview.attendanceRate ?? 0;
 
   return (
-    <div className={`${noWrapper ? '' : 'rounded-lg shadow-sm border bg-white border-gray-200'} ${className}`}>
+    <div className={`${noWrapper ? '' : 'rounded-3xl shadow-sm border bg-white border-gray-200'} ${className}`}>
       {/* Header */}
       <div className={`${noWrapper ? 'p-0' : 'p-3 sm:p-6'} border-b border-gray-200`}>
         <div className="flex items-center justify-between">

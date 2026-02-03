@@ -47,6 +47,12 @@ export default function DashboardPage() {
     monthlyIncome: 0,
     weeklyOfferings: [] as Array<{ week: string, amount: number, label: string }>
   });
+  const [visitorStats, setVisitorStats] = useState({
+    total_visitors: 0,
+    new_this_month: 0,
+    converted: 0,
+    conversion_rate: 0
+  });
   const [departmentLeaders, setDepartmentLeaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -86,7 +92,8 @@ export default function DashboardPage() {
         fetchFinancialData(),
         fetchDepartmentLeaders(),
         fetchUserProfile(),
-        fetchZonesData()
+        fetchZonesData(),
+        fetchVisitorStats()
       ]).finally(() => {
         clearTimeout(loadingTimeout);
       });
@@ -402,6 +409,22 @@ export default function DashboardPage() {
       }));
     } catch (error: any) {
       console.error('Error fetching zones data:', error.message || error);
+    }
+  };
+
+  const fetchVisitorStats = async () => {
+    try {
+      const response = await fetch('/api/visitors/stats');
+      if (!response.ok) {
+        console.error('Failed to fetch visitor stats');
+        return;
+      }
+      const result = await response.json();
+      if (result.success && result.data) {
+        setVisitorStats(result.data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching visitor stats:', error.message || error);
     }
   };
 
@@ -1117,19 +1140,41 @@ export default function DashboardPage() {
               <div className={`${cardBg} rounded-3xl p-8 border ${borderColor} shadow-sm`}>
                 <div className="flex items-center justify-between mb-8">
                   <h3 className={`text-2xl font-bold ${textPrimary}`}>Visitors</h3>
-                  <select className={`px-6 py-2.5 ${inputBg} ${textSecondary} border ${borderColor} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tag-red-500 focus:border-tag-red-500`}>
-                    <option>Monthly</option>
-                    <option>Yearly</option>
-                  </select>
+                  <button
+                    onClick={() => router.push('/visitors')}
+                    className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    View All →
+                  </button>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className={`p-4 rounded-xl ${darkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                    <p className={`text-sm ${textSecondary}`}>Total Visitors</p>
+                    <p className="text-2xl font-bold text-blue-600">{visitorStats.total_visitors}</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${darkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                    <p className={`text-sm ${textSecondary}`}>New This Month</p>
+                    <p className="text-2xl font-bold text-green-600">{visitorStats.new_this_month}</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${darkMode ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
+                    <p className={`text-sm ${textSecondary}`}>Converted</p>
+                    <p className="text-2xl font-bold text-purple-600">{visitorStats.converted}</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${darkMode ? 'bg-orange-900/20' : 'bg-orange-50'}`}>
+                    <p className={`text-sm ${textSecondary}`}>Conversion Rate</p>
+                    <p className="text-2xl font-bold text-orange-600">{visitorStats.conversion_rate.toFixed(1)}%</p>
+                  </div>
                 </div>
 
                 {/* Area Chart */}
                 <div className="relative h-64">
                   {/* Floating value label */}
                   <div className="absolute top-8 right-32 z-10">
-                    <p className={`text-sm ${textSecondary} mb-1`}>14 Apr</p>
+                    <p className={`text-sm ${textSecondary} mb-1`}>This Month</p>
                     <p className="text-3xl font-bold text-blue-600">
-                      32.61 <span className="text-base font-semibold text-green-500">30% ↑</span>
+                      {visitorStats.new_this_month} <span className="text-base font-semibold text-green-500">{visitorStats.conversion_rate > 0 ? `${visitorStats.conversion_rate.toFixed(0)}% ↑` : ''}</span>
                     </p>
                   </div>
 
@@ -1159,7 +1204,7 @@ export default function DashboardPage() {
                       strokeLinejoin="round"
                     />
                     
-                    {/* Dot at May */}
+                    {/* Dot at current month */}
                     <circle cx="470" cy="100" r="8" fill="#2563eb" stroke="white" strokeWidth="3"/>
                     
                     {/* Vertical dashed line */}

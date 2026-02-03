@@ -222,6 +222,56 @@ export interface Report {
   created_at: string;
 }
 
+export interface Visitor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gender?: Gender;
+  date_of_birth?: string;
+  marital_status?: MaritalStatus;
+  occupation?: string;
+  how_did_you_hear?: string;
+  converted: boolean;
+  conversion_date?: string;
+  referred_by_member_id?: string;
+  visited_date: string;
+  followed_up: boolean;
+  followed_up_by?: string;
+  followed_up_at?: string;
+  notes?: string;
+  status: 'new' | 'contacted' | 'interested' | 'converted' | 'not_interested';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VisitorStats {
+  total_visitors: number;
+  new_this_month: number;
+  converted: number;
+  followed_up: number;
+  not_followed_up: number;
+  conversion_rate: number;
+}
+
+export interface VisitorFormData {
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gender?: Gender;
+  date_of_birth?: string;
+  marital_status?: MaritalStatus;
+  occupation?: string;
+  how_did_you_hear?: string;
+  referred_by_member_id?: string;
+  visited_date: string;
+  notes?: string;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
   success: boolean;
