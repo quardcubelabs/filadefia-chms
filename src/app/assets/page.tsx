@@ -461,6 +461,7 @@ export default function AssetsPage() {
 
   return (
     <MainLayout title="Church Assets" subtitle="Track and manage all church assets">
+      <div className="max-w-7xl mx-auto">
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4 md:gap-6 mb-6">
         {/* Total Assets Card */}
@@ -1122,6 +1123,7 @@ export default function AssetsPage() {
           </Button>
         </div>
       </Modal>
+      </div>
     </MainLayout>
   );
 }

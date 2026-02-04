@@ -485,6 +485,7 @@ export default function WorkPlansPage() {
 
   return (
     <MainLayout title="Work Plans" subtitle="Manage operational work plans and tasks">
+      <div className="max-w-7xl mx-auto">
       {/* Tabs */}
       <div className="mb-4 md:mb-6">
         <nav className="flex space-x-0 overflow-x-auto">
@@ -1009,6 +1010,7 @@ export default function WorkPlansPage() {
           </Button>
         </div>
       </Modal>
+      </div>
     </MainLayout>
   );
 }

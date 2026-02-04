@@ -263,8 +263,9 @@ export default function ZonesPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="max-w-7xl mx-auto">
+        <div className="space-y-6">
+          {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
@@ -633,6 +634,7 @@ export default function ZonesPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </MainLayout>
   );

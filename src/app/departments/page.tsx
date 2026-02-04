@@ -307,8 +307,9 @@ export default function DepartmentsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="max-w-7xl mx-auto">
+        <div className="space-y-6">
+          {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -673,6 +674,7 @@ export default function DepartmentsPage() {
           </div>
         </div>
       </Modal>
+      </div>
     </MainLayout>
   );
 }

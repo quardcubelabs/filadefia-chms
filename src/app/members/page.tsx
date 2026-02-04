@@ -570,7 +570,7 @@ export default function MembersPage() {
       title={title}
       subtitle={subtitle}
     >
-
+      <div className="max-w-7xl mx-auto">
 
       {/* Error Alert */}
       {error && (
@@ -1028,6 +1028,7 @@ export default function MembersPage() {
             onClose={() => setShowBulkCardModal(false)}
           />
         </Modal>
+      </div>
     </MainLayout>
   );
 }

@@ -343,6 +343,7 @@ export default function VisitorsPage() {
 
         {/* Main Content Area */}
         <main className="p-4 md:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
           {/* Stats Cards - Dashboard Style with Pastel Colors */}
           {stats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -570,6 +571,7 @@ export default function VisitorsPage() {
                 </table>
               </div>
             )}
+          </div>
           </div>
         </main>
       </div>

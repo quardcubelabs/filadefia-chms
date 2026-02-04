@@ -643,6 +643,7 @@ export default function StrategicPlansPage() {
 
   return (
     <MainLayout title="Strategic Plans" subtitle="Long-term vision and strategic goals">
+      <div className="max-w-7xl mx-auto">
       {/* Tabs */}
       <div className="mb-4 md:mb-6">
         <nav className="flex space-x-0 overflow-x-auto">
@@ -1340,6 +1341,7 @@ export default function StrategicPlansPage() {
           </Button>
         </div>
       </Modal>
+      </div>
     </MainLayout>
   );
 }
