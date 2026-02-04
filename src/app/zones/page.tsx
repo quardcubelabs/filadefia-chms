@@ -10,7 +10,7 @@ import MainLayout from '@/components/MainLayout';
 import { useToast } from '@/components/Toast';
 import { 
   Users, MapPin, UserCheck, TrendingUp, 
-  Plus, Edit, Trash2, X
+  Plus, Edit, Trash2, X, Eye
 } from 'lucide-react';
 
 interface Zone {
@@ -388,73 +388,85 @@ export default function ZonesPage() {
               </div>
             </div>
 
-            {/* Zones Grid - Independent Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {zones.map((zone) => (
-                <div 
-                  key={zone.id} 
-                  className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] transition-all duration-200 cursor-pointer group shadow-sm"
-                  onClick={() => router.push(`/zones/${zone.id}`)}
-                >
-                  {/* Icon and Badge */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br ${zone.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                      <MapPin className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                    </div>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                      {zone.member_count} {zone.member_count === 1 ? 'Member' : 'Members'}
-                    </span>
-                  </div>
-
-                  {/* Zone Name */}
-                  <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                    {zone.name}
-                  </h4>
-
-                  {/* Swahili Name */}
-                  {zone.swahili_name && (
-                    <p className="text-sm font-medium text-gray-500 mb-2">
-                      {zone.swahili_name}
-                    </p>
-                  )}
-
-                  {/* Leader */}
-                  {zone.leader_name && (
-                    <p className="text-sm text-gray-600 mb-2">
-                      <span className="font-medium">Leader:</span> {zone.leader_name}
-                    </p>
-                  )}
-
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                    {zone.description || 'No description available'}
-                  </p>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2 border-t border-gray-100">
-                    <button
-                      className="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(zone);
-                      }}
-                      title="Edit Zone"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteZone(zone.id);
-                      }}
-                      title="Delete Zone"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            {/* Zones List */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Leader</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Description</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {zones.map((zone) => (
+                      <tr 
+                        key={zone.id} 
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/zones/${zone.id}`)}
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-10 h-10 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
+                              <MapPin className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-900">{zone.name}</p>
+                              {zone.swahili_name && (
+                                <p className="text-xs text-gray-500">{zone.swahili_name}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 hidden sm:table-cell">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            {zone.leader_name || <span className="text-gray-400">No leader</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 hidden md:table-cell">
+                          <p className="text-sm text-gray-600 truncate max-w-[200px]">
+                            {zone.description || 'No description'}
+                          </p>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {zone.member_count}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              onClick={() => router.push(`/zones/${zone.id}`)}
+                              title="View Zone"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              onClick={() => openEditModal(zone)}
+                              title="Edit Zone"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              onClick={() => handleDeleteZone(zone.id)}
+                              title="Delete Zone"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}

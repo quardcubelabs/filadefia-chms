@@ -11,7 +11,7 @@ import { Modal, Input, TextArea, Button } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 import { 
   Users, Building2, UserCheck, TrendingUp, ArrowRight, 
-  Music, Heart, Briefcase, BookOpen, Globe, Phone, Plus, Edit, X
+  Music, Heart, Briefcase, BookOpen, Globe, Phone, Plus, Edit, X, Eye, Trash2
 } from 'lucide-react';
 
 interface Department {
@@ -49,6 +49,8 @@ export default function DepartmentsPage() {
   
   // Add Department Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingDepartment, setEditingDepartment] = useState<DepartmentStats | null>(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -218,6 +220,79 @@ export default function DepartmentsPage() {
     }
   };
 
+  const handleEditDepartment = async () => {
+    if (!formData.name.trim()) {
+      setError('Department name is required');
+      toast.warning('Required Field', 'Department name is required');
+      return;
+    }
+
+    if (!supabase || !editingDepartment) {
+      setError('Database connection not available');
+      toast.error('Connection Error', 'Database connection not available');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const { error: updateError } = await supabase
+        .from('departments')
+        .update({
+          name: formData.name.trim(),
+          swahili_name: formData.swahili_name.trim() || null,
+          description: formData.description.trim() || null,
+        })
+        .eq('id', editingDepartment.id);
+
+      if (updateError) throw updateError;
+
+      // Reset form and close modal
+      setFormData({ name: '', swahili_name: '', description: '' });
+      setEditingDepartment(null);
+      setIsEditModalOpen(false);
+      toast.success('Department Updated', `${formData.name} has been updated successfully!`);
+      
+      // Refresh departments list
+      await fetchDepartments();
+
+    } catch (err: any) {
+      console.error('Error updating department:', err);
+      setError(err.message || 'Failed to update department');
+      toast.error('Update Failed', err.message || 'Failed to update department');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteDepartment = async (id: string) => {
+    if (!supabase) {
+      toast.error('Connection Error', 'Database connection not available');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('departments')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success('Department Deleted', 'Department has been deleted successfully!');
+      await fetchDepartments();
+
+    } catch (err: any) {
+      console.error('Error deleting department:', err);
+      toast.error('Delete Failed', err.message || 'Failed to delete department');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -357,45 +432,89 @@ export default function DepartmentsPage() {
               </div>
             </div>
 
-            {/* Departments Grid - Independent Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {departments.map((dept) => {
-                const Icon = dept.icon;
-                return (
-                  <div 
-                    key={dept.id} 
-                    className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] transition-all duration-200 cursor-pointer group shadow-sm"
-                    onClick={() => router.push(`/departments/${dept.id}`)}
-                  >
-                    {/* Icon and Badge */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br ${dept.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                        <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                      </div>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        {dept.member_count} {dept.member_count === 1 ? 'Member' : 'Members'}
-                      </span>
-                    </div>
-
-                    {/* Department Name */}
-                    <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                      {dept.name}
-                    </h4>
-
-                    {/* Swahili Name */}
-                    {dept.swahili_name && (
-                      <p className="text-sm font-medium text-gray-500 mb-2">
-                        {dept.swahili_name}
-                      </p>
-                    )}
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {dept.description || 'No description available'}
-                    </p>
-                  </div>
-                );
-              })}
+            {/* Departments List */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Description</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {departments.map((dept) => {
+                      const Icon = dept.icon;
+                      return (
+                        <tr 
+                          key={dept.id} 
+                          className="hover:bg-gray-50 transition-colors cursor-pointer"
+                          onClick={() => router.push(`/departments/${dept.id}`)}
+                        >
+                          <td className="px-4 py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-10 h-10 bg-gradient-to-br ${dept.color} rounded-lg flex items-center justify-center`}>
+                                <Icon className="h-5 w-5 text-white" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900">{dept.name}</p>
+                                {dept.swahili_name && (
+                                  <p className="text-xs text-gray-500">{dept.swahili_name}</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 hidden md:table-cell">
+                            <p className="text-sm text-gray-600 truncate max-w-[250px]">
+                              {dept.description || 'No description'}
+                            </p>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                              {dept.member_count}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                onClick={() => router.push(`/departments/${dept.id}`)}
+                                title="View Department"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                onClick={() => {
+                                  setFormData({
+                                    name: dept.name,
+                                    swahili_name: dept.swahili_name || '',
+                                    description: dept.description || ''
+                                  });
+                                  setEditingDepartment(dept);
+                                  setIsEditModalOpen(true);
+                                }}
+                                title="Edit Department"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                onClick={() => handleDeleteDepartment(dept.id)}
+                                title="Delete Department"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}
@@ -470,6 +589,84 @@ export default function DepartmentsPage() {
                 <>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Department
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Department Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingDepartment(null);
+          setFormData({ name: '', swahili_name: '', description: '' });
+          setError(null);
+        }}
+        title="Edit Department"
+        size="md"
+      >
+        <div className="space-y-3 sm:space-y-4">
+          <Input
+            label="Department Name *"
+            placeholder="e.g., Youth Department"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+          
+          <Input
+            label="Swahili Name"
+            placeholder="e.g., Idara ya Vijana"
+            value={formData.swahili_name}
+            onChange={(e) => setFormData({ ...formData, swahili_name: e.target.value })}
+          />
+          
+          <TextArea
+            label="Description"
+            placeholder="Brief description of the department's purpose and activities..."
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+          />
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingDepartment(null);
+                setFormData({ name: '', swahili_name: '', description: '' });
+                setError(null);
+              }}
+              disabled={saving}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleEditDepartment}
+              disabled={saving || !formData.name.trim()}
+              className="w-full sm:w-auto"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Save Changes
                 </>
               )}
             </Button>

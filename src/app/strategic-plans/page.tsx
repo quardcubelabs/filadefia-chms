@@ -715,78 +715,94 @@ export default function StrategicPlansPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {strategicPlans.map((plan) => (
-            <Card key={plan.id} hover className="cursor-pointer" onClick={() => openViewPlan(plan)}>
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{plan.title}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[plan.status]}`}>
-                  {plan.status.replace('_', ' ')}
-                </span>
-              </div>
-
-              {plan.vision && (
-                <div className="mb-3">
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                    <Lightbulb className="h-3 w-3" />
-                    Vision
-                  </div>
-                  <p className="text-sm text-gray-600 line-clamp-2">{plan.vision}</p>
-                </div>
-              )}
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {plan.year_start} - {plan.year_end}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Target className="h-4 w-4 mr-2" />
-                  {plan.completed_goals || 0} / {plan.goal_count || 0} goals achieved
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between text-xs text-gray-600 mb-1">
-                  <span>Progress</span>
-                  <span>{getProgressPercentage(plan)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full transition-all"
-                    style={{ width: `${getProgressPercentage(plan)}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {canManageCurrentTab() && (
-                <div className="flex gap-2 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => openViewPlan(plan)}
-                    className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <Eye className="h-4 w-4" />
-                    View
-                  </button>
-                  <button
-                    onClick={() => openEditPlan(plan)}
-                    className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeletePlan(plan.id)}
-                    className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </button>
-                </div>
-              )}
-            </Card>
-          ))}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strategic Plan</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Years</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Goals</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Progress</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {strategicPlans.map((plan) => (
+                  <tr key={plan.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openViewPlan(plan)}>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                          <Compass className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{plan.title}</p>
+                          {plan.vision && (
+                            <p className="text-xs text-gray-500 truncate max-w-[200px]">{plan.vision}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {plan.year_start} - {plan.year_end}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 hidden md:table-cell">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Target className="h-4 w-4 mr-2" />
+                        {plan.completed_goals || 0} / {plan.goal_count || 0}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 hidden lg:table-cell">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div className="bg-green-600 h-2 rounded-full" style={{ width: `${getProgressPercentage(plan)}%` }}></div>
+                        </div>
+                        <span className="text-xs text-gray-600">{getProgressPercentage(plan)}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[plan.status]}`}>
+                        {plan.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => openViewPlan(plan)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        {canManageCurrentTab() && (
+                          <>
+                            <button
+                              onClick={() => openEditPlan(plan)}
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePlan(plan.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

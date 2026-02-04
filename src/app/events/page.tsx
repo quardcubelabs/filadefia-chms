@@ -614,14 +614,7 @@ export default function EventsPage() {
           </div>
         )}
         
-        <div className="flex items-center justify-between mb-4 sm:mb-8">
-          <div>
-            {events.length > 0 && (
-              <span className="text-xs sm:text-sm font-normal text-gray-500">
-                ({events.length} {events.length === 1 ? 'event' : 'events'})
-              </span>
-            )}
-          </div>
+        <div className="flex items-center justify-end mb-4 sm:mb-8">
           <div className="flex gap-2">
                 <button 
                   onClick={async () => {
@@ -665,6 +658,49 @@ export default function EventsPage() {
                 {success}
               </Alert>
             )}
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6">
+              <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Events</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {events.length}
+                </h3>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Upcoming</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {events.filter(e => new Date(e.start_date) > new Date()).length}
+                </h3>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Registrations</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {events.reduce((sum, e) => sum + (e.registration_count || 0), 0)}
+                </h3>
+              </div>
+
+              <div className="bg-gradient-to-br from-amber-100 to-amber-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Attended</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                  {events.reduce((sum, e) => sum + (e.attendance_count || 0), 0)}
+                </h3>
+              </div>
+            </div>
 
             {/* Search and Filters */}
             <Card className="mb-4 sm:mb-6" padding="sm" rounded="xl">
@@ -730,110 +766,91 @@ export default function EventsPage() {
                 }}
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {filteredEvents.map((event) => (
-                  <Card key={event.id} className="hover:shadow-lg transition-shadow" padding="sm" rounded="xl">
-                    <CardBody>
-                      <div className="flex justify-between items-start mb-3 sm:mb-4">
-                        <div className="flex-1 min-w-0 mr-2">
-                          <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1 truncate">
-                            {event.title}
-                          </h3>
-                          <Badge 
-                            variant="default" 
-                            className={`text-xs ${getEventTypeColor(event.event_type)}`}
-                          >
-                            {event.event_type.replace('_', ' ').toUpperCase()}
-                          </Badge>
-                        </div>
-                        <div className="flex space-x-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/events/${event.id}`)}
-                            icon={<Eye className="h-4 w-4" />}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditModal(event)}
-                            icon={<Edit className="h-4 w-4" />}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            icon={<Trash2 className="h-4 w-4" />}
-                            className="text-red-600 hover:text-red-700"
-                          />
-                        </div>
-                      </div>
-
-                      {event.description && (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                          {event.description}
-                        </p>
-                      )}
-
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2" />
-                          <span>{formatDate(event.start_date)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          <span>{event.location}</span>
-                        </div>
-                        {event.department && (
-                          <div className="flex items-center">
-                            <Settings className="h-4 w-4 mr-2" />
-                            <span>{event.department.name}</span>
-                          </div>
-                        )}
-                        {event.cost > 0 && (
-                          <div className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-2" />
-                            <span>TZS {event.cost.toLocaleString()}</span>
-                          </div>
-                        )}
-                        {event.registration_required && (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-2" />
-                              <span>
-                                {event.registration_count || 0}
-                                {event.max_attendees && `/${event.max_attendees}`} registered
-                              </span>
-                            </div>
-                            {event.attendance_count !== undefined && (
-                              <div className="flex items-center">
-                                <UserCheck className="h-4 w-4 mr-1" />
-                                <span>{event.attendance_count} attended</span>
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Location</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Registration</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredEvents.map((event) => (
+                        <tr key={event.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getEventTypeColor(event.event_type)}`}>
+                                <Calendar className="h-5 w-5" />
                               </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{event.title}</p>
+                                <p className="text-xs text-gray-500">{event.event_type.replace('_', ' ').toUpperCase()}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 hidden sm:table-cell">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Clock className="h-4 w-4 mr-2" />
+                              {formatDate(event.start_date)}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 hidden md:table-cell">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                              <span className="truncate max-w-[150px]">{event.location}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 hidden lg:table-cell">
+                            {event.registration_required ? (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Users className="h-4 w-4 mr-2" />
+                                {event.registration_count || 0}{event.max_attendees && `/${event.max_attendees}`}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">Open</span>
                             )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Status indicator */}
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <Badge 
-                            variant={new Date(event.start_date) > new Date() ? 'success' : 'default'}
-                          >
-                            {new Date(event.start_date) > new Date() ? 'Upcoming' : 'Past'}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            by {event.organizer?.first_name} {event.organizer?.last_name}
-                          </span>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                ))}
+                          </td>
+                          <td className="px-4 py-4">
+                            <Badge variant={new Date(event.start_date) > new Date() ? 'success' : 'default'}>
+                              {new Date(event.start_date) > new Date() ? 'Upcoming' : 'Past'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex justify-end space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => router.push(`/events/${event.id}`)}
+                                icon={<Eye className="h-4 w-4" />}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditModal(event)}
+                                icon={<Edit className="h-4 w-4" />}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedEvent(event);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                icon={<Trash2 className="h-4 w-4" />}
+                                className="text-red-600 hover:text-red-700"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

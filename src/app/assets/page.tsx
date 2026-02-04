@@ -664,87 +664,95 @@ export default function AssetsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAssets.map((asset) => (
-            <Card key={asset.id} className="hover:shadow-lg transition-shadow">
-              <div className="p-4">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      {categoryIcons[asset.category]}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{asset.name}</h3>
-                      <p className="text-xs text-gray-500">{asset.asset_number}</p>
-                    </div>
-                  </div>
-                  <Badge className={conditionColors[asset.condition]}>
-                    {conditionLabels[asset.condition]}
-                  </Badge>
-                </div>
-
-                {/* Details */}
-                <div className="space-y-2 mb-4">
-                  {asset.location && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Building2 className="h-4 w-4 mr-2" />
-                      {asset.location}
-                    </div>
-                  )}
-                  {asset.purchase_date && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Purchased: {formatDate(asset.purchase_date)}
-                    </div>
-                  )}
-                  <div className="flex items-center text-sm text-gray-600">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Value: {formatCurrency(asset.current_value || 0, asset.currency)}
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center justify-between mb-4">
-                  <Badge className={statusColors[asset.status]}>
-                    {statusLabels[asset.status]}
-                  </Badge>
-                  <span className="text-xs text-gray-500">
-                    {categoryLabels[asset.category]}
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-end space-x-2 pt-3 border-t border-gray-100">
-                  <button
-                    onClick={() => openViewModal(asset)}
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="View Details"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  {canManageAssets && (
-                    <>
-                      <button
-                        onClick={() => openEditModal(asset)}
-                        className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAsset(asset.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Value</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Purchased</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredAssets.map((asset) => (
+                  <tr key={asset.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                          {categoryIcons[asset.category]}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{asset.name}</p>
+                          <p className="text-xs text-gray-500">{asset.asset_number}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Building2 className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate max-w-[120px]">{asset.location || 'N/A'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 hidden md:table-cell">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        {formatCurrency(asset.current_value || 0, asset.currency)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 hidden lg:table-cell">
+                      <span className="text-sm text-gray-600">
+                        {asset.purchase_date ? formatDate(asset.purchase_date) : 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <Badge className={conditionColors[asset.condition]}>
+                        {conditionLabels[asset.condition]}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <Badge className={statusColors[asset.status]}>
+                        {statusLabels[asset.status]}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end space-x-1">
+                        <button
+                          onClick={() => openViewModal(asset)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        {canManageAssets && (
+                          <>
+                            <button
+                              onClick={() => openEditModal(asset)}
+                              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAsset(asset.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
