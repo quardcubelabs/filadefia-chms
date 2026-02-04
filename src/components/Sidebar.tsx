@@ -19,7 +19,10 @@ import {
   MapPin,
   X,
   Briefcase,
-  UserPlus
+  UserPlus,
+  ClipboardList,
+  Compass,
+  Package
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -62,6 +65,9 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
       { icon: <UserPlus className="h-5 w-5" />, label: 'Visitors', href: '/visitors' },
       { icon: <UserCheck className="h-5 w-5" />, label: 'Attendance', href: '/attendance' },
       { icon: <Calendar className="h-5 w-5" />, label: 'Events', href: '/events' },
+      { icon: <ClipboardList className="h-5 w-5" />, label: 'Work Plans', href: '/work-plans' },
+      { icon: <Compass className="h-5 w-5" />, label: 'Strategic Plans', href: '/strategic-plans' },
+      { icon: <Package className="h-5 w-5" />, label: 'Assets', href: '/assets' },
       { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages' },
       { icon: <DollarSign className="h-5 w-5" />, label: 'Finance', href: '/finance' },
       { icon: <BarChart3 className="h-5 w-5" />, label: 'Reports', href: '/reports' },

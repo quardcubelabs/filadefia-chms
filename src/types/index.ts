@@ -363,3 +363,320 @@ export interface DepartmentCardProps {
   onEdit?: (department: Department) => void;
   onView?: (departmentId: string) => void;
 }
+
+// ============================================
+// Work Plans Types
+// ============================================
+
+export type PlanStatus = 'draft' | 'active' | 'completed' | 'cancelled' | 'on_hold';
+export type PlanScope = 'church' | 'department' | 'zone';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'overdue';
+
+export interface WorkPlan {
+  id: string;
+  title: string;
+  description?: string;
+  scope: PlanScope;
+  department_id?: string;
+  zone_id?: string;
+  start_date: string;
+  end_date: string;
+  status: PlanStatus;
+  created_by: string;
+  approved_by?: string;
+  approved_at?: string;
+  budget?: number;
+  currency: string;
+  notes?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  department?: Department;
+  zone?: Zone;
+  creator?: Profile;
+  approver?: Profile;
+  tasks?: WorkPlanTask[];
+  task_count?: number;
+  completed_tasks?: number;
+}
+
+export interface WorkPlanTask {
+  id: string;
+  work_plan_id: string;
+  title: string;
+  description?: string;
+  assigned_to?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  start_date?: string;
+  due_date?: string;
+  completed_date?: string;
+  progress: number;
+  notes?: string;
+  order_index: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  assignee?: Member;
+}
+
+export interface WorkPlanFormData {
+  title: string;
+  description?: string;
+  scope: PlanScope;
+  department_id?: string;
+  zone_id?: string;
+  start_date: string;
+  end_date: string;
+  status?: PlanStatus;
+  budget?: number;
+  notes?: string;
+}
+
+export interface WorkPlanTaskFormData {
+  title: string;
+  description?: string;
+  assigned_to?: string;
+  priority?: TaskPriority;
+  start_date?: string;
+  due_date?: string;
+  notes?: string;
+}
+
+// ============================================
+// Strategic Plans Types
+// ============================================
+
+export interface StrategicPlan {
+  id: string;
+  title: string;
+  vision?: string;
+  mission?: string;
+  description?: string;
+  scope: PlanScope;
+  department_id?: string;
+  zone_id?: string;
+  year_start: number;
+  year_end: number;
+  status: PlanStatus;
+  created_by: string;
+  approved_by?: string;
+  approved_at?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  department?: Department;
+  zone?: Zone;
+  creator?: Profile;
+  approver?: Profile;
+  goals?: StrategicGoal[];
+  goal_count?: number;
+  completed_goals?: number;
+}
+
+export interface StrategicGoal {
+  id: string;
+  strategic_plan_id: string;
+  title: string;
+  description?: string;
+  target_metric?: string;
+  target_value?: string;
+  current_value?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  progress: number;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  objectives?: StrategicObjective[];
+  objective_count?: number;
+  completed_objectives?: number;
+}
+
+export interface StrategicObjective {
+  id: string;
+  strategic_goal_id: string;
+  title: string;
+  description?: string;
+  key_result?: string;
+  assigned_to?: string;
+  due_date?: string;
+  status: TaskStatus;
+  progress: number;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  assignee?: Member;
+}
+
+export interface StrategicPlanFormData {
+  title: string;
+  vision?: string;
+  mission?: string;
+  description?: string;
+  scope: PlanScope;
+  department_id?: string;
+  zone_id?: string;
+  year_start: number;
+  year_end: number;
+  status?: PlanStatus;
+}
+
+export interface StrategicGoalFormData {
+  title: string;
+  description?: string;
+  target_metric?: string;
+  target_value?: string;
+  priority?: TaskPriority;
+}
+
+export interface StrategicObjectiveFormData {
+  title: string;
+  description?: string;
+  key_result?: string;
+  assigned_to?: string;
+  due_date?: string;
+}
+
+// ============================================
+// Assets Types
+// ============================================
+
+export type AssetCategory = 
+  | 'property'
+  | 'vehicle'
+  | 'electronics'
+  | 'furniture'
+  | 'musical_instruments'
+  | 'office_equipment'
+  | 'kitchen_equipment'
+  | 'sound_system'
+  | 'lighting'
+  | 'tools'
+  | 'other';
+
+export type AssetCondition = 
+  | 'excellent'
+  | 'good'
+  | 'fair'
+  | 'poor'
+  | 'needs_repair'
+  | 'non_functional';
+
+export type AssetStatus = 
+  | 'active'
+  | 'in_use'
+  | 'in_storage'
+  | 'under_maintenance'
+  | 'disposed'
+  | 'donated'
+  | 'sold'
+  | 'lost';
+
+export interface Asset {
+  id: string;
+  asset_number: string;
+  name: string;
+  description?: string;
+  category: AssetCategory;
+  condition: AssetCondition;
+  status: AssetStatus;
+  purchase_date?: string;
+  purchase_price?: number;
+  current_value?: number;
+  currency: string;
+  location?: string;
+  department_id?: string;
+  assigned_to?: string;
+  brand?: string;
+  model?: string;
+  serial_number?: string;
+  warranty_expiry?: string;
+  photo_url?: string;
+  receipt_url?: string;
+  notes?: string;
+  created_by: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  department?: Department;
+  assignee?: Member;
+  creator?: Profile;
+  maintenance_count?: number;
+}
+
+export interface AssetMaintenance {
+  id: string;
+  asset_id: string;
+  maintenance_type: string;
+  description: string;
+  cost: number;
+  currency: string;
+  performed_by?: string;
+  performed_date: string;
+  next_maintenance_date?: string;
+  notes?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface AssetDisposal {
+  id: string;
+  asset_id: string;
+  disposal_type: string;
+  disposal_date: string;
+  disposal_value: number;
+  currency: string;
+  recipient?: string;
+  reason: string;
+  approved_by?: string;
+  notes?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface AssetFormData {
+  name: string;
+  description?: string;
+  category: AssetCategory;
+  condition?: AssetCondition;
+  status?: AssetStatus;
+  purchase_date?: string;
+  purchase_price?: number;
+  current_value?: number;
+  location?: string;
+  department_id?: string;
+  assigned_to?: string;
+  brand?: string;
+  model?: string;
+  serial_number?: string;
+  warranty_expiry?: string;
+  notes?: string;
+}
+
+export interface AssetMaintenanceFormData {
+  maintenance_type: string;
+  description: string;
+  cost?: number;
+  performed_by?: string;
+  performed_date: string;
+  next_maintenance_date?: string;
+  notes?: string;
+}
+
+export interface AssetStats {
+  total_assets: number;
+  total_value: number;
+  by_category: Record<AssetCategory, number>;
+  by_condition: Record<AssetCondition, number>;
+  by_status: Record<AssetStatus, number>;
+  recent_acquisitions: number;
+  under_maintenance: number;
+}

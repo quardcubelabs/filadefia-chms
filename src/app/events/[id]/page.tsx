@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/Sidebar';
+import TopNavbar from '@/components/TopNavbar';
 import { useToast } from '@/components/Toast';
 import { 
   Button, 
@@ -111,6 +112,10 @@ export default function EventDetailPage() {
   // Filter states
   const [attendanceFilter, setAttendanceFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  
+  // UI states
+  const [darkMode, setDarkMode] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -608,17 +613,29 @@ export default function EventDetailPage() {
   if (!event) {
     return (
       <div className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <EmptyState
-            icon={<Calendar className="h-16 w-16 text-gray-400" />}
+        <Sidebar
+          darkMode={darkMode}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
+        />
+        <div className="flex-1 lg:ml-20">
+          <TopNavbar
             title="Event Not Found"
-            description="The event you're looking for doesn't exist or has been deleted."
-            action={{
-              label: "Back to Events",
-              onClick: () => router.push('/events')
-            }}
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(!darkMode)}
+            onMenuClick={() => setSidebarOpen(true)}
           />
+          <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+            <EmptyState
+              icon={<Calendar className="h-16 w-16 text-gray-400" />}
+              title="Event Not Found"
+              description="The event you're looking for doesn't exist or has been deleted."
+              action={{
+                label: "Back to Events",
+                onClick: () => router.push('/events')
+              }}
+            />
+          </div>
         </div>
       </div>
     );
@@ -626,27 +643,33 @@ export default function EventDetailPage() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar
+        darkMode={darkMode}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
+      />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-8">
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-20">
+        <TopNavbar
+          title={event.title}
+          subtitle="Event Details & Registration Management"
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        
+        <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push('/events')}
-                  icon={<ArrowLeft className="h-4 w-4" />}
-                >
-                  Back to Events
-                </Button>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
-                  <p className="text-gray-600 mt-1">Event Details & Registration Management</p>
-                </div>
-              </div>
-              <div className="flex space-x-3">
+            {/* Header Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <Button
+                variant="ghost"
+                onClick={() => router.push('/events')}
+                icon={<ArrowLeft className="h-4 w-4" />}
+              >
+                Back to Events
+              </Button>
+              <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
                   onClick={() => router.push(`/attendance/record?event_id=${event.id}&date=${event.start_date.split('T')[0]}&type=special_event`)}
@@ -670,56 +693,6 @@ export default function EventDetailPage() {
                     Add Registration
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={debugRegistrationAccess}
-                  className="bg-red-50 border-red-200 text-red-800 hover:bg-red-100"
-                >
-                  Debug Registration
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const migrationSQL = `-- Simple RLS fix for events and event_registrations
-ALTER TABLE events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE event_registrations ENABLE ROW LEVEL SECURITY;
-
--- Drop all existing policies
-DO $$
-DECLARE policy_record RECORD;
-BEGIN
-    FOR policy_record IN SELECT policyname FROM pg_policies WHERE tablename = 'events'
-    LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON events', policy_record.policyname);
-    END LOOP;
-    FOR policy_record IN SELECT policyname FROM pg_policies WHERE tablename = 'event_registrations'
-    LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON event_registrations', policy_record.policyname);
-    END LOOP;
-END $$;
-
--- Create permissive policies
-CREATE POLICY "allow_all_events" ON events FOR ALL TO public USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all_registrations" ON event_registrations FOR ALL TO public USING (true) WITH CHECK (true);
-
--- Grant permissions
-GRANT ALL ON events TO authenticated, anon, service_role;
-GRANT ALL ON event_registrations TO authenticated, anon, service_role;`;
-
-                    console.group('🚀 COPY THIS SQL TO SUPABASE:');
-                    console.log(migrationSQL);
-                    console.groupEnd();
-                    
-                    // Copy to clipboard if available
-                    if (navigator.clipboard) {
-                      navigator.clipboard.writeText(migrationSQL);
-                      toast.success('Copied', 'Migration SQL copied to clipboard! Paste it in Supabase SQL Editor.');
-                    } else {
-                      toast.info('Check Console', 'Check console for migration SQL to copy to Supabase SQL Editor');
-                    }
-                  }}
-                  className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"
-                >
-                  Copy Migration SQL
-                </Button>
               </div>
             </div>
 
