@@ -717,152 +717,184 @@ export default function EventDetailPage() {
             )}
 
             {/* Event Information */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               {/* Main Event Details */}
               <div className="lg:col-span-2">
-                <Card>
-                  <CardBody>
-                    <div className="flex justify-between items-start mb-4">
-                      <Badge 
-                        variant="default" 
-                        className={getEventTypeColor(event.event_type)}
-                      >
-                        {event.event_type.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                      <Badge 
-                        variant={new Date(event.start_date) > new Date() ? 'success' : 'default'}
-                      >
-                        {new Date(event.start_date) > new Date() ? 'Upcoming' : 'Past'}
-                      </Badge>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                  <div className="flex flex-wrap justify-between items-start gap-3 mb-6">
+                    <Badge 
+                      variant="default" 
+                      className={`${getEventTypeColor(event.event_type)} px-3 py-1 text-sm font-semibold rounded-full`}
+                    >
+                      {event.event_type.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    <Badge 
+                      variant={new Date(event.start_date) > new Date() ? 'success' : 'default'}
+                      className={`px-3 py-1 text-sm font-semibold rounded-full ${new Date(event.start_date) > new Date() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}
+                    >
+                      {new Date(event.start_date) > new Date() ? '● Upcoming' : '● Past'}
+                    </Badge>
+                  </div>
+
+                  {event.description && (
+                    <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                      <h3 className="font-semibold text-gray-900 mb-2 text-sm uppercase tracking-wide">Description</h3>
+                      <p className="text-gray-600 leading-relaxed">{event.description}</p>
                     </div>
+                  )}
 
-                    {event.description && (
-                      <div className="mb-6">
-                        <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                        <p className="text-gray-600">{event.description}</p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="flex items-center">
-                          <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm text-gray-500">Start Date</p>
-                            <p className="font-medium">{formatDate(event.start_date)}</p>
-                          </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center p-3 bg-blue-50 rounded-xl">
+                        <div className="p-2 bg-white rounded-lg mr-3">
+                          <Calendar className="h-5 w-5 text-blue-600" />
                         </div>
-                        <div className="flex items-center">
-                          <Clock className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm text-gray-500">End Date</p>
-                            <p className="font-medium">{formatDate(event.end_date)}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <MapPin className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm text-gray-500">Location</p>
-                            <p className="font-medium">{event.location}</p>
-                          </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Start Date</p>
+                          <p className="font-semibold text-gray-900">{formatDate(event.start_date)}</p>
                         </div>
                       </div>
-                      
-                      <div className="space-y-4">
-                        {event.cost > 0 && (
-                          <div className="flex items-center">
-                            <DollarSign className="h-5 w-5 text-gray-400 mr-3" />
-                            <div>
-                              <p className="text-sm text-gray-500">Cost</p>
-                              <p className="font-medium">TZS {event.cost.toLocaleString()}</p>
-                            </div>
-                          </div>
-                        )}
-                        {event.department && (
-                          <div className="flex items-center">
-                            <Settings className="h-5 w-5 text-gray-400 mr-3" />
-                            <div>
-                              <p className="text-sm text-gray-500">Department</p>
-                              <p className="font-medium">{event.department.name}</p>
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex items-center">
-                          <Users className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm text-gray-500">Organizer</p>
-                            <p className="font-medium">
-                              {event.organizer?.first_name} {event.organizer?.last_name}
-                            </p>
-                          </div>
+                      <div className="flex items-center p-3 bg-purple-50 rounded-xl">
+                        <div className="p-2 bg-white rounded-lg mr-3">
+                          <Clock className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">End Date</p>
+                          <p className="font-semibold text-gray-900">{formatDate(event.end_date)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center p-3 bg-green-50 rounded-xl">
+                        <div className="p-2 bg-white rounded-lg mr-3">
+                          <MapPin className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Location</p>
+                          <p className="font-semibold text-gray-900">{event.location}</p>
                         </div>
                       </div>
                     </div>
-                  </CardBody>
-                </Card>
+                    
+                    <div className="space-y-4">
+                      {event.cost > 0 && (
+                        <div className="flex items-center p-3 bg-cyan-50 rounded-xl">
+                          <div className="p-2 bg-white rounded-lg mr-3">
+                            <DollarSign className="h-5 w-5 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Cost</p>
+                            <p className="font-semibold text-gray-900">TZS {event.cost.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      )}
+                      {event.department && (
+                        <div className="flex items-center p-3 bg-orange-50 rounded-xl">
+                          <div className="p-2 bg-white rounded-lg mr-3">
+                            <Settings className="h-5 w-5 text-orange-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Department</p>
+                            <p className="font-semibold text-gray-900">{event.department.name}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center p-3 bg-indigo-50 rounded-xl">
+                        <div className="p-2 bg-white rounded-lg mr-3">
+                          <Users className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Organizer</p>
+                          <p className="font-semibold text-gray-900">
+                            {event.organizer?.first_name} {event.organizer?.last_name}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Statistics */}
-              <div className="space-y-6">
-                <Card>
-                  <CardBody>
-                    <h3 className="font-semibold text-gray-900 mb-4">Registration Stats</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total Registrations</span>
-                        <span className="font-semibold text-2xl text-blue-600">{stats.totalRegistrations}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Attended</span>
-                        <span className="font-semibold text-green-600">{stats.attended}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Paid</span>
-                        <span className="font-semibold text-blue-600">{stats.paidRegistrations}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Pending Payment</span>
-                        <span className="font-semibold text-orange-600">{stats.pendingPayments}</span>
-                      </div>
-                      {event.max_attendees && (
-                        <div className="flex justify-between items-center pt-2 border-t">
-                          <span className="text-gray-600">Capacity</span>
-                          <span className="font-semibold">
-                            {stats.totalRegistrations}/{event.max_attendees}
-                          </span>
-                        </div>
-                      )}
+              <div className="space-y-4">
+                {/* Stats Cards with Gradient */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-4 shadow-sm">
+                    <div className="inline-flex p-2 bg-white rounded-xl mb-2">
+                      <Users className="h-5 w-5 text-blue-600" />
                     </div>
-                  </CardBody>
-                </Card>
+                    <p className="text-xs text-gray-600 mb-1">Total Registrations</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.totalRegistrations}</h3>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-2xl p-4 shadow-sm">
+                    <div className="inline-flex p-2 bg-white rounded-xl mb-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-xs text-gray-600 mb-1">Attended</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.attended}</h3>
+                  </div>
+                  <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-2xl p-4 shadow-sm">
+                    <div className="inline-flex p-2 bg-white rounded-xl mb-2">
+                      <DollarSign className="h-5 w-5 text-cyan-600" />
+                    </div>
+                    <p className="text-xs text-gray-600 mb-1">Paid</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.paidRegistrations}</h3>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl p-4 shadow-sm">
+                    <div className="inline-flex p-2 bg-white rounded-xl mb-2">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <p className="text-xs text-gray-600 mb-1">Pending Payment</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.pendingPayments}</h3>
+                  </div>
+                </div>
+
+                {event.max_attendees && (
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Capacity</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {stats.totalRegistrations}/{event.max_attendees}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min((stats.totalRegistrations / event.max_attendees) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {event.registration_deadline && (
-                  <Card>
-                    <CardBody>
-                      <h3 className="font-semibold text-gray-900 mb-2">Registration Deadline</h3>
-                      <p className="text-gray-600">{formatDate(event.registration_deadline)}</p>
-                      {new Date(event.registration_deadline) < new Date() && (
-                        <Badge variant="danger" className="mt-2">
-                          Registration Closed
-                        </Badge>
-                      )}
-                    </CardBody>
-                  </Card>
+                  <div className={`rounded-2xl p-4 shadow-sm border ${new Date(event.registration_deadline) < new Date() ? 'bg-red-50 border-red-100' : 'bg-purple-50 border-purple-100'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`inline-flex p-2 rounded-xl ${new Date(event.registration_deadline) < new Date() ? 'bg-red-100' : 'bg-purple-100'}`}>
+                        <Calendar className={`h-5 w-5 ${new Date(event.registration_deadline) < new Date() ? 'text-red-600' : 'text-purple-600'}`} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Registration Deadline</p>
+                        <p className="font-semibold text-gray-900">{formatDate(event.registration_deadline)}</p>
+                        {new Date(event.registration_deadline) < new Date() && (
+                          <Badge variant="danger" className="mt-1">
+                            Closed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Registrations List */}
             {event.registration_required && (
-              <Card>
-                <CardBody>
-                  <div className="flex justify-between items-center mb-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h3 className="text-lg font-semibold text-gray-900">Event Registrations</h3>
-                    <div className="flex space-x-3">
+                    <div className="flex flex-wrap gap-3">
                       <select
                         value={attendanceFilter}
                         onChange={(e) => setAttendanceFilter(e.target.value)}
-                        className="px-3 py-2 border border-red-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
+                        className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-gray-50"
                       >
                         <option value="all">All Attendance</option>
                         <option value="attended">Attended</option>
@@ -871,7 +903,7 @@ export default function EventDetailPage() {
                       <select
                         value={paymentFilter}
                         onChange={(e) => setPaymentFilter(e.target.value)}
-                        className="px-3 py-2 border border-red-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50"
+                        className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-gray-50"
                       >
                         <option value="all">All Payments</option>
                         <option value="paid">Paid</option>
@@ -896,23 +928,23 @@ export default function EventDetailPage() {
                       description="No registrations match your current filters."
                     />
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-xl border border-gray-100">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                               Member
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                               Registration Date
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                               Payment Status
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                               Attendance
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                               Actions
                             </th>
                           </tr>
@@ -984,8 +1016,7 @@ export default function EventDetailPage() {
                       </table>
                     </div>
                   )}
-                </CardBody>
-              </Card>
+                </div>
             )}
           </div>
         </div>
