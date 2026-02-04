@@ -132,6 +132,13 @@ export async function PUT(request: NextRequest) {
       updateData.progress = 100;
     }
 
+    // First, get the objective to know which goal it belongs to
+    const { data: existingObjective } = await supabase
+      .from('strategic_objectives')
+      .select('strategic_goal_id')
+      .eq('id', id)
+      .single();
+
     const { data, error } = await supabase
       .from('strategic_objectives')
       .update(updateData)
@@ -147,10 +154,52 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Auto-update the parent goal's progress based on objectives completion
+    if (existingObjective?.strategic_goal_id) {
+      await updateGoalProgress(supabase, existingObjective.strategic_goal_id);
+    }
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// Helper function to update goal progress based on objectives
+async function updateGoalProgress(supabase: any, goalId: string) {
+  try {
+    // Get all objectives for this goal
+    const { data: objectives, error: objError } = await supabase
+      .from('strategic_objectives')
+      .select('status, progress')
+      .eq('strategic_goal_id', goalId);
+
+    if (objError || !objectives || objectives.length === 0) return;
+
+    // Calculate average progress
+    const totalProgress = objectives.reduce((sum: number, obj: any) => sum + (obj.progress || 0), 0);
+    const avgProgress = Math.round(totalProgress / objectives.length);
+
+    // Determine status based on objectives
+    const completedCount = objectives.filter((obj: any) => obj.status === 'completed').length;
+    let newStatus = 'pending';
+    if (completedCount === objectives.length) {
+      newStatus = 'completed';
+    } else if (completedCount > 0 || avgProgress > 0) {
+      newStatus = 'in_progress';
+    }
+
+    // Update the goal
+    await supabase
+      .from('strategic_goals')
+      .update({
+        progress: avgProgress,
+        status: newStatus
+      })
+      .eq('id', goalId);
+  } catch (error) {
+    console.error('Error updating goal progress:', error);
   }
 }
 

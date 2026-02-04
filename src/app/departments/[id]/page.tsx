@@ -867,9 +867,9 @@ export default function DepartmentDashboardPage() {
             </div>
 
             {/* ========== DESKTOP VIEW (hidden on small screens) ========== */}
-            <div className="hidden sm:grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+            <div className="hidden sm:grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
               {/* Left Column - Stats and Charts */}
-              <div className="col-span-1 lg:col-span-7 space-y-4 sm:space-y-6">
+              <div className="col-span-1 lg:col-span-7 flex flex-col gap-4 sm:gap-6">
                 {/* Stats Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {/* Total Members Card */}
@@ -1074,7 +1074,7 @@ export default function DepartmentDashboardPage() {
                 </div>
 
                 {/* Finances Chart */}
-                <div className={`${cardBg} rounded-2xl sm:rounded-3xl p-4 sm:p-6 border ${borderColor} shadow-sm`}>
+                <div className={`${cardBg} rounded-2xl sm:rounded-3xl p-4 sm:p-6 border ${borderColor} shadow-sm flex-1 flex flex-col`}>
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
                     <h3 className={`text-lg sm:text-xl font-bold ${textPrimary}`}>Finances</h3>
@@ -1113,7 +1113,7 @@ export default function DepartmentDashboardPage() {
                   </div>
 
                   {/* Bar Chart */}
-                  <div className="relative h-32 sm:h-40 md:h-[180px]">
+                  <div className="relative flex-1 min-h-[120px]">
                     {/* Bar Chart Container */}
                     <div className="h-full flex items-end justify-between gap-1 sm:gap-2 md:gap-4">
                       {(financialData.weeklyFinances.length > 0 ? financialData.weeklyFinances : [
@@ -1160,12 +1160,12 @@ export default function DepartmentDashboardPage() {
               </div>
 
               {/* Right Column - Leadership and Members */}
-              <div className="col-span-12 lg:col-span-5 space-y-6">
+              <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
                 {/* Leadership Team */}
                 {leadershipMembers.length > 0 && (
                   <Card variant="default" className="">
                     <CardBody className="p-6">
-                      <h2 className="text-xl font-bold text-tag-gray-900 mb-6 flex items-center">
+                      <h2 className="text-xl font-bold text-black mb-6 flex items-center">
                         <Crown className="h-6 w-6 mr-2 text-tag-blue-600" />
                         Leadership Team
                       </h2>
@@ -1184,10 +1184,10 @@ export default function DepartmentDashboardPage() {
                                 size="md"
                               />
                               <div className="flex-1">
-                                <h3 className="font-bold text-tag-gray-900">
+                                <h3 className="font-bold text-black">
                                   {dm.member?.first_name} {dm.member?.last_name}
                                 </h3>
-                                <p className="text-xs text-tag-gray-600 mb-2">
+                                <p className="text-xs text-gray-700 mb-2">
                                   {dm.member?.member_number}
                                 </p>
                                 {getPositionBadge(dm.position)}
@@ -1203,31 +1203,31 @@ export default function DepartmentDashboardPage() {
                 {/* Members Statistics */}
                 <Card variant="default">
                   <CardBody className="p-6">
-                    <h2 className="text-xl font-bold text-tag-gray-900 mb-4 flex items-center">
+                    <h2 className="text-xl font-bold text-black mb-4 flex items-center">
                       <Users className="h-6 w-6 mr-2 text-tag-blue-600" />
                       Members Overview
                     </h2>
                     
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-tag-gray-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Total Members</span>
+                        <span className="text-black font-medium">Total Members</span>
                         <span className="text-2xl font-bold text-tag-blue-600">{members.length}</span>
                       </div>
                       
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Active Members</span>
+                        <span className="text-black font-medium">Active Members</span>
                         <span className="text-2xl font-bold text-green-600">
                           {members.filter(m => m.member && m.member.status === 'active').length}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Leadership</span>
+                        <span className="text-black font-medium">Leadership</span>
                         <span className="text-2xl font-bold text-purple-600">{leadershipMembers.length}</span>
                       </div>
 
                       <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                        <span className="text-tag-gray-700 font-medium">Regular Members</span>
+                        <span className="text-black font-medium">Regular Members</span>
                         <span className="text-2xl font-bold text-orange-600">{regularMembers.length}</span>
                       </div>
                     </div>
@@ -1235,12 +1235,12 @@ export default function DepartmentDashboardPage() {
                 </Card>
 
                 {/* Recent Members */}
-                <Card variant="default">
-                  <CardBody className="p-6">
-                    <h2 className="text-xl font-bold text-tag-gray-900 mb-4">Recent Members</h2>
+                <Card variant="default" className="flex-1 flex flex-col">
+                  <CardBody className="p-6 flex-1 flex flex-col">
+                    <h2 className="text-xl font-bold text-black mb-4">Recent Members</h2>
                     
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {members.slice(0, 5).map((dm) => (
+                    <div className="space-y-3 flex-1 overflow-y-auto">
+                      {members.slice(0, 3).map((dm) => (
                         <div 
                           key={dm.id}
                           className="flex items-center gap-3 p-3 hover:bg-tag-gray-50 rounded-lg cursor-pointer transition-colors"
@@ -1252,10 +1252,10 @@ export default function DepartmentDashboardPage() {
                             size="sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-tag-gray-900 truncate">
+                            <p className="font-medium text-black truncate">
                               {dm.member?.first_name} {dm.member?.last_name}
                             </p>
-                            <p className="text-xs text-tag-gray-600 truncate">
+                            <p className="text-xs text-gray-700 truncate">
                               {dm.member?.member_number}
                             </p>
                           </div>
@@ -1266,7 +1266,7 @@ export default function DepartmentDashboardPage() {
                       ))}
                       
                       {members.length === 0 && (
-                        <p className="text-center text-tag-gray-600 py-4">No members yet</p>
+                        <p className="text-center text-gray-700 py-4">No members yet</p>
                       )}
                     </div>
                   </CardBody>

@@ -266,16 +266,7 @@ export default function ZonesPage() {
       <div className="max-w-7xl mx-auto">
         <div className="space-y-6">
           {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
-              <MapPin className="w-5 h-5 md:w-6 md:h-6 mr-2 text-blue-600" />
-              Church Zones
-            </h1>
-            <p className="text-sm md:text-base text-gray-600 mt-1">
-              Manage and view all church geographical zones
-            </p>
-          </div>
+        <div className="flex items-center justify-end">
           <button
             onClick={() => {
               setFormData({ name: '', swahili_name: '', description: '' });
@@ -411,8 +402,8 @@ export default function ZonesPage() {
                       >
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 bg-gradient-to-br ${zone.color} rounded-lg flex items-center justify-center`}>
-                              <MapPin className="h-5 w-5 text-white" />
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <MapPin className="h-5 w-5 text-blue-600" />
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium text-gray-900">{zone.name}</p>

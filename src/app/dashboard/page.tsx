@@ -21,7 +21,13 @@ import {
   Calendar,
   Bell,
   Star,
-  X
+  X,
+  ClipboardList,
+  Target,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  ArrowRight
 } from 'lucide-react';
 
 // Loading component to prevent blank pages
@@ -84,6 +90,20 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  
+  // Assigned objectives state
+  const [assignedObjectives, setAssignedObjectives] = useState<{
+    objectives: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      status: string;
+      progress: number;
+      due_date?: string;
+      goal?: { id: string; title: string; plan?: { id: string; title: string } };
+    }>;
+    stats: { total: number; completed: number; in_progress: number; pending: number; overdue: number };
+  }>({ objectives: [], stats: { total: 0, completed: 0, in_progress: 0, pending: 0, overdue: 0 } });
 
   // Handle auth state changes and department leader redirect
   useEffect(() => {
@@ -119,7 +139,8 @@ export default function DashboardPage() {
         fetchZonesData(),
         fetchVisitorStats(),
         fetchRecentActivities(),
-        fetchLeaderRatings()
+        fetchLeaderRatings(),
+        fetchAssignedObjectives()
       ]).finally(() => {
         clearTimeout(loadingTimeout);
       });
@@ -470,6 +491,24 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       console.error('Error fetching visitor stats:', error.message || error);
+    }
+  };
+
+  const fetchAssignedObjectives = async () => {
+    if (!user?.profile?.id) return;
+    
+    try {
+      const response = await fetch(`/api/strategic-plans/my-objectives?member_id=${user.profile.id}`);
+      const result = await response.json();
+      
+      if (!result.error) {
+        setAssignedObjectives({
+          objectives: result.objectives || [],
+          stats: result.stats || { total: 0, completed: 0, in_progress: 0, pending: 0, overdue: 0 }
+        });
+      }
+    } catch (error: any) {
+      console.error('Error fetching assigned objectives:', error.message || error);
     }
   };
 
@@ -1228,6 +1267,106 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Assigned Objectives Section - Only show if user has assignments */}
+              {assignedObjectives.stats.total > 0 && (
+                <div className={`${cardBg} rounded-2xl sm:rounded-3xl p-3 sm:p-6 border ${borderColor} shadow-sm w-full`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 ${darkMode ? 'bg-indigo-900/50' : 'bg-indigo-100'} rounded-lg`}>
+                        <ClipboardList className={`h-5 w-5 ${darkMode ? 'text-indigo-300' : 'text-indigo-600'}`} />
+                      </div>
+                      <div>
+                        <h3 className={`text-base sm:text-lg font-bold ${textPrimary}`}>My Assigned Objectives</h3>
+                        <p className={`text-xs ${textSecondary}`}>{assignedObjectives.stats.total} assigned to you</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => router.push('/strategic-plans')}
+                      className={`text-xs px-3 py-1.5 ${darkMode ? 'bg-indigo-900/50 text-indigo-300 hover:bg-indigo-800' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'} rounded-full transition-colors flex items-center gap-1`}
+                    >
+                      View All <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                  
+                  {/* Stats Summary */}
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    {assignedObjectives.stats.overdue > 0 && (
+                      <div className={`p-2 ${darkMode ? 'bg-red-900/30' : 'bg-red-50'} rounded-lg text-center`}>
+                        <div className={`text-lg font-bold ${darkMode ? 'text-red-300' : 'text-red-600'}`}>{assignedObjectives.stats.overdue}</div>
+                        <div className={`text-[10px] ${darkMode ? 'text-red-400' : 'text-red-500'}`}>Overdue</div>
+                      </div>
+                    )}
+                    <div className={`p-2 ${darkMode ? 'bg-yellow-900/30' : 'bg-yellow-50'} rounded-lg text-center`}>
+                      <div className={`text-lg font-bold ${darkMode ? 'text-yellow-300' : 'text-yellow-600'}`}>{assignedObjectives.stats.in_progress}</div>
+                      <div className={`text-[10px] ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`}>In Progress</div>
+                    </div>
+                    <div className={`p-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} rounded-lg text-center`}>
+                      <div className={`text-lg font-bold ${textPrimary}`}>{assignedObjectives.stats.pending}</div>
+                      <div className={`text-[10px] ${textSecondary}`}>Pending</div>
+                    </div>
+                    <div className={`p-2 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg text-center`}>
+                      <div className={`text-lg font-bold ${darkMode ? 'text-green-300' : 'text-green-600'}`}>{assignedObjectives.stats.completed}</div>
+                      <div className={`text-[10px] ${darkMode ? 'text-green-400' : 'text-green-500'}`}>Completed</div>
+                    </div>
+                  </div>
+                  
+                  {/* Objectives List - Show top 3 */}
+                  <div className="space-y-2">
+                    {assignedObjectives.objectives.slice(0, 3).map((obj) => {
+                      const isOverdue = obj.due_date && new Date(obj.due_date) < new Date() && obj.status !== 'completed';
+                      
+                      return (
+                        <div 
+                          key={obj.id} 
+                          className={`p-3 rounded-lg ${isOverdue ? (darkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200') : (darkMode ? 'bg-gray-800' : 'bg-gray-50')} transition-colors`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`text-sm font-medium ${textPrimary} truncate`}>{obj.title}</span>
+                                {isOverdue && <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />}
+                                {obj.status === 'completed' && <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
+                              </div>
+                              {obj.goal && (
+                                <div className={`flex items-center gap-1 text-xs ${textSecondary}`}>
+                                  <Target className="h-3 w-3" />
+                                  <span className="truncate">{obj.goal.title}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className={`text-xs font-medium ${
+                                obj.status === 'completed' ? 'text-green-500' :
+                                obj.status === 'in_progress' ? 'text-blue-500' :
+                                isOverdue ? 'text-red-500' : textSecondary
+                              }`}>
+                                {obj.progress || 0}%
+                              </span>
+                              {obj.due_date && (
+                                <span className={`text-[10px] flex items-center gap-0.5 ${isOverdue ? 'text-red-500' : textSecondary}`}>
+                                  <Clock className="h-2.5 w-2.5" />
+                                  {new Date(obj.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Progress bar */}
+                          <div className="mt-2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                obj.status === 'completed' ? 'bg-green-500' :
+                                isOverdue ? 'bg-red-500' : 'bg-blue-500'
+                              }`}
+                              style={{ width: `${obj.progress || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Weekly Offerings Chart */}
               <div className={`${cardBg} rounded-2xl sm:rounded-3xl p-3 sm:p-6 border ${borderColor} shadow-sm w-full`}>

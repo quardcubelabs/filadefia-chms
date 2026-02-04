@@ -310,16 +310,7 @@ export default function DepartmentsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="space-y-6">
           {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Building2 className="w-6 h-6 mr-2 text-blue-600" />
-              Department Management
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Manage and view all Tanzania Assemblies of God departments
-            </p>
-          </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-end">
           <div className="flex gap-3 mt-4 md:mt-0">
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -456,8 +447,8 @@ export default function DepartmentsPage() {
                         >
                           <td className="px-4 py-4">
                             <div className="flex items-center space-x-3">
-                              <div className={`w-10 h-10 bg-gradient-to-br ${dept.color} rounded-lg flex items-center justify-center`}>
-                                <Icon className="h-5 w-5 text-white" />
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <Icon className="h-5 w-5 text-blue-600" />
                               </div>
                               <div className="min-w-0">
                                 <p className="font-medium text-gray-900">{dept.name}</p>

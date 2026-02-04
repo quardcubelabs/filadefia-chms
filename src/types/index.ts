@@ -226,6 +226,7 @@ export interface Visitor {
   id: string;
   first_name: string;
   last_name: string;
+  middle_name?: string;
   phone?: string;
   email?: string;
   address?: string;
@@ -233,6 +234,10 @@ export interface Visitor {
   date_of_birth?: string;
   marital_status?: MaritalStatus;
   occupation?: string;
+  employer?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  baptism_date?: string;
   how_did_you_hear?: string;
   converted: boolean;
   conversion_date?: string;
@@ -259,6 +264,7 @@ export interface VisitorStats {
 export interface VisitorFormData {
   first_name: string;
   last_name: string;
+  middle_name?: string;
   phone?: string;
   email?: string;
   address?: string;
@@ -266,6 +272,10 @@ export interface VisitorFormData {
   date_of_birth?: string;
   marital_status?: MaritalStatus;
   occupation?: string;
+  employer?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  baptism_date?: string;
   how_did_you_hear?: string;
   referred_by_member_id?: string;
   visited_date: string;

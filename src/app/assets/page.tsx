@@ -463,58 +463,58 @@ export default function AssetsPage() {
     <MainLayout title="Church Assets" subtitle="Track and manage all church assets">
       <div className="max-w-7xl mx-auto">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4 md:gap-6 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-6">
         {/* Total Assets Card */}
-        <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-          <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-            <Package className="h-5 w-5 sm:h-7 sm:w-7 text-blue-600" />
+        <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+          <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+            <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Total Assets</p>
-          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-xs text-gray-600 mb-1">Total Assets</p>
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
             {loading ? '...' : stats.total}
           </h3>
         </div>
 
         {/* Total Value Card */}
-        <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-          <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-            <DollarSign className="h-5 w-5 sm:h-7 sm:w-7 text-cyan-600" />
+        <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+          <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Total Value</p>
+          <p className="text-xs text-gray-600 mb-1">Total Value</p>
           <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
             {loading ? '...' : formatCurrency(stats.totalValue)}
           </h3>
         </div>
 
         {/* Active Assets Card */}
-        <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-          <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-            <CheckCircle className="h-5 w-5 sm:h-7 sm:w-7 text-green-600" />
+        <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+          <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Active</p>
-          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-xs text-gray-600 mb-1">Active</p>
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
             {loading ? '...' : stats.active}
           </h3>
         </div>
 
         {/* Under Maintenance Card */}
-        <div className="bg-gradient-to-br from-yellow-100 to-yellow-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-          <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-            <Wrench className="h-5 w-5 sm:h-7 sm:w-7 text-yellow-600" />
+        <div className="bg-gradient-to-br from-yellow-100 to-yellow-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+          <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+            <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Under Maintenance</p>
-          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-xs text-gray-600 mb-1">Under Maintenance</p>
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
             {loading ? '...' : stats.underMaintenance}
           </h3>
         </div>
 
         {/* Needs Repair Card */}
-        <div className="bg-gradient-to-br from-red-100 to-red-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-sm min-w-0">
-          <div className="inline-flex p-2.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl mb-3 sm:mb-4">
-            <AlertCircle className="h-5 w-5 sm:h-7 sm:w-7 text-red-600" />
+        <div className="bg-gradient-to-br from-red-100 to-red-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+          <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Needs Repair</p>
-          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-xs text-gray-600 mb-1">Needs Repair</p>
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
             {loading ? '...' : stats.needsRepair}
           </h3>
         </div>

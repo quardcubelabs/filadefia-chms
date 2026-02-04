@@ -29,7 +29,8 @@ import {
   Flag,
   TrendingUp,
   Lightbulb,
-  Star
+  Star,
+  ClipboardList
 } from 'lucide-react';
 
 interface Department {
@@ -104,6 +105,14 @@ export default function StrategicPlansPage() {
   const [goalObjectives, setGoalObjectives] = useState<Record<string, StrategicObjective[]>>({});
   const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  
+  // My Objectives state (for assigned objectives)
+  const [myObjectives, setMyObjectives] = useState<{
+    objectives: Array<StrategicObjective & { goal?: { id: string; title: string; status: string; plan?: { id: string; title: string; scope: string } } }>;
+    stats: { total: number; completed: number; in_progress: number; pending: number; overdue: number; completion_rate: number };
+  }>({ objectives: [], stats: { total: 0, completed: 0, in_progress: 0, pending: 0, overdue: 0, completion_rate: 0 } });
+  const [showMyObjectives, setShowMyObjectives] = useState(false);
+  const [updatingObjective, setUpdatingObjective] = useState<string | null>(null);
 
   // Form data
   const currentYear = new Date().getFullYear();
@@ -125,7 +134,10 @@ export default function StrategicPlansPage() {
     description: '',
     target_metric: '',
     target_value: '',
-    priority: 'medium' as TaskPriority
+    current_value: '',
+    priority: 'medium' as TaskPriority,
+    status: 'pending' as TaskStatus,
+    progress: 0
   });
 
   const [objectiveForm, setObjectiveForm] = useState({
@@ -133,7 +145,9 @@ export default function StrategicPlansPage() {
     description: '',
     key_result: '',
     assigned_to: '',
-    due_date: ''
+    due_date: '',
+    status: 'pending' as TaskStatus,
+    progress: 0
   });
 
   // Check user permissions
@@ -153,6 +167,7 @@ export default function StrategicPlansPage() {
       fetchDepartments();
       fetchZones();
       fetchMembers();
+      fetchMyObjectives();
     }
   }, [authLoading, user, supabase, activeTab]);
 
@@ -205,6 +220,62 @@ export default function StrategicPlansPage() {
       .eq('status', 'active')
       .order('first_name');
     setMembers(data || []);
+  };
+
+  // Fetch objectives assigned to the current user
+  const fetchMyObjectives = async () => {
+    if (!user?.profile?.id) return;
+    
+    try {
+      const response = await fetch(`/api/strategic-plans/my-objectives?member_id=${user.profile.id}`);
+      const result = await response.json();
+      
+      if (result.error) {
+        console.error('Error fetching my objectives:', result.error);
+        return;
+      }
+      
+      setMyObjectives({
+        objectives: result.objectives || [],
+        stats: result.stats || { total: 0, completed: 0, in_progress: 0, pending: 0, overdue: 0, completion_rate: 0 }
+      });
+    } catch (error) {
+      console.error('Error fetching my objectives:', error);
+    }
+  };
+
+  // Update my objective progress
+  const handleUpdateMyObjectiveProgress = async (objectiveId: string, progress: number, status?: TaskStatus) => {
+    if (!user?.profile?.id) return;
+    
+    setUpdatingObjective(objectiveId);
+    try {
+      const response = await fetch('/api/strategic-plans/my-objectives', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          objective_id: objectiveId,
+          member_id: user.profile.id,
+          progress,
+          status
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      
+      toast.success('Progress updated!');
+      fetchMyObjectives(); // Refresh the list
+    } catch (error) {
+      console.error('Error updating objective:', error);
+      toast.error('Failed to update progress');
+    } finally {
+      setUpdatingObjective(null);
+    }
   };
 
   const fetchPlanGoals = async (planId: string) => {
@@ -545,7 +616,10 @@ export default function StrategicPlansPage() {
       description: '',
       target_metric: '',
       target_value: '',
-      priority: 'medium'
+      current_value: '',
+      priority: 'medium',
+      status: 'pending',
+      progress: 0
     });
     setSelectedGoal(null);
   };
@@ -556,7 +630,9 @@ export default function StrategicPlansPage() {
       description: '',
       key_result: '',
       assigned_to: '',
-      due_date: ''
+      due_date: '',
+      status: 'pending',
+      progress: 0
     });
     setSelectedObjective(null);
   };
@@ -591,9 +667,62 @@ export default function StrategicPlansPage() {
       description: goal.description || '',
       target_metric: goal.target_metric || '',
       target_value: goal.target_value || '',
-      priority: goal.priority
+      current_value: goal.current_value || '',
+      priority: goal.priority,
+      status: goal.status,
+      progress: goal.progress || 0
     });
     setShowGoalModal(true);
+  };
+
+  const handleMarkGoalComplete = async (goal: StrategicGoal) => {
+    try {
+      const response = await fetch('/api/strategic-plans/goals', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: goal.id,
+          status: 'completed',
+          progress: 100
+        })
+      });
+
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+
+      toast.success('Goal marked as completed!');
+      if (selectedPlan) {
+        fetchPlanGoals(selectedPlan.id);
+      }
+      fetchStrategicPlans();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update goal');
+    }
+  };
+
+  const handleUpdateGoalProgress = async (goal: StrategicGoal, progress: number) => {
+    try {
+      const newStatus = progress === 100 ? 'completed' : progress > 0 ? 'in_progress' : 'pending';
+      const response = await fetch('/api/strategic-plans/goals', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: goal.id,
+          progress,
+          status: newStatus
+        })
+      });
+
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+
+      if (selectedPlan) {
+        fetchPlanGoals(selectedPlan.id);
+      }
+      fetchStrategicPlans();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update progress');
+    }
   };
 
   const openEditObjective = (objective: StrategicObjective, goal: StrategicGoal) => {
@@ -604,7 +733,9 @@ export default function StrategicPlansPage() {
       description: objective.description || '',
       key_result: objective.key_result || '',
       assigned_to: objective.assigned_to || '',
-      due_date: objective.due_date || ''
+      due_date: objective.due_date || '',
+      status: objective.status || 'pending',
+      progress: objective.progress || 0
     });
     setShowObjectiveModal(true);
   };
@@ -668,6 +799,141 @@ export default function StrategicPlansPage() {
           ))}
         </nav>
       </div>
+
+      {/* My Assigned Objectives Section - Shows only if user has assignments */}
+      {myObjectives.stats.total > 0 && (
+        <div className="mb-6">
+          <button
+            onClick={() => setShowMyObjectives(!showMyObjectives)}
+            className="w-full flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <ClipboardList className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-gray-900">My Assigned Objectives</h3>
+                <p className="text-sm text-gray-600">
+                  {myObjectives.stats.total} objective{myObjectives.stats.total !== 1 ? 's' : ''} assigned to you
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 text-sm">
+                {myObjectives.stats.overdue > 0 && (
+                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">
+                    {myObjectives.stats.overdue} overdue
+                  </span>
+                )}
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full">
+                  {myObjectives.stats.in_progress} in progress
+                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                  {myObjectives.stats.completed} completed
+                </span>
+              </div>
+              {showMyObjectives ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+            </div>
+          </button>
+          
+          {showMyObjectives && (
+            <div className="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Stats Bar */}
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Completion Rate</span>
+                  <span className="text-sm font-bold text-blue-600">{myObjectives.stats.completion_rate}%</span>
+                </div>
+                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    style={{ width: `${myObjectives.stats.completion_rate}%` }}
+                  />
+                </div>
+              </div>
+              
+              {/* Objectives List */}
+              <div className="divide-y divide-gray-100">
+                {myObjectives.objectives.map((obj) => {
+                  const isOverdue = obj.due_date && new Date(obj.due_date) < new Date() && obj.status !== 'completed';
+                  
+                  return (
+                    <div key={obj.id} className={`p-4 hover:bg-gray-50 transition-colors ${isOverdue ? 'bg-red-50' : ''}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-gray-900 truncate">{obj.title}</h4>
+                            <Badge variant={
+                              obj.status === 'completed' ? 'success' :
+                              obj.status === 'in_progress' ? 'info' :
+                              isOverdue ? 'danger' : 'default'
+                            }>
+                              {isOverdue && obj.status !== 'completed' ? 'Overdue' : obj.status?.replace('_', ' ') || 'pending'}
+                            </Badge>
+                          </div>
+                          {obj.description && (
+                            <p className="text-sm text-gray-600 mb-2">{obj.description}</p>
+                          )}
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            {obj.goal && (
+                              <span className="flex items-center gap-1">
+                                <Target className="h-3 w-3" />
+                                Goal: {obj.goal.title}
+                              </span>
+                            )}
+                            {obj.goal?.plan && (
+                              <span className="flex items-center gap-1">
+                                <Compass className="h-3 w-3" />
+                                {obj.goal.plan.title}
+                              </span>
+                            )}
+                            {obj.due_date && (
+                              <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-medium' : ''}`}>
+                                <Clock className="h-3 w-3" />
+                                Due: {new Date(obj.due_date).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Progress Control */}
+                        <div className="flex flex-col items-end gap-2 min-w-[150px]">
+                          <div className="flex items-center gap-2 w-full">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={obj.progress || 0}
+                              onChange={(e) => {
+                                const newProgress = parseInt(e.target.value);
+                                handleUpdateMyObjectiveProgress(obj.id, newProgress);
+                              }}
+                              disabled={updatingObjective === obj.id || obj.status === 'completed'}
+                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                            />
+                            <span className="text-sm font-medium text-blue-600 w-10 text-right">
+                              {obj.progress || 0}%
+                            </span>
+                          </div>
+                          {obj.status !== 'completed' && (
+                            <button
+                              onClick={() => handleUpdateMyObjectiveProgress(obj.id, 100, 'completed')}
+                              disabled={updatingObjective === obj.id}
+                              className="text-xs px-3 py-1.5 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors disabled:opacity-50"
+                            >
+                              {updatingObjective === obj.id ? 'Updating...' : 'Mark Complete'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Header with Add Button */}
       <div className="flex justify-between items-center mb-6">
@@ -1082,29 +1348,41 @@ export default function StrategicPlansPage() {
                             <div className="mt-3">
                               <div className="flex justify-between text-xs text-gray-500 mb-1">
                                 <span>{goal.objective_count || 0} objectives</span>
-                                <span>{goal.completed_objectives || 0} completed</span>
+                                <span className="font-medium">{goal.progress || 0}% complete</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
-                                  className="bg-green-500 h-1.5 rounded-full transition-all"
-                                  style={{ 
-                                    width: `${goal.objective_count ? ((goal.completed_objectives || 0) / goal.objective_count) * 100 : 0}%` 
-                                  }}
+                                  className={`h-2 rounded-full transition-all ${
+                                    goal.status === 'completed' ? 'bg-green-500' : 
+                                    goal.progress >= 50 ? 'bg-blue-500' : 'bg-amber-500'
+                                  }`}
+                                  style={{ width: `${goal.progress || 0}%` }}
                                 ></div>
                               </div>
                             </div>
                           </div>
                           {canManageCurrentTab() && (
                             <div className="flex gap-1">
+                              {goal.status !== 'completed' && (
+                                <button
+                                  onClick={() => handleMarkGoalComplete(goal)}
+                                  className="p-1 text-gray-400 hover:text-green-600 rounded"
+                                  title="Mark as Complete"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => openEditGoal(goal)}
                                 className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                                title="Edit Goal"
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => handleDeleteGoal(goal.id)}
                                 className="p-1 text-gray-400 hover:text-red-600 rounded"
+                                title="Delete Goal"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -1140,56 +1418,99 @@ export default function StrategicPlansPage() {
                               {goalObjectives[goal.id].map((objective) => (
                                 <div
                                   key={objective.id}
-                                  className={`flex items-start gap-2 p-2 rounded ${
-                                    objective.status === 'completed' ? 'bg-green-100' : 'bg-white'
+                                  className={`p-3 rounded-lg border ${
+                                    objective.status === 'completed' 
+                                      ? 'bg-green-50 border-green-200' 
+                                      : 'bg-white border-gray-200'
                                   }`}
                                 >
-                                  <button
-                                    onClick={() => handleToggleObjectiveStatus(objective)}
-                                    className={`mt-0.5 p-0.5 rounded ${
-                                      objective.status === 'completed'
-                                        ? 'text-green-600'
-                                        : 'text-gray-400'
-                                    }`}
-                                  >
-                                    <CheckCircle className="h-4 w-4" />
-                                  </button>
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`text-sm ${
-                                      objective.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-700'
-                                    }`}>
-                                      {objective.title}
-                                    </p>
-                                    {objective.key_result && (
-                                      <p className="text-xs text-gray-500 mt-0.5">
-                                        Key Result: {objective.key_result}
+                                  <div className="flex items-start gap-3">
+                                    <button
+                                      onClick={() => handleToggleObjectiveStatus(objective)}
+                                      className={`mt-0.5 p-1 rounded-full transition-colors ${
+                                        objective.status === 'completed'
+                                          ? 'text-green-600 bg-green-100'
+                                          : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                                      }`}
+                                      title={objective.status === 'completed' ? 'Mark as pending' : 'Mark as complete'}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-sm font-medium ${
+                                        objective.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'
+                                      }`}>
+                                        {objective.title}
                                       </p>
+                                      {objective.key_result && (
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                          <span className="font-medium">Key Result:</span> {objective.key_result}
+                                        </p>
+                                      )}
+                                      
+                                      {/* Progress bar for objective */}
+                                      {objective.status !== 'completed' && (
+                                        <div className="mt-2">
+                                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                            <span>{objective.progress || 0}% complete</span>
+                                          </div>
+                                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                            <div
+                                              className={`h-1.5 rounded-full transition-all ${
+                                                (objective.progress || 0) >= 50 ? 'bg-blue-500' : 'bg-amber-500'
+                                              }`}
+                                              style={{ width: `${objective.progress || 0}%` }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
+                                        {objective.assignee && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                                            <Users className="h-3 w-3" />
+                                            {objective.assignee.first_name} {objective.assignee.last_name}
+                                          </span>
+                                        )}
+                                        {objective.due_date && (
+                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                                            new Date(objective.due_date) < new Date() && objective.status !== 'completed'
+                                              ? 'bg-red-100 text-red-700'
+                                              : 'bg-gray-100 text-gray-600'
+                                          }`}>
+                                            <Clock className="h-3 w-3" />
+                                            Due: {new Date(objective.due_date).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                        <Badge variant={
+                                          objective.status === 'completed' ? 'success' :
+                                          objective.status === 'in_progress' ? 'info' :
+                                          objective.status === 'cancelled' ? 'danger' :
+                                          objective.status === 'overdue' ? 'warning' : 'default'
+                                        }>
+                                          {objective.status?.replace('_', ' ') || 'pending'}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    {canManageCurrentTab() && (
+                                      <div className="flex gap-1">
+                                        <button
+                                          onClick={() => openEditObjective(objective, goal)}
+                                          className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                                          title="Edit Objective"
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteObjective(objective.id)}
+                                          className="p-1 text-gray-400 hover:text-red-600 rounded"
+                                          title="Delete Objective"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </div>
                                     )}
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                                      {objective.assignee && (
-                                        <span>{objective.assignee.first_name} {objective.assignee.last_name}</span>
-                                      )}
-                                      {objective.due_date && (
-                                        <span>Due: {new Date(objective.due_date).toLocaleDateString()}</span>
-                                      )}
-                                    </div>
                                   </div>
-                                  {canManageCurrentTab() && (
-                                    <div className="flex gap-1">
-                                      <button
-                                        onClick={() => openEditObjective(objective, goal)}
-                                        className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteObjective(objective.id)}
-                                        className="p-1 text-gray-400 hover:text-red-600 rounded"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </button>
-                                    </div>
-                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1246,17 +1567,56 @@ export default function StrategicPlansPage() {
             />
           </div>
 
-          <Select
-            label="Priority"
-            value={goalForm.priority}
-            onChange={(e) => setGoalForm({ ...goalForm, priority: e.target.value as TaskPriority })}
-            options={[
-              { value: 'low', label: 'Low' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'high', label: 'High' },
-              { value: 'urgent', label: 'Urgent' }
-            ]}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Current Value"
+              value={goalForm.current_value}
+              onChange={(e) => setGoalForm({ ...goalForm, current_value: e.target.value })}
+              placeholder="e.g., 350 members"
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={goalForm.progress}
+                onChange={(e) => setGoalForm({ ...goalForm, progress: parseInt(e.target.value) })}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span>
+                <span className="font-medium text-blue-600">{goalForm.progress}%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Priority"
+              value={goalForm.priority}
+              onChange={(e) => setGoalForm({ ...goalForm, priority: e.target.value as TaskPriority })}
+              options={[
+                { value: 'low', label: 'Low' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'high', label: 'High' },
+                { value: 'urgent', label: 'Urgent' }
+              ]}
+            />
+            <Select
+              label="Status"
+              value={goalForm.status}
+              onChange={(e) => setGoalForm({ ...goalForm, status: e.target.value as TaskStatus })}
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'overdue', label: 'Overdue' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
@@ -1308,22 +1668,62 @@ export default function StrategicPlansPage() {
             placeholder="What is the measurable outcome?"
           />
 
-          <Select
-            label="Assign To"
-            value={objectiveForm.assigned_to}
-            onChange={(e) => setObjectiveForm({ ...objectiveForm, assigned_to: e.target.value })}
-            options={[
-              { value: '', label: 'Unassigned' },
-              ...members.map(m => ({ value: m.id, label: `${m.first_name} ${m.last_name}` }))
-            ]}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Assign To"
+              value={objectiveForm.assigned_to}
+              onChange={(e) => setObjectiveForm({ ...objectiveForm, assigned_to: e.target.value })}
+              options={[
+                { value: '', label: 'Unassigned' },
+                ...members.map(m => ({ value: m.id, label: `${m.first_name} ${m.last_name}` }))
+              ]}
+            />
+            <Input
+              label="Due Date"
+              type="date"
+              value={objectiveForm.due_date}
+              onChange={(e) => setObjectiveForm({ ...objectiveForm, due_date: e.target.value })}
+            />
+          </div>
 
-          <Input
-            label="Due Date"
-            type="date"
-            value={objectiveForm.due_date}
-            onChange={(e) => setObjectiveForm({ ...objectiveForm, due_date: e.target.value })}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Status"
+              value={objectiveForm.status}
+              onChange={(e) => setObjectiveForm({ ...objectiveForm, status: e.target.value as TaskStatus })}
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'overdue', label: 'Overdue' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={objectiveForm.progress}
+                onChange={(e) => setObjectiveForm({ ...objectiveForm, progress: parseInt(e.target.value) })}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span>
+                <span className="font-medium text-blue-600">{objectiveForm.progress}%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+
+          {objectiveForm.assigned_to && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> The assigned person will be able to see this objective in their dashboard and update its progress.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 mt-6">

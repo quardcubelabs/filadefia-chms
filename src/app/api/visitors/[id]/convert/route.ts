@@ -39,19 +39,41 @@ export async function POST(
     }
 
     // Create the member record from visitor data
+    // Generate member number in the same format as regular members: FCC + sequential number
+    const { data: lastMember } = await adminClient
+      .from('members')
+      .select('member_number')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    let memberNumber: string;
+    if (!lastMember || lastMember.length === 0) {
+      memberNumber = 'FCC1';
+    } else {
+      // Extract the number from the last member number (e.g., FCC124 -> 124)
+      const lastNumberStr = lastMember[0].member_number.replace(/\D/g, '');
+      const lastNumber = parseInt(lastNumberStr) || 0;
+      memberNumber = `FCC${lastNumber + 1}`;
+    }
+    
     const memberData = {
+      member_number: memberNumber,
       first_name: visitor.first_name,
       last_name: visitor.last_name,
-      phone: visitor.phone,
-      email: visitor.email,
-      address: visitor.address,
-      gender: visitor.gender,
-      date_of_birth: visitor.date_of_birth,
-      marital_status: visitor.marital_status,
-      occupation: visitor.occupation,
-      membership_status: 'new_convert',
+      middle_name: visitor.middle_name || null,
+      phone: visitor.phone || '',
+      email: visitor.email || null,
+      address: visitor.address || '',
+      gender: visitor.gender || 'male',
+      date_of_birth: visitor.date_of_birth || new Date().toISOString().split('T')[0],
+      marital_status: visitor.marital_status || 'single',
+      occupation: visitor.occupation || null,
+      employer: visitor.employer || null,
+      emergency_contact_name: visitor.emergency_contact_name || 'Not provided',
+      emergency_contact_phone: visitor.emergency_contact_phone || 'Not provided',
+      baptism_date: visitor.baptism_date || null,
       membership_date: new Date().toISOString().split('T')[0],
-      is_active: true,
+      status: 'active',
       notes: visitor.notes ? `Converted from visitor. Original notes: ${visitor.notes}` : 'Converted from visitor'
     };
 

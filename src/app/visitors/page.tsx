@@ -54,10 +54,14 @@ export default function VisitorsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState<VisitorWithProfile | null>(null);
+  const [visitorToConvert, setVisitorToConvert] = useState<VisitorWithProfile | null>(null);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
+    middle_name: '',
     phone: '',
     email: '',
     address: '',
@@ -65,6 +69,10 @@ export default function VisitorsPage() {
     date_of_birth: '',
     marital_status: '',
     occupation: '',
+    employer: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    baptism_date: '',
     how_did_you_hear: '',
     visited_date: new Date().toISOString().split('T')[0],
     notes: ''
@@ -234,11 +242,17 @@ export default function VisitorsPage() {
     }
   };
 
-  const handleConvertToMember = async (visitor: VisitorWithProfile) => {
-    if (!confirm(`Convert ${visitor.first_name} ${visitor.last_name} to a member?\n\nThis will create a new member record with their information.`)) return;
+  const openConvertModal = (visitor: VisitorWithProfile) => {
+    setVisitorToConvert(visitor);
+    setIsConvertModalOpen(true);
+  };
+
+  const handleConvertToMember = async () => {
+    if (!visitorToConvert) return;
     
     try {
-      const response = await fetch(`/api/visitors/${visitor.id}/convert`, {
+      setConverting(true);
+      const response = await fetch(`/api/visitors/${visitorToConvert.id}/convert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -250,10 +264,14 @@ export default function VisitorsPage() {
       
       await fetchVisitors();
       await fetchStats();
-      toast.success('Converted to Member', `${visitor.first_name} ${visitor.last_name} has been added to members!`);
+      toast.success('Converted to Member', `${visitorToConvert.first_name} ${visitorToConvert.last_name} has been added to members!`);
+      setIsConvertModalOpen(false);
+      setVisitorToConvert(null);
     } catch (err: any) {
       console.error('Error converting visitor:', err);
       toast.error('Failed to Convert', err.message);
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -262,6 +280,7 @@ export default function VisitorsPage() {
     setFormData({
       first_name: visitor.first_name,
       last_name: visitor.last_name,
+      middle_name: visitor.middle_name || '',
       phone: visitor.phone || '',
       email: visitor.email || '',
       address: visitor.address || '',
@@ -269,6 +288,10 @@ export default function VisitorsPage() {
       date_of_birth: visitor.date_of_birth || '',
       marital_status: visitor.marital_status || '',
       occupation: visitor.occupation || '',
+      employer: visitor.employer || '',
+      emergency_contact_name: visitor.emergency_contact_name || '',
+      emergency_contact_phone: visitor.emergency_contact_phone || '',
+      baptism_date: visitor.baptism_date || '',
       how_did_you_hear: visitor.how_did_you_hear || '',
       visited_date: visitor.visited_date,
       notes: visitor.notes || ''
@@ -279,6 +302,7 @@ export default function VisitorsPage() {
     setFormData({
       first_name: '',
       last_name: '',
+      middle_name: '',
       phone: '',
       email: '',
       address: '',
@@ -286,6 +310,10 @@ export default function VisitorsPage() {
       date_of_birth: '',
       marital_status: '',
       occupation: '',
+      employer: '',
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
+      baptism_date: '',
       how_did_you_hear: '',
       visited_date: new Date().toISOString().split('T')[0],
       notes: ''
@@ -344,43 +372,43 @@ export default function VisitorsPage() {
         {/* Main Content Area */}
         <main className="p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-          {/* Stats Cards - Dashboard Style with Pastel Colors */}
+          {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {/* Total Visitors Card - Blue Pastel */}
-              <div className={`${darkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-blue-100 to-blue-50'} rounded-3xl p-6 shadow-sm`}>
-                <div className={`inline-flex p-3 ${darkMode ? 'bg-blue-700/50' : 'bg-white'} rounded-xl mb-4`}>
-                  <Users className={`h-6 w-6 ${darkMode ? 'text-white' : 'text-blue-600'}`} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6">
+              {/* Total Visitors Card */}
+              <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
-                <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-blue-100' : 'text-gray-600'}`}>Total Visitors</p>
-                <h3 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.total_visitors}</h3>
+                <p className="text-xs text-gray-600 mb-1">Total Visitors</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.total_visitors}</h3>
               </div>
 
-              {/* New This Month Card - Cyan Pastel */}
-              <div className={`${darkMode ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} rounded-3xl p-6 shadow-sm`}>
-                <div className={`inline-flex p-3 ${darkMode ? 'bg-cyan-700/50' : 'bg-white'} rounded-xl mb-4`}>
-                  <UserPlus className={`h-6 w-6 ${darkMode ? 'text-white' : 'text-cyan-600'}`} />
+              {/* New This Month Card */}
+              <div className="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
                 </div>
-                <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-cyan-100' : 'text-gray-600'}`}>New This Month</p>
-                <h3 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.new_this_month}</h3>
+                <p className="text-xs text-gray-600 mb-1">New This Month</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.new_this_month}</h3>
               </div>
 
-              {/* Converted Card - Purple Pastel */}
-              <div className={`${darkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700' : 'bg-gradient-to-br from-purple-100 to-purple-50'} rounded-3xl p-6 shadow-sm`}>
-                <div className={`inline-flex p-3 ${darkMode ? 'bg-purple-700/50' : 'bg-white'} rounded-xl mb-4`}>
-                  <CheckCircle className={`h-6 w-6 ${darkMode ? 'text-white' : 'text-purple-600'}`} />
+              {/* Converted Card */}
+              <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
-                <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-purple-100' : 'text-gray-600'}`}>Converted</p>
-                <h3 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.converted}</h3>
+                <p className="text-xs text-gray-600 mb-1">Converted</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.converted}</h3>
               </div>
 
-              {/* Conversion Rate Card - Green Pastel */}
-              <div className={`${darkMode ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-green-100 to-green-50'} rounded-3xl p-6 shadow-sm`}>
-                <div className={`inline-flex p-3 ${darkMode ? 'bg-green-700/50' : 'bg-white'} rounded-xl mb-4`}>
-                  <TrendingUp className={`h-6 w-6 ${darkMode ? 'text-white' : 'text-green-600'}`} />
+              {/* Conversion Rate Card */}
+              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-sm min-w-0">
+                <div className="inline-flex p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl mb-2 sm:mb-3">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-green-100' : 'text-gray-600'}`}>Conversion Rate</p>
-                <h3 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.conversion_rate.toFixed(1)}%</h3>
+                <p className="text-xs text-gray-600 mb-1">Conversion Rate</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.conversion_rate.toFixed(1)}%</h3>
               </div>
             </div>
           )}
@@ -549,7 +577,7 @@ export default function VisitorsPage() {
                             )}
                             {!visitor.converted && (
                               <button
-                                onClick={() => handleConvertToMember(visitor)}
+                                onClick={() => openConvertModal(visitor)}
                                 className={`p-2 ${darkMode ? 'hover:bg-purple-900/50' : 'hover:bg-purple-50'} rounded-lg text-purple-600 transition-colors`}
                                 title="Convert to member"
                               >
@@ -587,13 +615,20 @@ export default function VisitorsPage() {
             </div>
 
             <form onSubmit={selectedVisitor ? handleUpdateVisitor : handleAddVisitor} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <input
                   type="text"
                   placeholder="First Name *"
                   value={formData.first_name}
                   onChange={(e) => setFormData({...formData, first_name: e.target.value})}
                   required
+                  className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                <input
+                  type="text"
+                  placeholder="Middle Name"
+                  value={formData.middle_name}
+                  onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
                   className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 />
                 <input
@@ -609,9 +644,10 @@ export default function VisitorsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="tel"
-                  placeholder="Phone"
+                  placeholder="Phone *"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  required
                   className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 />
                 <input
@@ -625,9 +661,10 @@ export default function VisitorsPage() {
 
               <input
                 type="text"
-                placeholder="Address"
+                placeholder="Address *"
                 value={formData.address}
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
+                required
                 className={`w-full px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
 
@@ -635,25 +672,30 @@ export default function VisitorsPage() {
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                  required
                   className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 >
-                  <option value="">Gender</option>
+                  <option value="">Gender *</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                 </select>
-                <input
-                  type="date"
-                  placeholder="Date of Birth"
-                  value={formData.date_of_birth}
-                  onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
-                  className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
+                <div>
+                  <label className={`block text-xs ${textSecondary} mb-1`}>Date of Birth *</label>
+                  <input
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                    required
+                    className={`w-full px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
                 <select
                   value={formData.marital_status}
                   onChange={(e) => setFormData({...formData, marital_status: e.target.value})}
+                  required
                   className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 >
-                  <option value="">Marital Status</option>
+                  <option value="">Marital Status *</option>
                   <option value="single">Single</option>
                   <option value="married">Married</option>
                   <option value="divorced">Divorced</option>
@@ -671,10 +713,49 @@ export default function VisitorsPage() {
                 />
                 <input
                   type="text"
+                  placeholder="Employer"
+                  value={formData.employer}
+                  onChange={(e) => setFormData({...formData, employer: e.target.value})}
+                  className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              <div className={`p-4 border ${borderColor} rounded-xl`}>
+                <h4 className={`text-sm font-medium ${textPrimary} mb-3`}>Emergency Contact</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Emergency Contact Name"
+                    value={formData.emergency_contact_name}
+                    onChange={(e) => setFormData({...formData, emergency_contact_name: e.target.value})}
+                    className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Emergency Contact Phone"
+                    value={formData.emergency_contact_phone}
+                    onChange={(e) => setFormData({...formData, emergency_contact_phone: e.target.value})}
+                    className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-xs ${textSecondary} mb-1`}>Baptism Date (if baptized)</label>
+                  <input
+                    type="date"
+                    value={formData.baptism_date}
+                    onChange={(e) => setFormData({...formData, baptism_date: e.target.value})}
+                    className={`w-full px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+                <input
+                  type="text"
                   placeholder="How did you hear about us?"
                   value={formData.how_did_you_hear}
                   onChange={(e) => setFormData({...formData, how_did_you_hear: e.target.value})}
-                  className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  className={`px-4 py-2.5 ${cardBg} ${textPrimary} border ${borderColor} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 mt-5`}
                 />
               </div>
 
@@ -718,6 +799,57 @@ export default function VisitorsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Convert to Member Confirmation Modal */}
+      {isConvertModalOpen && visitorToConvert && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className={`${cardBg} rounded-2xl max-w-md w-full shadow-xl`}>
+            <div className={`p-6 border-b ${borderColor}`}>
+              <h2 className={`text-xl font-bold ${textPrimary}`}>Convert to Member</h2>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <UserPlus className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className={`font-medium ${textPrimary}`}>
+                    {visitorToConvert.first_name} {visitorToConvert.last_name}
+                  </p>
+                  <p className={`text-sm ${textSecondary}`}>
+                    {visitorToConvert.phone || visitorToConvert.email || 'No contact info'}
+                  </p>
+                </div>
+              </div>
+              
+              <p className={`${textSecondary} mb-6`}>
+                Are you sure you want to convert this visitor to a member? This will create a new member record with their information.
+              </p>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConvertToMember}
+                  disabled={converting}
+                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 font-medium"
+                >
+                  {converting ? 'Converting...' : 'Yes, Convert'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsConvertModalOpen(false);
+                    setVisitorToConvert(null);
+                  }}
+                  disabled={converting}
+                  className={`flex-1 px-4 py-2.5 border ${borderColor} ${textPrimary} rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
