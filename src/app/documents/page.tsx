@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import jsPDF from 'jspdf';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useZoneAccess } from '@/hooks/useZoneAccess';
@@ -158,7 +159,11 @@ export default function DocumentsPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isViewReportModalOpen, setIsViewReportModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MeetingMinutes | Report | null>(null);
+  const [viewingMinutes, setViewingMinutes] = useState<MeetingMinutes | null>(null);
+  const [viewingReport, setViewingReport] = useState<Report | null>(null);
   
   // Form data for meeting minutes
   const [minutesForm, setMinutesForm] = useState({
@@ -730,6 +735,343 @@ export default function DocumentsPage() {
     }
   };
 
+  // Handle view meeting minutes
+  const handleViewMinutes = (minute: MeetingMinutes) => {
+    setViewingMinutes(minute);
+    setIsViewModalOpen(true);
+  };
+
+  // Handle download meeting minutes as PDF
+  const handleDownloadMinutesPDF = (minute: MeetingMinutes) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPosition = margin;
+
+      // Header
+      doc.setFillColor(139, 0, 0); // Dark red color
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MEETING MINUTES', pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(minute.department?.name || 'Department Meeting', pageWidth / 2, 32, { align: 'center' });
+
+      yPosition = 55;
+      doc.setTextColor(0, 0, 0);
+
+      // Meeting Details Section
+      doc.setFillColor(245, 245, 245);
+      doc.rect(margin, yPosition, contentWidth, 30, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(margin, yPosition, contentWidth, 30, 'S');
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Meeting Date:', margin + 5, yPosition + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(formatDate(minute.meeting_date), margin + 40, yPosition + 10);
+
+      if (minute.next_meeting_date) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Next Meeting:', margin + 5, yPosition + 22);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatDate(minute.next_meeting_date), margin + 40, yPosition + 22);
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Status:', margin + contentWidth / 2, yPosition + 10);
+      doc.setFont('helvetica', 'normal');
+      const status = minute.approved_by ? 'Approved' : 'Pending Approval';
+      if (minute.approved_by) {
+        doc.setTextColor(0, 128, 0);
+      } else {
+        doc.setTextColor(255, 165, 0);
+      }
+      doc.text(status, margin + contentWidth / 2 + 20, yPosition + 10);
+      doc.setTextColor(0, 0, 0);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Recorded By:', margin + contentWidth / 2, yPosition + 22);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${minute.recorder?.first_name || ''} ${minute.recorder?.last_name || ''}`.trim() || 'N/A', margin + contentWidth / 2 + 35, yPosition + 22);
+
+      yPosition += 40;
+
+      // Agenda Section
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 0, 0);
+      doc.text('AGENDA', margin, yPosition);
+      doc.setDrawColor(139, 0, 0);
+      doc.line(margin, yPosition + 2, margin + 30, yPosition + 2);
+      yPosition += 10;
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const agendaLines = doc.splitTextToSize(minute.agenda, contentWidth);
+      agendaLines.forEach((line: string) => {
+        if (yPosition > pageHeight - margin - 20) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        doc.text(line, margin, yPosition);
+        yPosition += 6;
+      });
+
+      yPosition += 10;
+
+      // Minutes Section
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 0, 0);
+      doc.text('MINUTES', margin, yPosition);
+      doc.line(margin, yPosition + 2, margin + 35, yPosition + 2);
+      yPosition += 10;
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const minutesLines = doc.splitTextToSize(minute.minutes, contentWidth);
+      minutesLines.forEach((line: string) => {
+        if (yPosition > pageHeight - margin - 20) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        doc.text(line, margin, yPosition);
+        yPosition += 6;
+      });
+
+      yPosition += 10;
+
+      // Attendees Section
+      if (minute.attendee_details && minute.attendee_details.length > 0) {
+        if (yPosition > pageHeight - margin - 40) {
+          doc.addPage();
+          yPosition = margin;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(139, 0, 0);
+        doc.text('ATTENDEES', margin, yPosition);
+        doc.line(margin, yPosition + 2, margin + 45, yPosition + 2);
+        yPosition += 10;
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        
+        minute.attendee_details.forEach((attendee, index) => {
+          if (yPosition > pageHeight - margin - 10) {
+            doc.addPage();
+            yPosition = margin;
+          }
+          doc.text(`${index + 1}. ${attendee.first_name} ${attendee.last_name}`, margin + 5, yPosition);
+          yPosition += 6;
+        });
+      }
+
+      // Footer
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+          margin,
+          pageHeight - 10
+        );
+        doc.text(
+          `Page ${i} of ${totalPages}`,
+          pageWidth - margin,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+      }
+
+      // Download the PDF
+      const fileName = `meeting-minutes-${minute.department?.name?.replace(/\s+/g, '-').toLowerCase() || 'dept'}-${minute.meeting_date}.pdf`;
+      doc.save(fileName);
+      setSuccess('Meeting minutes downloaded successfully!');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      setError('Failed to generate PDF. Please try again.');
+    }
+  };
+
+  // Handle view report
+  const handleViewReport = (report: Report) => {
+    setViewingReport(report);
+    setIsViewReportModalOpen(true);
+  };
+
+  // Handle download report as PDF
+  const handleDownloadReportPDF = (report: Report) => {
+    // If report has a file_url, download it directly
+    if (report.file_url) {
+      const link = document.createElement('a');
+      link.href = report.file_url;
+      link.download = report.data?.filename || `report-${report.id}.pdf`;
+      link.click();
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPosition = margin;
+
+      // Header
+      doc.setFillColor(30, 64, 175); // Blue
+      doc.rect(0, 0, pageWidth, 40, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CHURCH REPORT', pageWidth / 2, 18, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(report.title, pageWidth / 2, 30, { align: 'center' });
+
+      yPosition = 55;
+      doc.setTextColor(0, 0, 0);
+
+      // Report Details Box
+      doc.setFillColor(245, 245, 245);
+      doc.rect(margin, yPosition, contentWidth, 35, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(margin, yPosition, contentWidth, 35, 'S');
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Report Type:', margin + 5, yPosition + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(report.type.charAt(0).toUpperCase() + report.type.slice(1), margin + 38, yPosition + 10);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Department:', margin + 5, yPosition + 20);
+      doc.setFont('helvetica', 'normal');
+      const deptName = report.department?.name || report.zone?.name || 'Church-wide';
+      doc.text(deptName, margin + 38, yPosition + 20);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Date:', margin + contentWidth / 2, yPosition + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(formatDate(report.created_at), margin + contentWidth / 2 + 18, yPosition + 10);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Created By:', margin + contentWidth / 2, yPosition + 20);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${report.generator?.first_name || ''} ${report.generator?.last_name || ''}`.trim() || 'N/A', margin + contentWidth / 2 + 32, yPosition + 20);
+
+      if (report.period_start && report.period_end) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Period:', margin + 5, yPosition + 30);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${new Date(report.period_start).toLocaleDateString()} - ${new Date(report.period_end).toLocaleDateString()}`, margin + 28, yPosition + 30);
+      }
+
+      yPosition += 45;
+
+      // Stats Section (if available)
+      if (report.data && (report.data.totalMembers !== undefined || report.data.totalIncome !== undefined)) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 64, 175);
+        doc.text('KEY STATISTICS', margin, yPosition);
+        doc.line(margin, yPosition + 2, margin + 55, yPosition + 2);
+        yPosition += 12;
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        if (report.data.totalMembers !== undefined) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Total Members:', margin + 5, yPosition);
+          doc.setFont('helvetica', 'normal');
+          doc.text(String(report.data.totalMembers), margin + 45, yPosition);
+          yPosition += 8;
+        }
+        if (report.data.totalIncome !== undefined) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Total Income:', margin + 5, yPosition);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`TZS ${report.data.totalIncome.toLocaleString()}`, margin + 45, yPosition);
+          yPosition += 8;
+        }
+        if (report.data.totalExpenses !== undefined) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Total Expenses:', margin + 5, yPosition);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`TZS ${report.data.totalExpenses.toLocaleString()}`, margin + 45, yPosition);
+          yPosition += 8;
+        }
+        yPosition += 8;
+      }
+
+      // Content Section
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text('REPORT CONTENT', margin, yPosition);
+      doc.line(margin, yPosition + 2, margin + 55, yPosition + 2);
+      yPosition += 12;
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const content = report.content || report.data?.content || report.description || 'No content available';
+      const contentLines = doc.splitTextToSize(content, contentWidth);
+      contentLines.forEach((line: string) => {
+        if (yPosition > pageHeight - margin - 20) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        doc.text(line, margin, yPosition);
+        yPosition += 6;
+      });
+
+      // Footer
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+          margin,
+          pageHeight - 10
+        );
+        doc.text(
+          `Page ${i} of ${totalPages}`,
+          pageWidth - margin,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+      }
+
+      const fileName = `report-${report.title.replace(/\s+/g, '-').toLowerCase()}-${formatDate(report.created_at).replace(/\s+/g, '-')}.pdf`;
+      doc.save(fileName);
+      setSuccess('Report downloaded successfully!');
+    } catch (err) {
+      console.error('Error generating report PDF:', err);
+      setError('Failed to generate PDF. Please try again.');
+    }
+  };
+
   const filteredMinutes = meetingMinutes.filter(minute => {
     const matchesSearch = minute.agenda.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          minute.minutes.toLowerCase().includes(searchTerm.toLowerCase());
@@ -945,99 +1287,82 @@ export default function DocumentsPage() {
                     }}
                   />
                 ) : (
-                  <div className="space-y-3 md:space-y-4">
-                    {filteredMinutes.map((minute) => (
-                      <Card key={minute.id} className="hover:shadow-md transition-shadow">
-                        <CardBody className="p-3 md:p-6">
-                          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-                            <div className="flex-1">
-                              <div className="flex flex-col md:flex-row md:items-center space-y-1.5 md:space-y-0 md:space-x-3 mb-2 md:mb-2">
-                                <h3 className="font-semibold text-sm md:text-lg text-gray-900">
-                                  {minute.department?.name} Meeting
-                                </h3>
-                                <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
-                                  <Badge variant="default" className="text-[10px] md:text-xs">
-                                    {formatDate(minute.meeting_date)}
-                                  </Badge>
-                                  {minute.approved_by ? (
-                                    <Badge variant="success" className="text-[10px] md:text-xs">
-                                      <CheckCircle className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                                      Approved
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="warning" className="text-[10px] md:text-xs">
-                                      <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                                      Pending
-                                    </Badge>
-                                  )}
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meeting</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Attendees</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {filteredMinutes.map((minute) => (
+                            <tr key={minute.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-red-100 text-red-600">
+                                    <FileText className="h-5 w-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-gray-900 truncate">{minute.department?.name} Meeting</p>
+                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{minute.agenda}</p>
+                                  </div>
                                 </div>
-                              </div>
-                              
-                              <div className="mb-3 md:mb-4">
-                                <h4 className="font-medium text-xs md:text-sm text-gray-900 mb-1">Agenda:</h4>
-                                <p className="text-gray-600 text-xs md:text-sm line-clamp-2">
-                                  {minute.agenda}
-                                </p>
-                              </div>
-                              
-                              <div className="mb-3 md:mb-4">
-                                <h4 className="font-medium text-xs md:text-sm text-gray-900 mb-1">Minutes:</h4>
-                                <p className="text-gray-600 text-xs md:text-sm line-clamp-3">
-                                  {minute.minutes}
-                                </p>
-                              </div>
-                              
-                              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0 text-[10px] md:text-sm text-gray-500">
-                                <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                                  <span className="text-[10px] md:text-sm">
-                                    By {minute.recorder?.first_name} {minute.recorder?.last_name}
-                                  </span>
-                                  {minute.attendee_details && (
-                                    <div className="flex items-center space-x-1">
-                                      <Users className="h-3 w-3 md:h-4 md:w-4" />
-                                      <span>{minute.attendee_details.length}</span>
-                                    </div>
-                                  )}
-                                  {minute.next_meeting_date && (
-                                    <div className="flex items-center space-x-1">
-                                      <Calendar className="h-3 w-3 md:h-4 md:w-4" />
-                                      <span className="hidden md:inline">Next: {formatDate(minute.next_meeting_date)}</span>
-                                      <span className="md:hidden">{formatDate(minute.next_meeting_date)}</span>
-                                    </div>
-                                  )}
-                                  {minute.attachment_url && (
-                                    <a 
-                                      href={minute.attachment_url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-                                    >
-                                      <File className="h-3 w-3 md:h-4 md:w-4" />
-                                      <span className="hidden md:inline">{minute.attachment_name || 'Attachment'}</span>
-                                    </a>
-                                  )}
+                              </td>
+                              <td className="px-4 py-4 hidden sm:table-cell">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  {formatDate(minute.meeting_date)}
                                 </div>
-                                <div className="flex space-x-0.5 md:space-x-1">
+                              </td>
+                              <td className="px-4 py-4 hidden md:table-cell">
+                                <div className="text-sm text-gray-600">
+                                  {minute.recorder?.first_name} {minute.recorder?.last_name}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden lg:table-cell">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Users className="h-4 w-4 mr-2" />
+                                  {minute.attendee_details?.length || 0}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                {minute.approved_by ? (
+                                  <Badge variant="success">Approved</Badge>
+                                ) : (
+                                  <Badge variant="warning">Pending</Badge>
+                                )}
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex justify-end space-x-1">
                                   {!minute.approved_by && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleApproveMinutes(minute.id)}
-                                      icon={<CheckCircle className="h-3 w-3 md:h-4 md:w-4" />}
-                                      className="text-green-600 hover:text-green-700 p-1 md:p-2"
+                                      icon={<CheckCircle className="h-4 w-4" />}
+                                      className="text-green-600 hover:text-green-700"
+                                      title="Approve"
                                     />
                                   )}
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    icon={<Eye className="h-3 w-3 md:h-4 md:w-4" />}
-                                    className="p-1 md:p-2"
+                                    onClick={() => handleViewMinutes(minute)}
+                                    icon={<Eye className="h-4 w-4" />}
+                                    title="View"
                                   />
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    icon={<Download className="h-3 w-3 md:h-4 md:w-4" />}
-                                    className="p-1 md:p-2"
+                                    onClick={() => handleDownloadMinutesPDF(minute)}
+                                    icon={<Download className="h-4 w-4" />}
+                                    title="Download PDF"
                                   />
                                   <Button
                                     variant="ghost"
@@ -1046,16 +1371,17 @@ export default function DocumentsPage() {
                                       setSelectedItem(minute);
                                       setIsDeleteModalOpen(true);
                                     }}
-                                    icon={<Trash2 className="h-3 w-3 md:h-4 md:w-4" />}
-                                    className="text-red-600 hover:text-red-700 p-1 md:p-2"
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:text-red-700"
+                                    title="Delete"
                                   />
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    ))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </>
@@ -1101,136 +1427,110 @@ export default function DocumentsPage() {
                     }}
                   />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
-                    {filteredReports.map((report) => (
-                      <Card key={report.id} className="hover:shadow-lg transition-shadow">
-                        <CardBody className="p-3 md:p-6">
-                          <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <div className="flex items-center space-x-1.5 md:space-x-2">
-                              {getFileIcon(report.file_url || 'report.pdf')}
-                              <Badge 
-                                variant={
-                                  report.type === 'annual' ? 'primary' :
-                                  report.type === 'quarterly' ? 'info' :
-                                  'success'
-                                }
-                                className="text-[10px] md:text-xs"
-                              >
-                                {report.type.toUpperCase()}
-                              </Badge>
-                              {report.source === 'generated' && (
-                                <Badge variant="warning" className="text-[10px] md:text-xs">
-                                  Auto
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Department</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Created</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {filteredReports.map((report) => (
+                            <tr key={report.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-100 text-blue-600">
+                                    <Folder className="h-5 w-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-gray-900 truncate">{report.title}</p>
+                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                                      {report.description || report.data?.content || 'No description'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden sm:table-cell">
+                                <Badge 
+                                  variant={
+                                    report.type === 'annual' ? 'primary' :
+                                    report.type === 'quarterly' ? 'info' :
+                                    'success'
+                                  }
+                                >
+                                  {report.type.toUpperCase()}
                                 </Badge>
-                              )}
-                            </div>
-                            <div className="flex space-x-0.5 md:space-x-1">
-                              {report.file_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => window.open(report.file_url, '_blank')}
-                                  icon={<Eye className="h-3 w-3 md:h-4 md:w-4" />}
-                                  title="View PDF"
-                                  className="p-1 md:p-2"
-                                />
-                              )}
-                              {report.file_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const link = document.createElement('a');
-                                    link.href = report.file_url!;
-                                    link.download = report.data?.filename || `report-${report.id}.pdf`;
-                                    link.click();
-                                  }}
-                                  icon={<Download className="h-3 w-3 md:h-4 md:w-4" />}
-                                  title="Download PDF"
-                                  className="p-1 md:p-2"
-                                />
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedItem(report);
-                                  setIsDeleteModalOpen(true);
-                                }}
-                                icon={<Trash2 className="h-3 w-3 md:h-4 md:w-4" />}
-                                className="text-red-600 hover:text-red-700 p-1 md:p-2"
-                                title="Delete Report"
-                              />
-                            </div>
-                          </div>
-
-                          <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-2">
-                            {report.title}
-                          </h3>
-
-                          {/* Show department or zone badge */}
-                          <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-3">
-                            {report.department ? (
-                              <Badge variant="default" className="text-[10px] md:text-xs">
-                                <Building2 className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                                {report.department.name}
-                              </Badge>
-                            ) : report.zone ? (
-                              <Badge variant="info" className="text-[10px] md:text-xs">
-                                <Users className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                                {report.zone.name} Zone
-                              </Badge>
-                            ) : (
-                              <Badge variant="success" className="text-[10px] md:text-xs">
-                                Church-wide
-                              </Badge>
-                            )}
-                            
-                            {/* Show period if available */}
-                            {report.period_start && report.period_end && (
-                              <Badge variant="default" className="text-[10px] md:text-xs">
-                                <Calendar className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                                <span className="hidden md:inline">{new Date(report.period_start).toLocaleDateString()} - {new Date(report.period_end).toLocaleDateString()}</span>
-                                <span className="md:hidden">{new Date(report.period_start).toLocaleDateString('en-US', {month: 'short', year: '2-digit'})}</span>
-                              </Badge>
-                            )}
-                          </div>
-
-                          <p className="text-gray-600 text-xs md:text-sm mb-3 md:mb-4 line-clamp-3">
-                            {report.description || report.data?.content || 'No description available'}
-                          </p>
-
-                          {/* Show report stats if available */}
-                          {report.data && (report.data.totalMembers || report.data.totalIncome) && (
-                            <div className="flex gap-2 md:gap-4 text-[10px] md:text-xs text-gray-500 mb-2 md:mb-3 bg-gray-50 p-1.5 md:p-2 rounded">
-                              {report.data.totalMembers !== undefined && (
-                                <span>
-                                  <Users className="h-2.5 w-2.5 md:h-3 md:w-3 inline mr-0.5 md:mr-1" />
-                                  {report.data.totalMembers}
-                                </span>
-                              )}
-                              {report.data.totalIncome !== undefined && (
-                                <span>
-                                  <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 inline mr-0.5 md:mr-1" />
-                                  TZS {(report.data.totalIncome / 1000).toFixed(0)}K
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="text-[10px] md:text-sm text-gray-500">
-                            <div className="flex justify-between items-center">
-                              <span>
-                                By {report.generator?.first_name} {report.generator?.last_name}
-                              </span>
-                              <span>
-                                {formatDate(report.created_at)}
-                              </span>
-                            </div>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    ))}
+                              </td>
+                              <td className="px-4 py-4 hidden md:table-cell">
+                                <div className="text-sm text-gray-600">
+                                  {report.department ? (
+                                    <span className="flex items-center">
+                                      <Building2 className="h-4 w-4 mr-1" />
+                                      {report.department.name}
+                                    </span>
+                                  ) : report.zone ? (
+                                    <span className="flex items-center">
+                                      <MapPin className="h-4 w-4 mr-1" />
+                                      {report.zone.name}
+                                    </span>
+                                  ) : (
+                                    <span>Church-wide</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden lg:table-cell">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  {formatDate(report.created_at)}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                {report.source === 'generated' ? (
+                                  <Badge variant="warning">Auto</Badge>
+                                ) : (
+                                  <Badge variant="default">Manual</Badge>
+                                )}
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex justify-end space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewReport(report)}
+                                    icon={<Eye className="h-4 w-4" />}
+                                    title="View"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDownloadReportPDF(report)}
+                                    icon={<Download className="h-4 w-4" />}
+                                    title="Download PDF"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedItem(report);
+                                      setIsDeleteModalOpen(true);
+                                    }}
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:text-red-700"
+                                    title="Delete"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </>
@@ -1462,6 +1762,317 @@ export default function DocumentsPage() {
             Create Report
           </Button>
         </div>
+      </Modal>
+
+      {/* View Meeting Minutes Modal */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setViewingMinutes(null);
+        }}
+        title="Meeting Minutes Details"
+        size="lg"
+      >
+        {viewingMinutes && (
+          <div className="space-y-4 sm:space-y-6">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6">
+              <h2 className="text-lg sm:text-xl font-bold mb-2">
+                {viewingMinutes.department?.name} Meeting
+              </h2>
+              <div className="flex flex-wrap gap-3 text-sm opacity-90">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(viewingMinutes.meeting_date)}</span>
+                </div>
+                {viewingMinutes.approved_by ? (
+                  <div className="flex items-center gap-1 bg-green-500 bg-opacity-30 px-2 py-0.5 rounded">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Approved</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 bg-yellow-500 bg-opacity-30 px-2 py-0.5 rounded">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Pending Approval</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Meeting Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Recorded By</label>
+                <p className="text-sm font-medium text-gray-900 mt-1">
+                  {viewingMinutes.recorder?.first_name} {viewingMinutes.recorder?.last_name}
+                </p>
+              </div>
+              {viewingMinutes.next_meeting_date && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Next Meeting</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {formatDate(viewingMinutes.next_meeting_date)}
+                  </p>
+                </div>
+              )}
+              {viewingMinutes.approved_by && viewingMinutes.approver && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Approved By</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingMinutes.approver.first_name} {viewingMinutes.approver.last_name}
+                  </p>
+                </div>
+              )}
+              {viewingMinutes.approved_at && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Approved On</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {formatDate(viewingMinutes.approved_at)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Agenda Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-red-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Agenda
+              </h3>
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingMinutes.agenda}</p>
+              </div>
+            </div>
+
+            {/* Minutes Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-red-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Minutes
+              </h3>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingMinutes.minutes}</p>
+              </div>
+            </div>
+
+            {/* Attendees Section */}
+            {viewingMinutes.attendee_details && viewingMinutes.attendee_details.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-red-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Attendees ({viewingMinutes.attendee_details.length})
+                </h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {viewingMinutes.attendee_details.map((attendee, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                      >
+                        {attendee.first_name} {attendee.last_name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Attachment Section */}
+            {viewingMinutes.attachment_url && (
+              <div>
+                <h3 className="text-sm font-semibold text-red-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <File className="h-4 w-4" />
+                  Attachment
+                </h3>
+                <a
+                  href={viewingMinutes.attachment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  {getFileIcon(viewingMinutes.attachment_name || '')}
+                  <span className="text-sm font-medium">{viewingMinutes.attachment_name || 'View Attachment'}</span>
+                </a>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  setViewingMinutes(null);
+                }}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() => handleDownloadMinutesPDF(viewingMinutes)}
+                icon={<Download className="h-4 w-4" />}
+                className="w-full sm:w-auto"
+              >
+                Download PDF
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* View Report Modal */}
+      <Modal
+        isOpen={isViewReportModalOpen}
+        onClose={() => {
+          setIsViewReportModalOpen(false);
+          setViewingReport(null);
+        }}
+        title="Report Details"
+        size="lg"
+      >
+        {viewingReport && (
+          <div className="space-y-4 sm:space-y-6">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6">
+              <h2 className="text-lg sm:text-xl font-bold mb-2">
+                {viewingReport.title}
+              </h2>
+              <div className="flex flex-wrap gap-3 text-sm opacity-90">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(viewingReport.created_at)}</span>
+                </div>
+                <div className="bg-white bg-opacity-20 px-2 py-0.5 rounded text-xs font-medium">
+                  {viewingReport.type.toUpperCase()}
+                </div>
+                {viewingReport.source === 'generated' && (
+                  <div className="bg-yellow-400 bg-opacity-30 px-2 py-0.5 rounded text-xs font-medium">
+                    Auto-generated
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Report Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Department / Scope</label>
+                <p className="text-sm font-medium text-gray-900 mt-1">
+                  {viewingReport.department?.name || viewingReport.zone?.name || 'Church-wide'}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Created By</label>
+                <p className="text-sm font-medium text-gray-900 mt-1">
+                  {viewingReport.generator?.first_name} {viewingReport.generator?.last_name}
+                </p>
+              </div>
+              {viewingReport.period_start && viewingReport.period_end && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Report Period</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {new Date(viewingReport.period_start).toLocaleDateString()} - {new Date(viewingReport.period_end).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+              {viewingReport.description && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Description</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingReport.description}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Statistics Section */}
+            {viewingReport.data && (viewingReport.data.totalMembers !== undefined || viewingReport.data.totalIncome !== undefined || viewingReport.data.totalExpenses !== undefined) && (
+              <div>
+                <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Key Statistics
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {viewingReport.data.totalMembers !== undefined && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                      <Users className="h-5 w-5 text-blue-600 mx-auto mb-1" />
+                      <p className="text-lg font-bold text-blue-900">{viewingReport.data.totalMembers}</p>
+                      <p className="text-xs text-blue-600">Total Members</p>
+                    </div>
+                  )}
+                  {viewingReport.data.totalIncome !== undefined && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                      <TrendingUp className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                      <p className="text-lg font-bold text-green-900">TZS {viewingReport.data.totalIncome.toLocaleString()}</p>
+                      <p className="text-xs text-green-600">Total Income</p>
+                    </div>
+                  )}
+                  {viewingReport.data.totalExpenses !== undefined && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                      <TrendingUp className="h-5 w-5 text-red-600 mx-auto mb-1" />
+                      <p className="text-lg font-bold text-red-900">TZS {viewingReport.data.totalExpenses.toLocaleString()}</p>
+                      <p className="text-xs text-red-600">Total Expenses</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Content Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Report Content
+              </h3>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {viewingReport.content || viewingReport.data?.content || 'No content available'}
+                </p>
+              </div>
+            </div>
+
+            {/* File Attachment */}
+            {viewingReport.file_url && (
+              <div>
+                <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <File className="h-4 w-4" />
+                  Attached File
+                </h3>
+                <a
+                  href={viewingReport.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  {getFileIcon(viewingReport.data?.filename || 'report.pdf')}
+                  <span className="text-sm font-medium">{viewingReport.data?.filename || 'View File'}</span>
+                </a>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsViewReportModalOpen(false);
+                  setViewingReport(null);
+                }}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() => handleDownloadReportPDF(viewingReport)}
+                icon={<Download className="h-4 w-4" />}
+                className="w-full sm:w-auto"
+              >
+                Download PDF
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Delete Confirmation Modal */}

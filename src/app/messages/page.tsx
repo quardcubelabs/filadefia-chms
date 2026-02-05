@@ -132,7 +132,13 @@ export default function MessagesPage() {
   const [isCommunicationModalOpen, setIsCommunicationModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isViewAnnouncementOpen, setIsViewAnnouncementOpen] = useState(false);
+  const [isViewCommunicationOpen, setIsViewCommunicationOpen] = useState(false);
+  const [isDeleteCommModalOpen, setIsDeleteCommModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Announcement | null>(null);
+  const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null);
+  const [viewingCommunication, setViewingCommunication] = useState<Communication | null>(null);
+  const [selectedComm, setSelectedComm] = useState<Communication | null>(null);
   
   // Form data for announcements
   const [announcementForm, setAnnouncementForm] = useState({
@@ -501,6 +507,54 @@ export default function MessagesPage() {
     }
   };
 
+  const handleDeleteCommunication = async () => {
+    if (!supabase || !selectedComm) return;
+
+    try {
+      const { error } = await supabase
+        .from('communications')
+        .delete()
+        .eq('id', selectedComm.id);
+
+      if (error) throw error;
+
+      setSuccess('Message deleted successfully!');
+      setIsDeleteCommModalOpen(false);
+      setSelectedComm(null);
+      loadCommunications();
+    } catch (err: any) {
+      console.error('Error deleting communication:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleResendCommunication = async (comm: Communication) => {
+    if (!supabase || !user?.profile?.id) return;
+
+    try {
+      const resendData = {
+        recipient_ids: comm.recipient_ids,
+        message: comm.message,
+        type: comm.type,
+        subject: comm.subject || null,
+        sent_by: user.profile.id,
+        cost: calculateCost(comm.type, comm.recipient_ids.length)
+      };
+
+      const { error } = await supabase
+        .from('communications')
+        .insert(resendData);
+
+      if (error) throw error;
+
+      setSuccess(`Message resent to ${comm.recipient_ids.length} recipients!`);
+      loadCommunications();
+    } catch (err: any) {
+      console.error('Error resending communication:', err);
+      setError(err.message);
+    }
+  };
+
   const calculateCost = (type: string, recipientCount: number): number => {
     const costs = {
       sms: 50, // TZS per SMS
@@ -735,7 +789,7 @@ export default function MessagesPage() {
                   </CardBody>
                 </Card>
 
-                {/* Announcements List - Desktop */}
+                {/* Announcements List */}
                 {filteredAnnouncements.length === 0 ? (
                   <EmptyState
                     icon={<Megaphone className="h-16 w-16 text-gray-400" />}
@@ -747,192 +801,130 @@ export default function MessagesPage() {
                     }}
                   />
                 ) : (
-                  <>
-                    {/* Desktop View */}
-                    <div className="hidden md:block space-y-4">
-                      {filteredAnnouncements.map((announcement) => (
-                        <Card key={announcement.id} className="hover:shadow-md transition-shadow">
-                          <CardBody>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <h3 className="font-semibold text-lg text-gray-900">
-                                    {announcement.title}
-                                  </h3>
-                                  <Badge 
-                                    variant={
-                                      announcement.priority === 'high' ? 'danger' :
-                                      announcement.priority === 'medium' ? 'warning' : 'info'
-                                    }
-                                  >
-                                    <div className="flex items-center space-x-1">
-                                      {getPriorityIcon(announcement.priority)}
-                                      <span>{announcement.priority.toUpperCase()}</span>
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Announcement</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Priority</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Audience</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {filteredAnnouncements.map((announcement) => (
+                            <tr key={announcement.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                    announcement.priority === 'high' ? 'bg-red-100 text-red-600' :
+                                    announcement.priority === 'medium' ? 'bg-yellow-100 text-yellow-600' :
+                                    'bg-blue-100 text-blue-600'
+                                  }`}>
+                                    <Megaphone className="h-5 w-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-gray-900 truncate">{announcement.title}</p>
+                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{announcement.content}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden sm:table-cell">
+                                <Badge
+                                  variant={
+                                    announcement.priority === 'high' ? 'danger' :
+                                    announcement.priority === 'medium' ? 'warning' : 'info'
+                                  }
+                                >
+                                  {announcement.priority.toUpperCase()}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-4 hidden md:table-cell">
+                                <div className="text-sm text-gray-600">
+                                  {announcement.department ? (
+                                    <span>{announcement.department.name}</span>
+                                  ) : (
+                                    <span>Church-wide</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden lg:table-cell">
+                                <div className="text-sm text-gray-600">
+                                  <div className="flex items-center">
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    {formatDate(announcement.created_at)}
+                                  </div>
+                                  {announcement.expires_at && (
+                                    <div className={`text-xs mt-1 ${
+                                      new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-orange-600'
+                                    }`}>
+                                      Expires: {formatDate(announcement.expires_at)}
                                     </div>
-                                  </Badge>
-                                  {announcement.department && (
-                                    <Badge variant="default">
-                                      {announcement.department.name}
-                                    </Badge>
-                                  )}
-                                  {!announcement.department_id && (
-                                    <Badge variant="success">
-                                      Church-wide
-                                    </Badge>
                                   )}
                                 </div>
-                                
-                                <p className="text-gray-600 mb-4 line-clamp-3">
-                                  {announcement.content}
-                                </p>
-                                
-                                <div className="flex items-center justify-between text-sm text-gray-500">
-                                  <div className="flex items-center space-x-4">
-                                    <span>
-                                      By {announcement.author?.first_name} {announcement.author?.last_name}
-                                    </span>
-                                    <span>
-                                      {formatDate(announcement.created_at)}
-                                    </span>
-                                    {announcement.expires_at && (
-                                      <span className={`flex items-center space-x-1 ${
-                                        new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-orange-600'
-                                      }`}>
-                                        <Calendar className="h-4 w-4" />
-                                        <span>
-                                          Expires: {formatDate(announcement.expires_at)}
-                                        </span>
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex space-x-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedItem(announcement);
-                                        setAnnouncementForm({
-                                          title: announcement.title,
-                                          content: announcement.content,
-                                          department_id: announcement.department_id || '',
-                                          zone_id: announcement.zone_id || '',
-                                          priority: announcement.priority,
-                                          expires_at: announcement.expires_at ? 
-                                            new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
-                                        });
-                                        setIsEditModalOpen(true);
-                                      }}
-                                      icon={<Edit className="h-4 w-4" />}
-                                    />
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedItem(announcement);
-                                        setIsDeleteModalOpen(true);
-                                      }}
-                                      icon={<Trash2 className="h-4 w-4" />}
-                                      className="text-red-600 hover:text-red-700"
-                                    />
-                                  </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                {announcement.expires_at && new Date(announcement.expires_at) < new Date() ? (
+                                  <Badge variant="danger">Expired</Badge>
+                                ) : announcement.is_active ? (
+                                  <Badge variant="success">Active</Badge>
+                                ) : (
+                                  <Badge variant="default">Inactive</Badge>
+                                )}
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex justify-end space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setViewingAnnouncement(announcement);
+                                      setIsViewAnnouncementOpen(true);
+                                    }}
+                                    icon={<Eye className="h-4 w-4" />}
+                                    title="View"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedItem(announcement);
+                                      setAnnouncementForm({
+                                        title: announcement.title,
+                                        content: announcement.content,
+                                        department_id: announcement.department_id || '',
+                                        zone_id: announcement.zone_id || '',
+                                        priority: announcement.priority,
+                                        expires_at: announcement.expires_at ?
+                                          new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
+                                      });
+                                      setIsEditModalOpen(true);
+                                    }}
+                                    icon={<Edit className="h-4 w-4" />}
+                                    title="Edit"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedItem(announcement);
+                                      setIsDeleteModalOpen(true);
+                                    }}
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:text-red-700"
+                                    title="Delete"
+                                  />
                                 </div>
-                              </div>
-                            </div>
-                          </CardBody>
-                        </Card>
-                      ))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-
-                    {/* Mobile View */}
-                    <div className="md:hidden space-y-3">
-                      {filteredAnnouncements.map((announcement) => (
-                        <div key={announcement.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-sm text-gray-900 flex-1">
-                              {announcement.title}
-                            </h3>
-                            <Badge 
-                              variant={
-                                announcement.priority === 'high' ? 'danger' :
-                                announcement.priority === 'medium' ? 'warning' : 'info'
-                              }
-                            >
-                              <div className="flex items-center space-x-1">
-                                {getPriorityIcon(announcement.priority)}
-                              </div>
-                            </Badge>
-                          </div>
-                          
-                          {(announcement.department || !announcement.department_id) && (
-                            <div className="flex gap-2 mb-2">
-                              {announcement.department && (
-                                <Badge variant="default">
-                                  <span className="text-xs">{announcement.department.name}</span>
-                                </Badge>
-                              )}
-                              {!announcement.department_id && (
-                                <Badge variant="success">
-                                  <span className="text-xs">Church-wide</span>
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                          
-                          <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                            {announcement.content}
-                          </p>
-                          
-                          <div className="flex items-center justify-between text-[10px] text-gray-500 mb-2">
-                            <span>
-                              {announcement.author?.first_name} {announcement.author?.last_name}
-                            </span>
-                            <span>
-                              {formatDate(announcement.created_at)}
-                            </span>
-                          </div>
-                          
-                          {announcement.expires_at && (
-                            <div className={`text-[10px] mb-2 flex items-center space-x-1 ${
-                              new Date(announcement.expires_at) < new Date() ? 'text-red-600' : 'text-orange-600'
-                            }`}>
-                              <Calendar className="h-3 w-3" />
-                              <span>Expires: {formatDate(announcement.expires_at)}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setSelectedItem(announcement);
-                                setAnnouncementForm({
-                                  title: announcement.title,
-                                  content: announcement.content,
-                                  department_id: announcement.department_id || '',
-                                  zone_id: announcement.zone_id || '',
-                                  priority: announcement.priority,
-                                  expires_at: announcement.expires_at ? 
-                                    new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
-                                });
-                                setIsEditModalOpen(true);
-                              }}
-                              className="text-gray-500 hover:text-blue-600 p-1"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedItem(announcement);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="text-gray-500 hover:text-red-600 p-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  </div>
                 )}
               </>
             )}
@@ -966,59 +958,112 @@ export default function MessagesPage() {
                     }}
                   />
                 ) : (
-                  communications.map((communication) => (
-                    <Card key={communication.id} className="hover:shadow-md transition-shadow">
-                      <CardBody>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <div className="flex items-center space-x-2">
-                                {getCommunicationTypeIcon(communication.type)}
-                                <h3 className="font-semibold text-lg text-gray-900">
-                                  {communication.subject || 'No Subject'}
-                                </h3>
-                              </div>
-                              <Badge 
-                                variant={
-                                  communication.delivery_status === 'delivered' ? 'success' :
-                                  communication.delivery_status === 'failed' ? 'danger' :
-                                  communication.delivery_status === 'sent' ? 'info' : 'warning'
-                                }
-                              >
-                                {communication.delivery_status.toUpperCase()}
-                              </Badge>
-                              <Badge variant="default">
-                                {communication.type.toUpperCase()}
-                              </Badge>
-                            </div>
-                            
-                            <p className="text-gray-600 mb-4 line-clamp-2">
-                              {communication.message}
-                            </p>
-                            
-                            <div className="flex items-center justify-between text-sm text-gray-500">
-                              <div className="flex items-center space-x-4">
-                                <span>
-                                  To {communication.recipient_ids.length} recipients
-                                </span>
-                                <span>
-                                  By {communication.sender?.first_name} {communication.sender?.last_name}
-                                </span>
-                                <span>
-                                  {formatDate(communication.sent_at)}
-                                </span>
-                                {communication.cost > 0 && (
-                                  <span>
-                                    Cost: TZS {communication.cost.toLocaleString()}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Recipients</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {communications.map((communication) => (
+                            <tr key={communication.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                    communication.type === 'sms' ? 'bg-green-100 text-green-600' :
+                                    communication.type === 'email' ? 'bg-blue-100 text-blue-600' :
+                                    'bg-emerald-100 text-emerald-600'
+                                  }`}>
+                                    {communication.type === 'sms' ? <Phone className="h-5 w-5" /> :
+                                     communication.type === 'email' ? <Mail className="h-5 w-5" /> :
+                                     <MessageCircle className="h-5 w-5" />}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-gray-900 truncate">{communication.subject || 'No Subject'}</p>
+                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{communication.message}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden sm:table-cell">
+                                <Badge variant="default">
+                                  {communication.type.toUpperCase()}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-4 hidden md:table-cell">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Users className="h-4 w-4 mr-2" />
+                                  {communication.recipient_ids.length} recipients
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 hidden lg:table-cell">
+                                <div className="text-sm text-gray-600">
+                                  <div className="flex items-center">
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    {formatDate(communication.sent_at)}
+                                  </div>
+                                  {communication.cost > 0 && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Cost: TZS {communication.cost.toLocaleString()}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <Badge
+                                  variant={
+                                    communication.delivery_status === 'delivered' ? 'success' :
+                                    communication.delivery_status === 'failed' ? 'danger' :
+                                    communication.delivery_status === 'sent' ? 'info' : 'warning'
+                                  }
+                                >
+                                  {communication.delivery_status.toUpperCase()}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex justify-end space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setViewingCommunication(communication);
+                                      setIsViewCommunicationOpen(true);
+                                    }}
+                                    icon={<Eye className="h-4 w-4" />}
+                                    title="View"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleResendCommunication(communication)}
+                                    icon={<Send className="h-4 w-4" />}
+                                    title="Resend"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedComm(communication);
+                                      setIsDeleteCommModalOpen(true);
+                                    }}
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:text-red-700"
+                                    title="Delete"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -1305,13 +1350,254 @@ export default function MessagesPage() {
         </div>
         </Modal>
 
-        {/* Delete Confirmation Modal */}
+        {/* View Announcement Modal */}
+        <Modal
+          isOpen={isViewAnnouncementOpen}
+          onClose={() => {
+            setIsViewAnnouncementOpen(false);
+            setViewingAnnouncement(null);
+          }}
+          title="Announcement Details"
+          size="lg"
+        >
+          {viewingAnnouncement && (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Header */}
+              <div className={`p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6 ${
+                viewingAnnouncement.priority === 'high' ? 'bg-gradient-to-r from-red-600 to-red-700' :
+                viewingAnnouncement.priority === 'medium' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                'bg-gradient-to-r from-blue-500 to-blue-600'
+              } text-white`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Megaphone className="h-5 w-5" />
+                  <span className="text-xs font-medium uppercase opacity-90">{viewingAnnouncement.priority} Priority</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold">{viewingAnnouncement.title}</h2>
+                <div className="flex flex-wrap gap-3 mt-2 text-sm opacity-90">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(viewingAnnouncement.created_at)}</span>
+                  </div>
+                  {viewingAnnouncement.expires_at && new Date(viewingAnnouncement.expires_at) < new Date() ? (
+                    <div className="bg-white bg-opacity-20 px-2 py-0.5 rounded text-xs font-medium">Expired</div>
+                  ) : viewingAnnouncement.is_active ? (
+                    <div className="bg-white bg-opacity-20 px-2 py-0.5 rounded text-xs font-medium">Active</div>
+                  ) : (
+                    <div className="bg-white bg-opacity-20 px-2 py-0.5 rounded text-xs font-medium">Inactive</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Posted By</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingAnnouncement.author?.first_name} {viewingAnnouncement.author?.last_name}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Audience</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingAnnouncement.department?.name || 'Church-wide'}
+                  </p>
+                </div>
+                {viewingAnnouncement.expires_at && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Expires</label>
+                    <p className={`text-sm font-medium mt-1 ${
+                      new Date(viewingAnnouncement.expires_at) < new Date() ? 'text-red-600' : 'text-gray-900'
+                    }`}>
+                      {formatDate(viewingAnnouncement.expires_at)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Content */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Content
+                </h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingAnnouncement.content}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsViewAnnouncementOpen(false);
+                    setViewingAnnouncement(null);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsViewAnnouncementOpen(false);
+                    setSelectedItem(viewingAnnouncement);
+                    setAnnouncementForm({
+                      title: viewingAnnouncement.title,
+                      content: viewingAnnouncement.content,
+                      department_id: viewingAnnouncement.department_id || '',
+                      zone_id: viewingAnnouncement.zone_id || '',
+                      priority: viewingAnnouncement.priority,
+                      expires_at: viewingAnnouncement.expires_at ?
+                        new Date(viewingAnnouncement.expires_at).toISOString().slice(0, 16) : ''
+                    });
+                    setIsEditModalOpen(true);
+                  }}
+                  icon={<Edit className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
+                >
+                  Edit
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        {/* View Communication Modal */}
+        <Modal
+          isOpen={isViewCommunicationOpen}
+          onClose={() => {
+            setIsViewCommunicationOpen(false);
+            setViewingCommunication(null);
+          }}
+          title="Message Details"
+          size="lg"
+        >
+          {viewingCommunication && (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Header */}
+              <div className={`p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6 ${
+                viewingCommunication.type === 'sms' ? 'bg-gradient-to-r from-green-600 to-green-700' :
+                viewingCommunication.type === 'email' ? 'bg-gradient-to-r from-blue-600 to-blue-700' :
+                'bg-gradient-to-r from-emerald-600 to-emerald-700'
+              } text-white`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {viewingCommunication.type === 'sms' ? <Phone className="h-5 w-5" /> :
+                   viewingCommunication.type === 'email' ? <Mail className="h-5 w-5" /> :
+                   <MessageCircle className="h-5 w-5" />}
+                  <span className="text-xs font-medium uppercase opacity-90">{viewingCommunication.type} Message</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold">{viewingCommunication.subject || 'No Subject'}</h2>
+                <div className="flex flex-wrap gap-3 mt-2 text-sm opacity-90">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(viewingCommunication.sent_at)}</span>
+                  </div>
+                  <div className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    viewingCommunication.delivery_status === 'delivered' ? 'bg-white bg-opacity-30' :
+                    viewingCommunication.delivery_status === 'failed' ? 'bg-red-400 bg-opacity-40' :
+                    'bg-white bg-opacity-20'
+                  }`}>
+                    {viewingCommunication.delivery_status.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Sent By</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingCommunication.sender?.first_name} {viewingCommunication.sender?.last_name}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Recipients</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingCommunication.recipient_ids.length} recipients
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Message Type</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {viewingCommunication.type.toUpperCase()}
+                  </p>
+                </div>
+                {viewingCommunication.cost > 0 && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cost</label>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      TZS {viewingCommunication.cost.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                {viewingCommunication.scheduled_at && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Scheduled For</label>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {formatDate(viewingCommunication.scheduled_at)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Message Content */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Message
+                </h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingCommunication.message}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsViewCommunicationOpen(false);
+                    setViewingCommunication(null);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleResendCommunication(viewingCommunication);
+                    setIsViewCommunicationOpen(false);
+                    setViewingCommunication(null);
+                  }}
+                  icon={<Send className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
+                >
+                  Resend
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        {/* Delete Announcement Confirmation Modal */}
         <ConfirmModal
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteAnnouncement}
           title="Delete Announcement"
           message={`Are you sure you want to delete "${selectedItem?.title}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+        />
+
+        {/* Delete Communication Confirmation Modal */}
+        <ConfirmModal
+          isOpen={isDeleteCommModalOpen}
+          onClose={() => setIsDeleteCommModalOpen(false)}
+          onConfirm={handleDeleteCommunication}
+          title="Delete Message"
+          message={`Are you sure you want to delete this ${selectedComm?.type?.toUpperCase() || ''} message? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           variant="danger"

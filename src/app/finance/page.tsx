@@ -171,7 +171,9 @@ export default function FinancePage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isViewTransactionOpen, setIsViewTransactionOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<FinancialTransaction | null>(null);
+  const [viewingTransaction, setViewingTransaction] = useState<FinancialTransaction | null>(null);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -1600,6 +1602,16 @@ export default function FinancePage() {
                                 </td>
                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <div className="flex space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setViewingTransaction(transaction);
+                                        setIsViewTransactionOpen(true);
+                                      }}
+                                      icon={<Eye className="h-4 w-4" />}
+                                      title="View"
+                                    />
                                     {!transaction.verified && (
                                       <Button
                                         variant="ghost"
@@ -1607,6 +1619,7 @@ export default function FinancePage() {
                                         onClick={() => handleVerifyTransaction(transaction.id)}
                                         icon={<CheckCircle className="h-4 w-4" />}
                                         className="text-green-600 hover:text-green-700"
+                                        title="Verify"
                                       />
                                     )}
                                     <Button
@@ -1614,6 +1627,7 @@ export default function FinancePage() {
                                       size="sm"
                                       onClick={() => openEditModal(transaction)}
                                       icon={<Edit className="h-4 w-4" />}
+                                      title="Edit"
                                     />
                                     <Button
                                       variant="ghost"
@@ -1624,6 +1638,7 @@ export default function FinancePage() {
                                       }}
                                       icon={<Trash2 className="h-4 w-4" />}
                                       className="text-red-600 hover:text-red-700"
+                                      title="Delete"
                                     />
                                   </div>
                                 </td>
@@ -1774,6 +1789,16 @@ export default function FinancePage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setViewingTransaction(transaction);
+                                    setIsViewTransactionOpen(true);
+                                  }}
+                                  icon={<Eye className="h-4 w-4" />}
+                                  title="View"
+                                />
                                 {!transaction.verified && (
                                   <Button
                                     variant="ghost"
@@ -1781,6 +1806,7 @@ export default function FinancePage() {
                                     onClick={() => handleVerifyTransaction(transaction.id)}
                                     icon={<CheckCircle className="h-4 w-4" />}
                                     className="text-green-600 hover:text-green-700"
+                                    title="Verify"
                                   />
                                 )}
                                 <Button
@@ -1788,6 +1814,7 @@ export default function FinancePage() {
                                   size="sm"
                                   onClick={() => openEditModal(transaction)}
                                   icon={<Edit className="h-4 w-4" />}
+                                  title="Edit"
                                 />
                                 <Button
                                   variant="ghost"
@@ -1798,6 +1825,7 @@ export default function FinancePage() {
                                   }}
                                   icon={<Trash2 className="h-4 w-4" />}
                                   className="text-red-600 hover:text-red-700"
+                                  title="Delete"
                                 />
                               </div>
                             </td>
@@ -2059,6 +2087,158 @@ export default function FinancePage() {
             Update Transaction
           </Button>
         </div>
+      </Modal>
+
+      {/* View Transaction Modal */}
+      <Modal
+        isOpen={isViewTransactionOpen}
+        onClose={() => {
+          setIsViewTransactionOpen(false);
+          setViewingTransaction(null);
+        }}
+        title="Transaction Details"
+        size="lg"
+      >
+        {viewingTransaction && (
+          <div className="space-y-4 sm:space-y-6">
+            {/* Header */}
+            <div className={`p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6 ${
+              ['expense', 'welfare'].includes(viewingTransaction.transaction_type)
+                ? 'bg-gradient-to-r from-red-600 to-red-700'
+                : 'bg-gradient-to-r from-green-600 to-green-700'
+            } text-white`}>
+              <div className="flex items-center gap-2 mb-2">
+                {['expense', 'welfare'].includes(viewingTransaction.transaction_type)
+                  ? <TrendingDown className="h-5 w-5" />
+                  : <TrendingUp className="h-5 w-5" />}
+                <span className="text-xs font-medium uppercase opacity-90">
+                  {viewingTransaction.transaction_type.replace('_', ' ')}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold">
+                {formatCurrency(viewingTransaction.amount)}
+              </h2>
+              <div className="flex flex-wrap gap-3 mt-2 text-sm opacity-90">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(viewingTransaction.date)}</span>
+                </div>
+                <div className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  viewingTransaction.verified ? 'bg-white bg-opacity-30' : 'bg-yellow-400 bg-opacity-40'
+                }`}>
+                  {viewingTransaction.verified ? 'VERIFIED' : 'PENDING'}
+                </div>
+              </div>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Member</label>
+                <p className="text-sm font-medium text-gray-900 mt-1">
+                  {viewingTransaction.member
+                    ? `${viewingTransaction.member.first_name} ${viewingTransaction.member.last_name}`
+                    : 'Anonymous'}
+                </p>
+                {viewingTransaction.member && (
+                  <p className="text-xs text-gray-500">#{viewingTransaction.member.member_number}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Payment Method</label>
+                <p className="text-sm font-medium text-gray-900 mt-1 flex items-center gap-1">
+                  <CreditCard className="h-4 w-4 text-gray-400" />
+                  {viewingTransaction.payment_method}
+                </p>
+              </div>
+              {viewingTransaction.department?.name && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Department</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{viewingTransaction.department.name}</p>
+                </div>
+              )}
+              {viewingTransaction.zone?.name && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Zone</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{viewingTransaction.zone.name}</p>
+                </div>
+              )}
+              {viewingTransaction.reference_number && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Reference Number</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{viewingTransaction.reference_number}</p>
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Recorded</label>
+                <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(viewingTransaction.created_at)}</p>
+              </div>
+              {viewingTransaction.verified && viewingTransaction.verified_at && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Verified On</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(viewingTransaction.verified_at)}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            {viewingTransaction.description && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  Description
+                </h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingTransaction.description}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Receipt */}
+            {viewingTransaction.receipt_url && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  Receipt
+                </h3>
+                <a
+                  href={viewingTransaction.receipt_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-2 rounded-lg"
+                >
+                  <Download className="h-4 w-4" />
+                  View / Download Receipt
+                </a>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsViewTransactionOpen(false);
+                  setViewingTransaction(null);
+                }}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsViewTransactionOpen(false);
+                  openEditModal(viewingTransaction);
+                  setViewingTransaction(null);
+                }}
+                icon={<Edit className="h-4 w-4" />}
+                className="w-full sm:w-auto"
+              >
+                Edit Transaction
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Delete Confirmation Modal */}

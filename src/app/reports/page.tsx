@@ -1926,7 +1926,7 @@ export default function ReportsPage() {
       title="Reports Management"
       subtitle="Generate comprehensive reports for your church management system"
     >
-      <div className="max-w-7xl">
+      <div className="max-w-7xl mx-auto">
         {/* Department Leader Access Notification */}
         {isDepartmentLeader && departmentName && !canAccessAllDepartments && (
           <div className="mb-4 sm:mb-8 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -2086,7 +2086,7 @@ export default function ReportsPage() {
                     >
                       {savingReport ? (
                         <>
-                          <Loading size="sm" />
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           <span className="hidden md:inline">Saving...</span>
                           <span className="md:hidden">Save...</span>
                         </>
@@ -2269,7 +2269,7 @@ export default function ReportsPage() {
             <div className="space-y-8">
               {/* Tab Navigation - Exact design from image */}
               <div className="mb-4 md:mb-6">
-                <nav className="flex space-x-0 overflow-x-auto">
+                <nav className="flex justify-center space-x-0 overflow-x-auto">
                   {[
                     { id: 'membership', label: 'Membership', icon: Users },
                     { id: 'finance', label: 'Finance', icon: DollarSign },
@@ -2352,55 +2352,99 @@ export default function ReportsPage() {
                     </Card>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
-                    <Card>
-                      <CardBody>
-                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Members by Status</h3>
-                        <div className="space-y-2 md:space-y-3">
-                          {Object.entries(reportData?.membershipStats?.membersByStatus || {}).map(([status, count]) => (
-                            <div key={status} className="flex justify-between items-center">
-                              <span className="capitalize text-xs md:text-sm text-gray-600">{status}</span>
-                              <div className="flex items-center space-x-1.5 md:space-x-2">
-                                <span className="text-xs md:text-sm font-medium">{count}</span>
-                                <div className="w-12 md:w-16 h-2 bg-gray-200 rounded-full">
-                                  <div
-                                    className="h-2 bg-blue-600 rounded-full"
-                                    style={{
-                                      width: `${((count as number) / (reportData?.membershipStats?.totalMembers || 1) * 100)}%`
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardBody>
-                    </Card>
+                  {/* Members by Status Table */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Members by Status</h3>
+                      <div className="overflow-x-auto">
+                        {Object.entries(reportData?.membershipStats?.membersByStatus || {}).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {Object.entries(reportData?.membershipStats?.membersByStatus || {}).map(([status, count]) => (
+                                <tr key={status} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="capitalize text-sm font-medium text-gray-900">{status}</span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                    {count}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <span className="text-sm font-medium mr-2 text-blue-600">
+                                        {((count as number) / (reportData?.membershipStats?.totalMembers || 1) * 100).toFixed(1)}%
+                                      </span>
+                                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 bg-blue-600 rounded-full"
+                                          style={{ width: `${((count as number) / (reportData?.membershipStats?.totalMembers || 1) * 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No membership status data available for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
 
-                    <Card>
-                      <CardBody>
-                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Members by Department</h3>
-                        <div className="space-y-2 md:space-y-3">
-                          {(reportData?.membershipStats?.membersByDepartment || []).slice(0, 5).map((dept) => (
-                            <div key={dept.name} className="flex justify-between items-center">
-                              <span className="text-xs md:text-sm text-gray-600">{dept.name}</span>
-                              <div className="flex items-center space-x-1.5 md:space-x-2">
-                                <span className="text-xs md:text-sm font-medium">{dept.count}</span>
-                                <div className="w-12 md:w-16 h-2 bg-gray-200 rounded-full">
-                                  <div
-                                    className="h-2 bg-green-600 rounded-full"
-                                    style={{
-                                      width: `${(dept.count / (reportData?.membershipStats?.totalMembers || 1) * 100)}%`
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardBody>
-                    </Card>
-                  </div>
+                  {/* Members by Department Table */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Members by Department</h3>
+                      <div className="overflow-x-auto">
+                        {(reportData?.membershipStats?.membersByDepartment || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {(reportData?.membershipStats?.membersByDepartment || []).map((dept) => (
+                                <tr key={dept.name} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {dept.name}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                    {dept.count}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <span className="text-sm font-medium mr-2 text-green-600">
+                                        {(dept.count / (reportData?.membershipStats?.totalMembers || 1) * 100).toFixed(1)}%
+                                      </span>
+                                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 bg-green-600 rounded-full"
+                                          style={{ width: `${(dept.count / (reportData?.membershipStats?.totalMembers || 1) * 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No department data available for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
                 </div>
               )}
 
@@ -2460,67 +2504,95 @@ export default function ReportsPage() {
                     </Card>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
-                    <Card>
-                      <CardBody>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Income by Type</h3>
-                        <div className="space-y-3">
-                          {(reportData?.financialStats?.incomeByType || []).map((item) => (
-                            <div key={item.type} className="flex justify-between items-center">
-                              <span className="capitalize text-gray-600">{item.type}</span>
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium">{formatCurrency(item.amount)}</span>
-                                <div className="w-16 h-2 bg-gray-200 rounded-full">
-                                  <div
-                                    className="h-2 bg-green-600 rounded-full"
-                                    style={{
-                                      width: `${(item.amount / (reportData?.financialStats?.totalIncome || 1) * 100)}%`
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardBody>
-                    </Card>
+                  {/* Income by Type Table */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Income by Type</h3>
+                      <div className="overflow-x-auto">
+                        {(reportData?.financialStats?.incomeByType || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (TZS)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Share</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {(reportData?.financialStats?.incomeByType || []).map((item) => (
+                                <tr key={item.type} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="capitalize text-sm font-medium text-gray-900">{item.type}</span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                    {formatCurrency(item.amount)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <span className="text-sm font-medium mr-2 text-green-600">
+                                        {(item.amount / (reportData?.financialStats?.totalIncome || 1) * 100).toFixed(1)}%
+                                      </span>
+                                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 bg-green-600 rounded-full"
+                                          style={{ width: `${(item.amount / (reportData?.financialStats?.totalIncome || 1) * 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No income data available for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
 
-                    <Card>
-                      <CardBody>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h3>
-                        <div className="space-y-3">
-                          {(reportData?.financialStats?.monthlyTrends || []).map((item) => (
-                            <div key={item.month} className="space-y-1">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">{item.month}</span>
-                                <span className="font-medium">
-                                  {formatCurrency(item.income - item.expenses)}
-                                </span>
-                              </div>
-                              <div className="flex space-x-1">
-                                <div className="flex-1 h-2 bg-green-200 rounded">
-                                  <div
-                                    className="h-2 bg-green-600 rounded"
-                                    style={{
-                                      width: item.income > 0 ? `${Math.min(item.income / Math.max(...(reportData?.financialStats?.monthlyTrends || []).map((t: any) => t.income)) * 100, 100)}%` : '0%'
-                                    }}
-                                  />
-                                </div>
-                                <div className="flex-1 h-2 bg-red-200 rounded">
-                                  <div
-                                    className="h-2 bg-red-600 rounded"
-                                    style={{
-                                      width: item.expenses > 0 ? `${Math.min(item.expenses / Math.max(...(reportData?.financialStats?.monthlyTrends || []).map((t: any) => t.expenses)) * 100, 100)}%` : '0%'
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardBody>
-                    </Card>
-                  </div>
+                  {/* Monthly Trends Table */}
+                  <Card>
+                    <CardBody>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h3>
+                      <div className="overflow-x-auto">
+                        {(reportData?.financialStats?.monthlyTrends || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income (TZS)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses (TZS)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net (TZS)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {(reportData?.financialStats?.monthlyTrends || []).map((item) => (
+                                <tr key={item.month} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {item.month}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                    {formatCurrency(item.income)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
+                                    {formatCurrency(item.expenses)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`text-sm font-medium ${(item.income - item.expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatCurrency(item.income - item.expenses)}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No monthly trends data available for this period</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
                 </div>
               )}
 
@@ -2574,26 +2646,51 @@ export default function ReportsPage() {
                     </Card>
                   </div>
 
+                  {/* Events by Type Table */}
                   <Card>
                     <CardBody>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Events by Type</h3>
-                      <div className="space-y-3">
-                        {(reportData?.eventStats?.eventsByType || []).map((item) => (
-                          <div key={item.type} className="flex justify-between items-center">
-                            <span className="text-gray-600">{item.type}</span>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-medium">{item.count}</span>
-                              <div className="w-16 h-2 bg-gray-200 rounded-full">
-                                <div
-                                  className="h-2 bg-blue-600 rounded-full"
-                                  style={{
-                                    width: `${(item.count / (reportData?.eventStats?.totalEvents || 1) * 100)}%`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="overflow-x-auto">
+                        {(reportData?.eventStats?.eventsByType || []).length > 0 ? (
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Type</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {(reportData?.eventStats?.eventsByType || []).map((item) => (
+                                <tr key={item.type} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {item.type}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                    {item.count}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <span className={`text-sm font-medium mr-2 ${
+                                        (item.count / (reportData?.eventStats?.totalEvents || 1) * 100) >= 50 ? 'text-green-600' : 'text-blue-600'
+                                      }`}>
+                                        {(item.count / (reportData?.eventStats?.totalEvents || 1) * 100).toFixed(1)}%
+                                      </span>
+                                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 bg-blue-600 rounded-full"
+                                          style={{ width: `${(item.count / (reportData?.eventStats?.totalEvents || 1) * 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No events data available for this period</p>
+                        )}
                       </div>
                     </CardBody>
                   </Card>
