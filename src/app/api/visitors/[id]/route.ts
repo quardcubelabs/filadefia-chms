@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -45,7 +45,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     
-    const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
       throw new Error('Service role key is not set');
     }
@@ -94,7 +94,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
       throw new Error('Service role key is not set');
     }

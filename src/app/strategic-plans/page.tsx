@@ -228,10 +228,17 @@ export default function StrategicPlansPage() {
     
     try {
       const response = await fetch(`/api/strategic-plans/my-objectives?member_id=${user.profile.id}`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch my objectives:', response.status);
+        return;
+      }
+      
       const result = await response.json();
       
       if (result.error) {
-        console.error('Error fetching my objectives:', result.error);
+        // Silently fail - objectives feature is optional
+        console.warn('My objectives not available:', result.error);
         return;
       }
       
@@ -240,7 +247,8 @@ export default function StrategicPlansPage() {
         stats: result.stats || { total: 0, completed: 0, in_progress: 0, pending: 0, overdue: 0, completion_rate: 0 }
       });
     } catch (error) {
-      console.error('Error fetching my objectives:', error);
+      // Silently fail - don't break the page if this feature fails
+      console.warn('Error fetching my objectives:', error);
     }
   };
 

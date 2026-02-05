@@ -12,16 +12,16 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
     
-    if (!process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured');
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not configured');
       return NextResponse.json({ 
-        error: 'NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY is not configured' 
+        error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' 
       }, { status: 500 });
     }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'active';

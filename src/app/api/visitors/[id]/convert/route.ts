@@ -9,7 +9,7 @@ export async function POST(
   try {
     const { id } = await params;
     
-    const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
       throw new Error('Service role key is not set');
     }

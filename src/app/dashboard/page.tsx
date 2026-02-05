@@ -499,6 +499,12 @@ export default function DashboardPage() {
     
     try {
       const response = await fetch(`/api/strategic-plans/my-objectives?member_id=${user.profile.id}`);
+      
+      if (!response.ok) {
+        // Silently fail - this feature is optional
+        return;
+      }
+      
       const result = await response.json();
       
       if (!result.error) {
@@ -508,7 +514,8 @@ export default function DashboardPage() {
         });
       }
     } catch (error: any) {
-      console.error('Error fetching assigned objectives:', error.message || error);
+      // Silently fail - don't break dashboard if this feature fails
+      console.warn('Assigned objectives not available');
     }
   };
 
