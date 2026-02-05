@@ -13,6 +13,7 @@ import {
   Clock
 } from 'lucide-react';
 import Link from 'next/link';
+import { Loading } from '@/components/ui/EmptyState';
 
 interface AttendanceStats {
   overview: {
@@ -115,19 +116,8 @@ export default function AttendanceCard({
   if (loading) {
     return (
       <div className={`${noWrapper ? '' : 'rounded-3xl shadow-sm border p-6 bg-white border-gray-200'} ${className}`}>
-        <div className="animate-pulse">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-5 rounded w-32 bg-gray-200"></div>
-            <div className="h-4 rounded w-20 bg-gray-200"></div>
-          </div>
-          <div className="space-y-3">
-            <div className="h-8 rounded w-20 bg-gray-200"></div>
-            <div className="h-4 rounded w-40 bg-gray-200"></div>
-            <div className="flex space-x-4">
-              <div className="h-12 rounded flex-1 bg-gray-200"></div>
-              <div className="h-12 rounded flex-1 bg-gray-200"></div>
-            </div>
-          </div>
+        <div className="flex items-center justify-center py-4">
+          <Loading size="sm" text="Loading attendance..." />
         </div>
       </div>
     );

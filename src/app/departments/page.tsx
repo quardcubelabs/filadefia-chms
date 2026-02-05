@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
-import { Modal, Input, TextArea, Button } from '@/components/ui';
+import { Modal, Input, TextArea, Button, Loading } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 import { 
   Users, Building2, UserCheck, TrendingUp, ArrowRight, 
@@ -296,7 +296,7 @@ export default function DepartmentsPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <Loading />
       </div>
     );
   }
@@ -353,14 +353,8 @@ export default function DepartmentsPage() {
 
         {/* Statistics Cards */}
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-3 sm:p-6 animate-pulse">
-                <div className="h-3 sm:h-4 bg-gray-200 rounded mb-2 sm:mb-4"></div>
-                <div className="h-6 sm:h-8 bg-gray-200 rounded mb-1 sm:mb-2"></div>
-                <div className="h-2 sm:h-3 bg-gray-200 rounded"></div>
-              </div>
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <Loading text="Loading departments..." />
           </div>
         ) : departments.length === 0 ? (
           <div className="bg-white rounded-xl sm:rounded-lg shadow-sm border p-6 sm:p-12 text-center">

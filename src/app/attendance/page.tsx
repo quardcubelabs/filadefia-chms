@@ -20,6 +20,7 @@ import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useToast } from '@/components/Toast';
+import { Loading } from '@/components/ui/EmptyState';
 
 interface AttendanceStats {
   totalMembers: number;
@@ -66,7 +67,7 @@ export default function AttendancePage() {
     <Suspense fallback={
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <Loading size="sm" />
         </div>
       </MainLayout>
     }>
@@ -374,14 +375,8 @@ function AttendancePageContent() {
 
         {/* Statistics Cards */}
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6 animate-pulse bg-white border-gray-200">
-                <div className="h-3 sm:h-4 rounded mb-3 sm:mb-4 bg-gray-200"></div>
-                <div className="h-6 sm:h-8 rounded mb-2 bg-gray-200"></div>
-                <div className="h-2 sm:h-3 rounded bg-gray-200"></div>
-              </div>
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <Loading text="Loading attendance..." />
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
@@ -511,13 +506,8 @@ function AttendancePageContent() {
           </div>
           <div className="p-3 sm:p-4 md:p-6">
             {loading ? (
-              <div className="space-y-3 sm:space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-3 sm:h-4 rounded mb-2 bg-gray-200"></div>
-                    <div className="h-2 sm:h-3 rounded w-3/4 bg-gray-200"></div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-center py-8">
+                <Loading size="sm" text="Loading sessions..." />
               </div>
             ) : stats.recentSessions.length > 0 ? (
               <div className="space-y-2 sm:space-y-4">

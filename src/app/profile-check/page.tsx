@@ -3,6 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Loading } from '@/components/ui/EmptyState';
 
 export default function ProfileCheckPage() {
   const { user, loading, supabase } = useAuth();
@@ -39,10 +40,7 @@ export default function ProfileCheckPage() {
   if (loading || checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fcc-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking profile status...</p>
-        </div>
+        <Loading text="Checking profile status..." />
       </div>
     );
   }

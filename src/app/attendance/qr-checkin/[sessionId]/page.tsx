@@ -15,6 +15,7 @@ import {
   Calendar,
   Building2
 } from 'lucide-react';
+import { Loading } from '@/components/ui/EmptyState';
 
 interface SessionInfo {
   session_id: string;
@@ -147,8 +148,7 @@ export default function QRCheckInPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading check-in session...</p>
+          <Loading size="sm" text="Loading check-in session..." />
         </div>
       </div>
     );

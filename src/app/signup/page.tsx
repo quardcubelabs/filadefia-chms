@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserRole } from '@/types';
 import { useRequireAuth } from '@/hooks/useAuth';
+import { Loading } from '@/components/ui/EmptyState';
 
 export default function SignupPage() {
   const { user, loading } = useRequireAuth('administrator');
@@ -25,7 +26,7 @@ export default function SignupPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fcc-blue-600"></div>
+        <Loading size="sm" />
       </div>
     );
   }

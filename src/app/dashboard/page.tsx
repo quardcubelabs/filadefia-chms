@@ -8,6 +8,7 @@ import TopNavbar from '@/components/TopNavbar';
 import AttendanceCard from '@/components/AttendanceCard';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useToast } from '@/components/Toast';
+import { Loading } from '@/components/ui/EmptyState';
 
 import { 
   Building2,
@@ -34,10 +35,7 @@ import {
 function DashboardLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-        <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
-      </div>
+      <Loading text="Loading dashboard..." />
     </div>
   );
 }
@@ -814,10 +812,7 @@ export default function DashboardPage() {
     }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-          <p className="mt-3 text-gray-600 text-sm">Redirecting to login...</p>
-        </div>
+        <Loading size="sm" text="Redirecting to login..." />
       </div>
     );
   }

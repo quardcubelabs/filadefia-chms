@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
-import { EmptyState, Button, Card, Badge, Modal, Input, Select } from '@/components/ui';
+import { EmptyState, Button, Card, Badge, Modal, Input, Select, Loading } from '@/components/ui';
 import MainLayout from '@/components/MainLayout';
 import { 
   Bell, 
@@ -296,7 +296,7 @@ export default function NotificationsPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fcc-blue-600"></div>
+        <Loading />
       </div>
     );
   }
@@ -404,7 +404,7 @@ export default function NotificationsPage() {
 
         {loading ? (
           <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 md:p-12">
-            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-fcc-blue-600 mx-auto"></div>
+            <Loading size="sm" />
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 md:p-12">

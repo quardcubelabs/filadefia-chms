@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Loading } from './EmptyState';
 
 export interface Column<T> {
   key: string;
@@ -40,35 +41,8 @@ export function Table<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-        <div className="inline-block min-w-full align-middle">
-          <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
-            <thead className="bg-gray-50">
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    key={column.key}
-                    className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-700 ${bordered ? 'border-b border-gray-200' : ''} whitespace-nowrap`}
-                    style={{ width: column.width }}
-                  >
-                    {column.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[...Array(5)].map((_, i) => (
-                <tr key={i} className={striped && i % 2 === 0 ? 'bg-gray-50' : ''}>
-                  {columns.map((column) => (
-                    <td key={column.key} className={`px-3 sm:px-4 py-3 sm:py-4 ${bordered ? 'border-b border-gray-200' : ''}`}>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <Loading text="Loading data..." />
       </div>
     );
   }

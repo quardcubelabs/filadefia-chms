@@ -41,6 +41,7 @@ import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useToast } from '@/components/Toast';
+import { Loading } from '@/components/ui/EmptyState';
 
 interface AttendanceStats {
   overview: {
@@ -373,7 +374,7 @@ export default function AttendanceReportsPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <Loading size="sm" />
         </div>
       </MainLayout>
     );

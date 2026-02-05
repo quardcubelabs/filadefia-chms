@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import MainLayout from '@/components/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
+import { Loading } from '@/components/ui/EmptyState';
 import { useDepartmentAccess } from '@/hooks/useDepartmentAccess';
 import { useToast } from '@/components/Toast';
 
@@ -243,15 +244,8 @@ export default function AttendanceMembersPage() {
   if (authLoading || loading) {
     return (
       <MainLayout>
-        <div className="p-3 sm:p-4 md:p-6">
-          <div className="animate-pulse space-y-4 sm:space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="space-y-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loading text="Loading members..." />
         </div>
       </MainLayout>
     );

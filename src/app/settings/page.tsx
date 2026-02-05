@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import MainLayout from '@/components/MainLayout';
-import { Card, Button, Input, Select, Modal } from '@/components/ui';
+import { Card, Button, Input, Select, Modal, Loading } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 import { 
   User, 
@@ -380,7 +380,7 @@ export default function SettingsPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <Loading />
       </div>
     );
   }

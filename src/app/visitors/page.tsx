@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/Toast';
+import { Loading } from '@/components/ui/EmptyState';
 import { Visitor, VisitorStats } from '@/types';
 import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
@@ -333,7 +334,7 @@ export default function VisitorsPage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <Loading />
       </div>
     );
   }

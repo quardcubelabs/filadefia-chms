@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Inbox, FileQuestion } from 'lucide-react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from './Button';
 
 export interface EmptyStateProps {
@@ -49,15 +50,24 @@ export interface LoadingProps {
 
 export const Loading: React.FC<LoadingProps> = ({ text, size = 'md', className = '' }) => {
   const sizes = {
-    sm: 'h-6 w-6',
-    md: 'h-10 w-10',
-    lg: 'h-16 w-16',
+    sm: { container: 'h-12 w-12', wrapper: 'py-2' },
+    md: { container: 'h-24 w-24', wrapper: 'py-6' },
+    lg: { container: 'h-36 w-36', wrapper: 'py-8' },
   };
 
+  const { container, wrapper } = sizes[size];
+
   return (
-    <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
-      <div className={`animate-spin rounded-full ${sizes[size]} border-b-2 border-fcc-blue-600 mb-4`}></div>
-      {text && <p className="text-sm text-gray-600">{text}</p>}
+    <div className={`flex flex-col items-center justify-center ${wrapper} ${className}`}>
+      <div className={container}>
+        <DotLottieReact
+          src="https://lottie.host/0f253b21-4a3e-4100-bb40-dabc430f558e/sMdR60noD2.lottie"
+          loop
+          autoplay
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+      {text && <p className="text-sm text-gray-600 mt-2">{text}</p>}
     </div>
   );
 };

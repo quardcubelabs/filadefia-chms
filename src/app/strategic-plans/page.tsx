@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
-import { Modal, Button, Input, TextArea, Select, Badge, Card, EmptyState } from '@/components/ui';
+import { Modal, Button, Input, TextArea, Select, Badge, Card, EmptyState, Loading } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 import { StrategicPlan, StrategicGoal, StrategicObjective, PlanScope, PlanStatus, TaskPriority, TaskStatus } from '@/types';
 import {
@@ -774,7 +774,7 @@ export default function StrategicPlansPage() {
     return (
       <MainLayout title="Strategic Plans">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <Loading />
         </div>
       </MainLayout>
     );
@@ -970,7 +970,7 @@ export default function StrategicPlansPage() {
       {/* Strategic Plans List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <Loading />
         </div>
       ) : strategicPlans.length === 0 ? (
         <EmptyState

@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import MainLayout from '@/components/MainLayout';
-import { Modal, Button, Input, TextArea, Select, Badge, Card, EmptyState } from '@/components/ui';
+import { Modal, Button, Input, TextArea, Select, Badge, Card, EmptyState, Loading } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 import { 
   Asset, 
@@ -453,7 +453,7 @@ export default function AssetsPage() {
     return (
       <MainLayout title="Assets">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <Loading />
         </div>
       </MainLayout>
     );
@@ -642,7 +642,7 @@ export default function AssetsPage() {
       {/* Assets Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <Loading />
         </div>
       ) : filteredAssets.length === 0 ? (
         <EmptyState

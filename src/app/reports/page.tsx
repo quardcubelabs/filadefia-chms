@@ -2155,11 +2155,7 @@ export default function ReportsPage() {
 
                 {aiLoading && (
                   <div className="flex items-center justify-center py-8">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-3"></div>
-                      <p className="text-sm text-gray-600">Analyzing your report data...</p>
-                      <p className="text-xs text-gray-400 mt-1">This may take a few seconds</p>
-                    </div>
+                    <Loading size="sm" text="Analyzing your report data..." />
                   </div>
                 )}
 
