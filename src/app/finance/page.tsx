@@ -634,10 +634,13 @@ export default function FinancePage() {
   };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = (transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          transaction.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          transaction.member?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          transaction.member?.last_name?.toLowerCase().includes(searchTerm.toLowerCase())) ?? false;
+    const matchesSearch = !searchTerm || 
+      (transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       transaction.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       transaction.member?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       transaction.member?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       transaction.transaction_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       transaction.payment_method?.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesType = filterType === 'all' || transaction.transaction_type === filterType;
     // Department leaders already have filtered transactions from loadTransactions
