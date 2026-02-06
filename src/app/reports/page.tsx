@@ -1499,7 +1499,8 @@ export default function ReportsPage() {
       const currentDate = new Date().toISOString().split('T')[0];
       const periodText = reportPeriod === 'weekly' ? 'Weekly' : 
                         reportPeriod === 'monthly' ? 'Monthly' : 
-                        reportPeriod === 'quarterly' ? 'Quarterly' : 'Custom';
+                        reportPeriod === 'quarterly' ? 'Quarterly' :
+                        reportPeriod === 'yearly' ? 'Annual' : 'Custom';
       
       // Include department/zone name in filename if applicable
       let entityName = '';
@@ -1519,6 +1520,7 @@ export default function ReportsPage() {
         <PDFReport 
           reportData={reportData}
           reportType={reportType}
+          reportPeriod={reportPeriod}
           startDate={startDate}
           endDate={endDate}
           aiInsights={pdfAiInsights ? {
