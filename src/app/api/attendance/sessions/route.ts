@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { getSiteUrl } from '@/lib/config';
-
-function createServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase configuration');
-  }
-  
-  return createClient(supabaseUrl, supabaseServiceKey);
-}
+import { createServiceClient } from '@/lib/supabase/service';
 
 // GET - Get available attendance sessions (grouped by date and type)
 export async function GET(request: NextRequest) {
@@ -231,10 +220,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new attendance session
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const body = await request.json();
     const { 

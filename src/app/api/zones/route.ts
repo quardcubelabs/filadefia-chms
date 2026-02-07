@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@supabase/supabase-js';
 
 // GET - Fetch all zones
@@ -17,10 +18,7 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('active') !== 'false';
@@ -63,10 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const body = await request.json();
     const { name, swahili_name, description, leader_id } = body;

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@supabase/supabase-js';
 
 // POST - QR Code Check-in
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
     const body = await request.json();
     const { session_id, member_id, phone_number, member_number } = body;
 
@@ -306,10 +304,7 @@ export async function POST(request: NextRequest) {
 // GET - Get check-in statistics for a session
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('session_id');

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { getSiteUrl } from '@/lib/config';
@@ -6,10 +7,7 @@ import { getSiteUrl } from '@/lib/config';
 // POST - Migrate legacy attendance data to attendance_sessions table with QR codes
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     console.log('Starting legacy attendance migration...');
 
