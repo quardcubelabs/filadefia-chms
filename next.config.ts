@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
     } : false,
   },
   
-  // Configure webpack for ESM packages
+  // Empty Turbopack config to satisfy Next.js 16
+  turbopack: {},
+  
+  // Configure webpack for ESM packages (fallback for non-turbopack builds)
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;

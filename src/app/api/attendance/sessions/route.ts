@@ -3,13 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { getSiteUrl } from '@/lib/config';
 
+function createServiceClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
+
 // GET - Get available attendance sessions (grouped by date and type)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
