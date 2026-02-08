@@ -117,14 +117,14 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
               darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
             }`}
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         )}
 
         {/* Logo Section */}
         <div className="px-4 lg:px-5 mb-6 lg:mb-8">
-          <div className="flex items-center space-x-2 lg:space-x-3">
-            <div className="h-8 w-8 lg:h-12 lg:w-12 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-xl flex items-center justify-center flex-shrink-0">
               <img 
                 src="/tag-logo.png" 
                 alt="TAG Logo" 
@@ -136,12 +136,12 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                 mobileOpen ? 'w-auto opacity-100' : isExpanded ? 'lg:w-auto lg:opacity-100' : 'lg:w-0 lg:opacity-0'
               }`}
             >
-              <h2 className={`text-base lg:text-xl font-bold ${
+              <h2 className={`text-lg lg:text-xl font-bold ${
                 darkMode ? 'text-white' : 'text-gray-900'
               } whitespace-nowrap`}>
                 FCC CHMS
               </h2>
-              <p className={`text-xs lg:text-sm ${
+              <p className={`text-sm ${
                 darkMode ? 'text-gray-400' : 'text-gray-600'
               } whitespace-nowrap`}>
                 Church Management
@@ -151,7 +151,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 lg:px-3 space-y-0.5 lg:space-y-1 overflow-y-auto scrollbar-hide">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-hide">
           {navItems.map((item, index) => {
             const active = isActive(item.href);
             return (
@@ -159,7 +159,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                 key={index}
                 href={item.href}
                 onClick={handleNavClick}
-                className={`flex items-center space-x-2 lg:space-x-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-lg transition-all duration-200 group relative ${
+                className={`flex items-center space-x-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-lg transition-all duration-200 group relative ${
                   active
                     ? 'bg-red-100 text-red-700 shadow-md ring-1 ring-red-200'
                     : darkMode
@@ -169,7 +169,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
               >
                 {/* Icon */}
                 <div className="flex-shrink-0">
-                  <div className="[&>svg]:h-4 [&>svg]:w-4 lg:[&>svg]:h-5 [&>svg]:w-5">
+                  <div className="[&>svg]:h-5 [&>svg]:w-5">
                     {item.icon}
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
                     mobileOpen ? 'w-auto opacity-100' : isExpanded ? 'lg:w-auto lg:opacity-100' : 'lg:w-0 lg:opacity-0'
                   }`}
                 >
-                  <span className="text-sm lg:text-base font-medium whitespace-nowrap">{item.label}</span>
+                  <span className="text-base font-medium whitespace-nowrap">{item.label}</span>
                 </div>
 
                 {/* Hover tooltip when collapsed */}
