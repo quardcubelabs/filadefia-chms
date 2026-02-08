@@ -101,7 +101,7 @@ export default function Sidebar({ darkMode = false, onSignOut, mobileOpen = fals
         darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
       } border-r flex flex-col py-4 lg:py-6 z-50 transition-all duration-300 ease-in-out shadow-lg ${
         mobileOpen 
-          ? 'w-48 translate-x-0 lg:hidden' 
+          ? 'w-64 translate-x-0 lg:hidden' 
           : 'hidden lg:flex'
       } ${
         isExpanded 
