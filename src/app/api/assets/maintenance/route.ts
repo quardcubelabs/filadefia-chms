@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-function getSupabase() {
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    }
-  });
-}
+import { createServiceClient } from '@/lib/supabase/service';
 
 // GET - Fetch maintenance records for an asset
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     
     const assetId = searchParams.get('asset_id');
@@ -46,7 +34,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new maintenance record
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const body = await request.json();
 
     const {
@@ -109,7 +97,7 @@ export async function POST(request: NextRequest) {
 // DELETE - Delete a maintenance record
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

@@ -105,9 +105,25 @@ export default function EventDetailPage() {
   
   // Modal states
   const [isAddRegistrationModalOpen, setIsAddRegistrationModalOpen] = useState(false);
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [notes, setNotes] = useState('');
+  
+  // Edit event form state
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    event_type: 'fellowship' as string,
+    start_date: '',
+    end_date: '',
+    location: '',
+    department_id: '',
+    max_attendees: '',
+    registration_required: false,
+    registration_deadline: '',
+    cost: '0'
+  });
   
   // Filter states
   const [attendanceFilter, setAttendanceFilter] = useState<string>('all');
@@ -555,6 +571,122 @@ export default function EventDetailPage() {
     }
   };
 
+  // Open Edit Event Modal
+  const openEditModal = () => {
+    if (!event) return;
+    setEditFormData({
+      title: event.title,
+      description: event.description || '',
+      event_type: event.event_type,
+      start_date: new Date(event.start_date).toISOString().slice(0, 16),
+      end_date: new Date(event.end_date).toISOString().slice(0, 16),
+      location: event.location,
+      department_id: event.department_id || '',
+      max_attendees: event.max_attendees?.toString() || '',
+      registration_required: event.registration_required,
+      registration_deadline: event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0, 16) : '',
+      cost: event.cost.toString()
+    });
+    setIsEditEventModalOpen(true);
+  };
+
+  // Handle Edit Event
+  const handleEditEvent = async () => {
+    if (!supabase || !event) return;
+
+    try {
+      const eventData = {
+        title: editFormData.title,
+        description: editFormData.description || null,
+        event_type: editFormData.event_type,
+        start_date: editFormData.start_date,
+        end_date: editFormData.end_date,
+        location: editFormData.location,
+        department_id: editFormData.department_id || null,
+        max_attendees: editFormData.max_attendees ? parseInt(editFormData.max_attendees) : null,
+        registration_required: editFormData.registration_required,
+        registration_deadline: editFormData.registration_deadline || null,
+        cost: parseFloat(editFormData.cost) || 0
+      };
+
+      const { error } = await supabase
+        .from('events')
+        .update(eventData)
+        .eq('id', event.id);
+
+      if (error) throw error;
+
+      setSuccess('Event updated successfully!');
+      toast.success('Event updated successfully!');
+      setIsEditEventModalOpen(false);
+      loadEventDetails();
+    } catch (err: any) {
+      console.error('Error updating event:', err);
+      setError(err.message);
+      toast.error(err.message || 'Failed to update event');
+    }
+  };
+
+  // Handle Export Registrations
+  const handleExportRegistrations = () => {
+    if (registrations.length === 0) {
+      toast.error('No registrations to export');
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Member Number', 'First Name', 'Last Name', 'Phone', 'Email', 'Registration Date', 'Payment Status', 'Attended'];
+    const rows = registrations.map(reg => [
+      reg.member.member_number,
+      reg.member.first_name,
+      reg.member.last_name,
+      reg.member.phone,
+      reg.member.email || '',
+      new Date(reg.registered_at).toLocaleDateString(),
+      reg.payment_status,
+      reg.attended ? 'Yes' : 'No'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${event?.title.replace(/[^a-z0-9]/gi, '_')}_registrations_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success('Registrations exported successfully!');
+  };
+
+  // Mark all as attended
+  const markAllAttended = async () => {
+    if (!supabase || registrations.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('event_registrations')
+        .update({ attended: true })
+        .eq('event_id', params.id);
+
+      if (error) throw error;
+
+      setSuccess('All registrations marked as attended!');
+      toast.success('All marked as attended!');
+      loadRegistrations();
+    } catch (err: any) {
+      console.error('Error marking all attended:', err);
+      setError(err.message);
+    }
+  };
+
   const getEventTypeColor = (type: string) => {
     const colors = {
       conference: 'bg-purple-100 text-purple-800',
@@ -680,7 +812,7 @@ export default function EventDetailPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/events/${event.id}/edit`)}
+                  onClick={openEditModal}
                   icon={<Edit className="h-4 w-4" />}
                 >
                   Edit Event
@@ -913,6 +1045,16 @@ export default function EventDetailPage() {
                       </select>
                       <Button
                         variant="outline"
+                        onClick={markAllAttended}
+                        icon={<CheckCircle className="h-4 w-4" />}
+                        size="sm"
+                        className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      >
+                        Mark All Attended
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleExportRegistrations}
                         icon={<Download className="h-4 w-4" />}
                         size="sm"
                       >
@@ -1087,6 +1229,161 @@ export default function EventDetailPage() {
           </Button>
           <Button onClick={handleAddRegistration} disabled={!selectedMemberId}>
             Add Registration
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Edit Event Modal */}
+      <Modal
+        isOpen={isEditEventModalOpen}
+        onClose={() => setIsEditEventModalOpen(false)}
+        title="Edit Event"
+        size="lg"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Event Title *
+            </label>
+            <input
+              type="text"
+              value={editFormData.title}
+              onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <textarea
+              value={editFormData.description}
+              onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event Type *
+              </label>
+              <select
+                value={editFormData.event_type}
+                onChange={(e) => setEditFormData({ ...editFormData, event_type: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="conference">Conference</option>
+                <option value="crusade">Crusade</option>
+                <option value="seminar">Seminar</option>
+                <option value="prayer_night">Prayer Night</option>
+                <option value="workshop">Workshop</option>
+                <option value="fellowship">Fellowship</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location *
+              </label>
+              <input
+                type="text"
+                value={editFormData.location}
+                onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Start Date & Time *
+              </label>
+              <input
+                type="datetime-local"
+                value={editFormData.start_date}
+                onChange={(e) => setEditFormData({ ...editFormData, start_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Date & Time *
+              </label>
+              <input
+                type="datetime-local"
+                value={editFormData.end_date}
+                onChange={(e) => setEditFormData({ ...editFormData, end_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max Attendees
+              </label>
+              <input
+                type="number"
+                value={editFormData.max_attendees}
+                onChange={(e) => setEditFormData({ ...editFormData, max_attendees: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Leave empty for unlimited"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cost (TZS)
+              </label>
+              <input
+                type="number"
+                value={editFormData.cost}
+                onChange={(e) => setEditFormData({ ...editFormData, cost: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={editFormData.registration_required}
+                onChange={(e) => setEditFormData({ ...editFormData, registration_required: e.target.checked })}
+                className="rounded border-gray-300 text-red-600 focus:ring-red-500 mr-2"
+              />
+              <span className="text-sm text-gray-700">Registration Required</span>
+            </label>
+          </div>
+
+          {editFormData.registration_required && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Registration Deadline
+              </label>
+              <input
+                type="datetime-local"
+                value={editFormData.registration_deadline}
+                onChange={(e) => setEditFormData({ ...editFormData, registration_deadline: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-3 mt-6">
+          <Button variant="outline" onClick={() => setIsEditEventModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleEditEvent} disabled={!editFormData.title || !editFormData.start_date || !editFormData.end_date || !editFormData.location}>
+            Save Changes
           </Button>
         </div>
       </Modal>

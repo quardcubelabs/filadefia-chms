@@ -1012,40 +1012,143 @@ export default function DashboardPage() {
                 />
               </div>
 
+            {/* Mobile Visitors Stats Card */}
+            <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-bold ${textPrimary}`}>Visitors</h3>
+                <button
+                  onClick={() => router.push('/visitors')}
+                  className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  View All →
+                </button>
+              </div>
+              {/* Stats Grid - 2x2 */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className={`p-2 rounded-lg ${darkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <p className={`text-[10px] ${textSecondary}`}>Total</p>
+                  <p className="text-base font-bold text-blue-600">{visitorStats.total_visitors}</p>
+                </div>
+                <div className={`p-2 rounded-lg ${darkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                  <p className={`text-[10px] ${textSecondary}`}>This Month</p>
+                  <p className="text-base font-bold text-green-600">{visitorStats.new_this_month}</p>
+                </div>
+                <div className={`p-2 rounded-lg ${darkMode ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
+                  <p className={`text-[10px] ${textSecondary}`}>Converted</p>
+                  <p className="text-base font-bold text-purple-600">{visitorStats.converted}</p>
+                </div>
+                <div className={`p-2 rounded-lg ${darkMode ? 'bg-orange-900/20' : 'bg-orange-50'}`}>
+                  <p className={`text-[10px] ${textSecondary}`}>Conv. Rate</p>
+                  <p className="text-base font-bold text-orange-600">{visitorStats.conversion_rate.toFixed(1)}%</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Recent Activity Card */}
+            <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-bold ${textPrimary}`}>Recent Activity</h3>
+                <span className={`text-[10px] ${textSecondary}`}>Last 7 days</span>
+              </div>
+              <div className="space-y-2">
+                {recentActivities.length > 0 ? (
+                  recentActivities.slice(0, 4).map((activity) => (
+                    <div 
+                      key={activity.id} 
+                      onClick={() => activity.link && router.push(activity.link)}
+                      className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors cursor-pointer`}
+                    >
+                      <div className={`p-1.5 rounded-lg flex-shrink-0 ${
+                        activity.type === 'member' ? (darkMode ? 'bg-green-900/30' : 'bg-green-100') :
+                        activity.type === 'finance' ? (darkMode ? 'bg-blue-900/30' : 'bg-blue-100') :
+                        activity.type === 'visitor' ? (darkMode ? 'bg-purple-900/30' : 'bg-purple-100') :
+                        activity.type === 'attendance' ? (darkMode ? 'bg-orange-900/30' : 'bg-orange-100') :
+                        (darkMode ? 'bg-gray-800' : 'bg-gray-100')
+                      }`}>
+                        {activity.type === 'member' && <UserPlus className={`w-3.5 h-3.5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />}
+                        {activity.type === 'finance' && <DollarSign className={`w-3.5 h-3.5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />}
+                        {activity.type === 'visitor' && <Bell className={`w-3.5 h-3.5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />}
+                        {activity.type === 'attendance' && <Calendar className={`w-3.5 h-3.5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />}
+                        {activity.type === 'event' && <Calendar className={`w-3.5 h-3.5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium ${textPrimary} truncate`}>{activity.title}</p>
+                        <p className={`text-[10px] ${textSecondary} truncate`}>{activity.description}</p>
+                      </div>
+                      <span className={`text-[9px] ${textSecondary} flex-shrink-0`}>
+                        {new Date(activity.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className={`text-center py-4 ${textSecondary}`}>
+                    <p className="text-xs">{loading ? 'Loading...' : 'No recent activity'}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Mobile Department Leaders */}
             <div className={`${cardBg} rounded-xl p-3 ${borderClass} shadow-sm`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-bold ${textPrimary}`}>Best Leaders</h3>
-                <span className={`text-[10px] ${textSecondary}`}>{departmentLeaders.length} leaders</span>
+                <span className={`text-[10px] ${textSecondary}`}>Top 3</span>
               </div>
               <div className="space-y-2">
                 {departmentLeaders.length > 0 ? (
-                  departmentLeaders.slice(0, 4).map((leader, index) => (
-                    <div key={index} className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                      <div className="relative">
-                        <img
-                          src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
-                          alt={leader.name}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                        {index < 3 && (
-                          <div className="absolute -top-0.5 -left-0.5 bg-red-500 rounded-full p-0.5 shadow-sm">
-                            <Crown className="h-2 w-2 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-medium ${textPrimary} truncate`}>{leader.name}</p>
-                        <p className={`text-[10px] ${textSecondary} truncate`}>{leader.departmentName}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="flex text-blue-400 text-[8px]">
-                          {'â˜…â˜…â˜…â˜…â˜…'}
+                  departmentLeaders.slice(0, 3).map((leader, index) => {
+                    const rating = leaderRatings[leader.id];
+                    const avgRating = rating?.average || 0;
+                    const fullStars = Math.floor(avgRating);
+                    const hasHalfStar = avgRating % 1 >= 0.5;
+                    
+                    // Rank badge colors: Gold, Silver, Bronze for top 3
+                    const rankColors = [
+                      'bg-yellow-500', // 1st - Gold
+                      'bg-gray-400',   // 2nd - Silver
+                      'bg-amber-600'   // 3rd - Bronze
+                    ];
+                    
+                    return (
+                      <div key={leader.id} className={`flex items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                        <div className="relative">
+                          <img
+                            src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
+                            alt={leader.name}
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                          {index < 3 && (
+                            <div className={`absolute -top-0.5 -left-0.5 ${rankColors[index]} rounded-full p-0.5 shadow-sm`}>
+                              <Crown className="h-2 w-2 text-white" />
+                            </div>
+                          )}
                         </div>
-                        <span className={`text-[8px] ${textSecondary}`}>5.0</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className={`text-xs font-medium ${textPrimary} truncate`}>{leader.name}</p>
+                            {index === 0 && avgRating > 0 && (
+                              <span className="px-1 py-0.5 bg-yellow-100 text-yellow-700 text-[8px] rounded-full font-medium">
+                                Top
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-[10px] ${textSecondary} truncate`}>{leader.departmentName}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="flex text-orange-400 text-[8px]">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span key={star} className={star <= fullStars ? 'text-orange-400' : (star === fullStars + 1 && hasHalfStar ? 'text-orange-300' : 'text-gray-300')}>
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className={`text-[8px] ${textSecondary}`}>
+                            {avgRating > 0 ? avgRating.toFixed(1) : '-'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className={`text-xs text-center py-4 ${textSecondary}`}>
                     {loading ? 'Loading...' : 'No leaders found'}
@@ -1640,13 +1743,13 @@ export default function DashboardPage() {
                       ];
                       
                       return (
-                        <div key={leader.id} className={`flex items-center justify-between p-4 rounded-2xl ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors cursor-pointer`}>
-                          <div className="flex items-center space-x-3">
-                            <div className="relative">
+                        <div key={leader.id} className={`flex items-center justify-between p-3 sm:p-4 rounded-2xl ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors cursor-pointer`}>
+                          <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                            <div className="relative flex-shrink-0">
                               {/* Rank Badge - shows position based on rating */}
-                              <div className={`absolute -top-1 -left-1 h-6 w-6 ${rankColors[index]} rounded-full border-2 border-white flex items-center justify-center z-10`}>
+                              <div className={`absolute -top-1 -left-1 h-5 w-5 sm:h-6 sm:w-6 ${rankColors[index]} rounded-full border-2 border-white flex items-center justify-center z-10`}>
                                 {index < 3 ? (
-                                  <Crown className="text-white h-3.5 w-3.5" />
+                                  <Crown className="text-white h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                 ) : (
                                   <span className="text-white text-xs font-bold">{index + 1}</span>
                                 )}
@@ -1654,42 +1757,42 @@ export default function DashboardPage() {
                               <img
                                 src={leader.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${leader.name}`}
                                 alt={leader.name}
-                                className="h-12 w-12 rounded-full object-cover"
+                                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover"
                               />
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className={`font-semibold ${textPrimary}`}>{leader.name}</p>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                <p className={`font-semibold ${textPrimary} text-sm sm:text-base truncate`}>{leader.name}</p>
                                 {index === 0 && avgRating > 0 && (
-                                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
+                                  <span className="px-1.5 sm:px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] sm:text-xs rounded-full font-medium whitespace-nowrap">
                                     Top Rated
                                   </span>
                                 )}
                               </div>
-                              <p className={`text-sm ${textSecondary}`}>{leader.role}</p>
-                              <div className="flex items-center mt-1">
+                              <p className={`text-xs sm:text-sm ${textSecondary} truncate`}>{leader.role}</p>
+                              <div className="flex items-center mt-1 flex-wrap gap-1">
                                 {/* Orange Stars */}
-                                <div className="flex text-orange-400 text-xs">
+                                <div className="flex text-orange-400 text-[10px] sm:text-xs">
                                   {[1, 2, 3, 4, 5].map((star) => (
                                     <span key={star} className={star <= fullStars ? 'text-orange-400' : (star === fullStars + 1 && hasHalfStar ? 'text-orange-300' : 'text-gray-300')}>
                                       â˜…
                                     </span>
                                   ))}
                                 </div>
-                                <span className={`text-xs ${textSecondary} ml-2`}>
-                                  {avgRating > 0 ? `${avgRating.toFixed(1)} (${rating?.count || 0} reviews)` : 'No ratings yet'}
+                                <span className={`text-[10px] sm:text-xs ${textSecondary}`}>
+                                  {avgRating > 0 ? `${avgRating.toFixed(1)} (${rating?.count || 0})` : 'No ratings'}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-2">
                             {(user?.profile?.role === 'administrator' || user?.profile?.role === 'pastor') && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openRatingModal(leader);
                                 }}
-                                className="px-3 py-2 bg-orange-100 border border-orange-400 text-orange-600 rounded-xl text-sm font-medium hover:bg-orange-200 transition-colors"
+                                className="p-1.5 sm:px-3 sm:py-2 bg-orange-100 border border-orange-400 text-orange-600 rounded-lg sm:rounded-xl text-sm font-medium hover:bg-orange-200 transition-colors"
                                 title="Rate this leader"
                               >
                                 <Star className="h-4 w-4" />
@@ -1697,7 +1800,7 @@ export default function DashboardPage() {
                             )}
                             <button 
                               onClick={() => handleViewDepartmentLeader(leader.id)}
-                              className="px-5 py-2 bg-blue-100 border border-blue-600 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-200 hover:text-blue-800 transition-colors"
+                              className="px-3 sm:px-5 py-1.5 sm:py-2 bg-blue-100 border border-blue-600 text-blue-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium hover:bg-blue-200 hover:text-blue-800 transition-colors"
                             >
                               View
                             </button>

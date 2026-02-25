@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@supabase/supabase-js';
 
 // POST - Save attendance records
@@ -17,10 +18,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
     console.log('Attendance API called');
     const body = await request.json();
     console.log('Request body:', JSON.stringify(body, null, 2));
@@ -205,10 +203,7 @@ export async function POST(request: NextRequest) {
 // GET - Fetch existing attendance records
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');

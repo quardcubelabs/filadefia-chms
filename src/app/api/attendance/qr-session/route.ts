@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { getSiteUrl } from '@/lib/config';
@@ -6,10 +7,7 @@ import { getSiteUrl } from '@/lib/config';
 // POST - Create QR attendance session
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
     const body = await request.json();
     const { 
       date, 
@@ -98,10 +96,7 @@ export async function POST(request: NextRequest) {
 // GET - Get QR session info
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('session_id');
@@ -161,10 +156,7 @@ export async function GET(request: NextRequest) {
 // PUT - Update QR session (close, extend, etc.)
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const body = await request.json();
     const { session_id, action, expires_at } = body;

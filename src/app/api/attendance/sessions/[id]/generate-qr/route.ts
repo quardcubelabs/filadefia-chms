@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { getSiteUrl } from '@/lib/config';
+import { createServiceClient } from '@/lib/supabase/service';
 
 // POST - Generate QR code for existing attendance session
 export async function POST(
@@ -9,10 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
 
     const { id: sessionId } = await params;
     const body = await request.json();

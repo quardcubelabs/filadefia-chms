@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-function getSupabase() {
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    }
-  });
-}
+import { createServiceClient } from '@/lib/supabase/service';
 
 // GET - Fetch goals for a strategic plan
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     
     const strategicPlanId = searchParams.get('strategic_plan_id');
@@ -75,7 +63,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new goal
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const body = await request.json();
 
     const {
@@ -135,7 +123,7 @@ export async function POST(request: NextRequest) {
 // PUT - Update a goal
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const body = await request.json();
     const { id, ...updateData } = body;
 
@@ -170,7 +158,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a goal
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

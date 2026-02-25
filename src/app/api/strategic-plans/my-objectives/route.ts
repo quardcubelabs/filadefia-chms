@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 export const dynamic = 'force-dynamic';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // GET - Fetch all objectives assigned to the logged-in user
 export async function GET(request: Request) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing Supabase configuration');
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createServiceClient();
     
     // Get the user's member_id from the search params
     const { searchParams } = new URL(request.url);
@@ -92,11 +84,7 @@ export async function GET(request: Request) {
 // PATCH - Update objective progress (for assigned leaders)
 export async function PATCH(request: Request) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createServiceClient();
     const body = await request.json();
     
     const { objective_id, member_id, progress, status, notes } = body;

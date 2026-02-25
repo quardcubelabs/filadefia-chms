@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@supabase/supabase-js';
 
 // GET - Fetch ratings for a leader or all leaders
@@ -6,10 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // Use service role to bypass RLS for reading ratings
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createServiceClient();
 
     const searchParams = request.nextUrl.searchParams;
     const leaderId = searchParams.get('leader_id');
@@ -69,10 +67,7 @@ export async function POST(request: NextRequest) {
       throw new Error('Service role key is not set');
     }
 
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
+    const adminClient = createServiceClient();
 
     const body = await request.json();
     

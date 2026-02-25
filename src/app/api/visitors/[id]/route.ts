@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/service';
 
 // GET - Fetch single visitor
 export async function GET(
@@ -8,12 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createServiceClient();
 
     const { data, error } = await supabase
       .from('visitors')
@@ -44,16 +39,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      throw new Error('Service role key is not set');
-    }
-
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
+    const supabase = createServiceClient();
 
     const body = await request.json();
     console.log('Updating visitor:', id, 'with:', body);
@@ -63,7 +49,7 @@ export async function PATCH(
       Object.entries(body).filter(([_, v]) => v !== undefined)
     );
 
-    const { data, error } = await adminClient
+    const { data, error } = await supabase
       .from('visitors')
       .update(updates)
       .eq('id', id)
@@ -93,18 +79,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      throw new Error('Service role key is not set');
-    }
+    const supabase = createServiceClient();
 
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-
-    const { error } = await adminClient
+    const { error } = await supabase
       .from('visitors')
       .delete()
       .eq('id', id);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/service';
 
 // POST - Convert visitor to member
 export async function POST(
@@ -8,19 +8,10 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      throw new Error('Service role key is not set');
-    }
-
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
+    const supabase = createServiceClient();
 
     // First, get the visitor data
-    const { data: visitor, error: fetchError } = await adminClient
+    const { data: visitor, error: fetchError } = await supabase
       .from('visitors')
       .select('*')
       .eq('id', id)
@@ -40,7 +31,7 @@ export async function POST(
 
     // Create the member record from visitor data
     // Generate member number in the same format as regular members: FCC + sequential number
-    const { data: lastMember } = await adminClient
+    const { data: lastMember } = await supabase
       .from('members')
       .select('member_number')
       .order('created_at', { ascending: false })
@@ -78,7 +69,7 @@ export async function POST(
     };
 
     // Insert into members table
-    const { data: newMember, error: memberError } = await adminClient
+    const { data: newMember, error: memberError } = await supabase
       .from('members')
       .insert([memberData])
       .select()
@@ -90,7 +81,7 @@ export async function POST(
     }
 
     // Update visitor record to mark as converted and link to new member
-    const { error: updateError } = await adminClient
+    const { error: updateError } = await supabase
       .from('visitors')
       .update({
         converted: true,
