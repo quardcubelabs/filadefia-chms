@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // Prevent SSR/prerendering issues during build
 export const dynamic = 'force-dynamic';
@@ -40,7 +40,13 @@ import {
   Megaphone,
   Phone,
   Mail,
-  MessageCircle
+  MessageCircle,
+  Wallet,
+  Loader2,
+  X,
+  CheckCircle2,
+  XCircle,
+  Zap
 } from 'lucide-react';
 
 interface Zone {
@@ -160,6 +166,13 @@ export default function MessagesPage() {
     selected_members: [] as string[],
     scheduled_at: ''
   });
+
+  // SMS-specific state
+  const [smsBalance, setSmsBalance] = useState<number | null>(null);
+  const [smsBalanceLoading, setSmsBalanceLoading] = useState(false);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsResults, setSmsResults] = useState<{ totalSent: number; totalFailed: number; invalidNumbers: number } | null>(null);
+  const [memberSearchTerm, setMemberSearchTerm] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -425,16 +438,92 @@ export default function MessagesPage() {
     }
   };
 
+  // Fetch SMS balance
+  const fetchSmsBalance = async () => {
+    setSmsBalanceLoading(true);
+    try {
+      const res = await fetch('/api/sms/balance');
+      const data = await res.json();
+      if (data.success) {
+        setSmsBalance(data.data.balance);
+      }
+    } catch (err) {
+      console.error('Failed to fetch SMS balance:', err);
+    } finally {
+      setSmsBalanceLoading(false);
+    }
+  };
+
   const handleSendCommunication = async () => {
     if (!supabase || !user?.profile?.id) return;
 
+    if (!communicationForm.message.trim()) {
+      setError('Message is required.');
+      return;
+    }
+
+    // For SMS type, use the NextSMS API
+    if (communicationForm.type === 'sms') {
+      setSmsSending(true);
+      setSmsResults(null);
+      try {
+        const res = await fetch('/api/sms/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: communicationForm.message.trim(),
+            recipientType: communicationForm.recipient_type,
+            departmentId: communicationForm.department_id || undefined,
+            memberIds: communicationForm.selected_members.length > 0 ? communicationForm.selected_members : undefined,
+            senderId: user.profile.id,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Failed to send SMS');
+        }
+
+        setSmsResults({
+          totalSent: data.data.totalSent,
+          totalFailed: data.data.totalFailed,
+          invalidNumbers: data.data.invalidNumbers || 0,
+        });
+
+        if (data.data.balance !== undefined) {
+          setSmsBalance(data.data.balance);
+        }
+
+        setSuccess(`SMS sent successfully! ${data.data.totalSent} delivered, ${data.data.totalFailed} failed.`);
+        setIsCommunicationModalOpen(false);
+        setCommunicationForm({
+          type: 'sms',
+          subject: '',
+          message: '',
+          recipient_type: 'all',
+          department_id: '',
+          selected_members: [],
+          scheduled_at: ''
+        });
+        setSmsResults(null);
+        loadCommunications();
+      } catch (err: any) {
+        console.error('Error sending SMS:', err);
+        setError(err.message);
+      } finally {
+        setSmsSending(false);
+      }
+      return;
+    }
+
+    // For email/whatsapp, save to database (existing flow)
     try {
       let recipientIds: string[] = [];
 
       if (communicationForm.recipient_type === 'all') {
         recipientIds = members.map(m => m.id);
       } else if (communicationForm.recipient_type === 'department' && communicationForm.department_id) {
-        // Get department members
         const { data: deptMembers, error: deptError } = await supabase
           .from('department_members')
           .select('member_id')
@@ -1157,11 +1246,41 @@ export default function MessagesPage() {
         {/* Send Communication Modal */}
         <Modal
           isOpen={isCommunicationModalOpen}
-          onClose={() => setIsCommunicationModalOpen(false)}
+          onClose={() => {
+            if (!smsSending) {
+              setIsCommunicationModalOpen(false);
+              setSmsResults(null);
+              setMemberSearchTerm('');
+            }
+          }}
           title="Send Message"
           size="lg"
         >
           <div className="space-y-3 sm:space-y-4">
+            {/* SMS Balance Banner */}
+            {communicationForm.type === 'sms' && (
+              <div className="flex items-center justify-between bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-green-100 rounded-lg">
+                    <Wallet className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-green-700 font-medium">NextSMS Balance</p>
+                    <p className="text-sm font-bold text-green-800">
+                      {smsBalanceLoading ? 'Checking...' : smsBalance !== null ? `TZS ${smsBalance.toLocaleString()}` : 'Click to check'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={fetchSmsBalance}
+                  disabled={smsBalanceLoading}
+                  className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {smsBalanceLoading ? 'Checking...' : 'Refresh'}
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               label="Message Type"
@@ -1169,21 +1288,21 @@ export default function MessagesPage() {
               onChange={(e) => setCommunicationForm({ ...communicationForm, type: e.target.value as Communication['type'] })}
               required
               options={[
-                { value: "sms", label: "SMS" },
-                { value: "email", label: "Email" },
-                { value: "whatsapp", label: "WhatsApp" }
+                { value: "sms", label: "\u{1F4F1} SMS (NextSMS)" },
+                { value: "email", label: "\u{1F4E7} Email" },
+                { value: "whatsapp", label: "\u{1F4AC} WhatsApp" }
               ]}
             />
 
             <Select
               label="Recipients"
               value={communicationForm.recipient_type}
-              onChange={(e) => setCommunicationForm({ ...communicationForm, recipient_type: e.target.value })}
+              onChange={(e) => setCommunicationForm({ ...communicationForm, recipient_type: e.target.value, selected_members: [] })}
               required
               options={[
-                { value: "all", label: "All Members" },
-                { value: "department", label: "Department" },
-                { value: "individual", label: "Select Individual" }
+                { value: "all", label: `All Members (${members.length})` },
+                { value: "department", label: "By Department" },
+                { value: "individual", label: "Select Members" }
               ]}
             />
           </div>
@@ -1199,6 +1318,87 @@ export default function MessagesPage() {
             />
           )}
 
+          {/* Individual member selection with search */}
+          {communicationForm.recipient_type === 'individual' && (
+            <div className="space-y-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700">Select Members</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search members by name or phone..."
+                  value={memberSearchTerm}
+                  onChange={(e) => setMemberSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              {/* Selected members chips */}
+              {communicationForm.selected_members.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {communicationForm.selected_members.map(id => {
+                    const member = members.find(m => m.id === id);
+                    return member ? (
+                      <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        {member.first_name} {member.last_name}
+                        <button
+                          onClick={() => setCommunicationForm({
+                            ...communicationForm,
+                            selected_members: communicationForm.selected_members.filter(mid => mid !== id)
+                          })}
+                          className="hover:text-blue-900"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                  <span className="text-xs text-gray-500 self-center">{communicationForm.selected_members.length} selected</span>
+                </div>
+              )}
+              {/* Member list */}
+              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                {members
+                  .filter(m => {
+                    if (!memberSearchTerm) return true;
+                    const search = memberSearchTerm.toLowerCase();
+                    return (
+                      m.first_name.toLowerCase().includes(search) ||
+                      m.last_name.toLowerCase().includes(search) ||
+                      (m.phone && m.phone.includes(search))
+                    );
+                  })
+                  .slice(0, 50)
+                  .map(member => {
+                    const isSelected = communicationForm.selected_members.includes(member.id);
+                    return (
+                      <label
+                        key={member.id}
+                        className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setCommunicationForm(prev => ({
+                              ...prev,
+                              selected_members: isSelected
+                                ? prev.selected_members.filter(id => id !== member.id)
+                                : [...prev.selected_members, member.id]
+                            }));
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{member.first_name} {member.last_name}</p>
+                          <p className="text-xs text-gray-500">{member.phone || 'No phone'}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
           {(communicationForm.type === 'email' || communicationForm.type === 'whatsapp') && (
             <Input
               label="Subject"
@@ -1208,42 +1408,119 @@ export default function MessagesPage() {
             />
           )}
           
-          <TextArea
-            label="Message"
-            value={communicationForm.message}
-            onChange={(e) => setCommunicationForm({ ...communicationForm, message: e.target.value })}
-            placeholder="Enter your message"
-            rows={5}
-            required
-          />
+          <div>
+            <TextArea
+              label="Message"
+              value={communicationForm.message}
+              onChange={(e) => setCommunicationForm({ ...communicationForm, message: e.target.value })}
+              placeholder={communicationForm.type === 'sms' ? 'Type your SMS message here... (max 918 chars)' : 'Enter your message'}
+              rows={5}
+              required
+            />
+            {/* Character count for SMS */}
+            {communicationForm.type === 'sms' && (
+              <div className="flex justify-between mt-1">
+                <p className="text-xs text-gray-500">
+                  {communicationForm.message.length <= 160 ? '1 SMS' :
+                   communicationForm.message.length <= 306 ? '2 SMS parts' :
+                   communicationForm.message.length <= 459 ? '3 SMS parts' :
+                   communicationForm.message.length <= 612 ? '4 SMS parts' :
+                   communicationForm.message.length <= 765 ? '5 SMS parts' :
+                   communicationForm.message.length <= 918 ? '6 SMS parts' : 'Too long!'}
+                </p>
+                <p className={`text-xs ${communicationForm.message.length > 918 ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                  {communicationForm.message.length}/918
+                </p>
+              </div>
+            )}
+          </div>
 
-          <Input
-            label="Schedule for Later (Optional)"
-            type="datetime-local"
-            value={communicationForm.scheduled_at}
-            onChange={(e) => setCommunicationForm({ ...communicationForm, scheduled_at: e.target.value })}
-          />
+          {communicationForm.type !== 'sms' && (
+            <Input
+              label="Schedule for Later (Optional)"
+              type="datetime-local"
+              value={communicationForm.scheduled_at}
+              onChange={(e) => setCommunicationForm({ ...communicationForm, scheduled_at: e.target.value })}
+            />
+          )}
 
           {/* Cost estimate */}
-          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-            <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-1.5 sm:mb-2">Cost Estimate</h4>
-            <p className="text-xs sm:text-sm text-gray-600">
-              {communicationForm.recipient_type === 'all' ? members.length :
-               communicationForm.recipient_type === 'department' && communicationForm.department_id ? 
-               'Department members' : 'Selected members'} × TZS {
-                communicationForm.type === 'sms' ? '50' :
-                communicationForm.type === 'whatsapp' ? '30' : '0'
-              } = Estimated cost
-            </p>
+          <div className={`p-3 sm:p-4 rounded-lg ${communicationForm.type === 'sms' ? 'bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200' : 'bg-gray-50'}`}>
+            <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-1.5 sm:mb-2 flex items-center gap-2">
+              {communicationForm.type === 'sms' && <Zap className="h-4 w-4 text-blue-600" />}
+              {communicationForm.type === 'sms' ? 'SMS Cost Estimate' : 'Cost Estimate'}
+            </h4>
+            <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+              <p>
+                Recipients: <span className="font-medium text-gray-900">
+                  {communicationForm.recipient_type === 'all' ? members.length :
+                   communicationForm.recipient_type === 'individual' ? communicationForm.selected_members.length :
+                   communicationForm.recipient_type === 'department' && communicationForm.department_id ? 'Dept members' : '0'}
+                </span>
+              </p>
+              <p>
+                Cost per SMS: <span className="font-medium text-gray-900">
+                  TZS {communicationForm.type === 'sms' ? '25' : communicationForm.type === 'whatsapp' ? '30' : '0'}
+                </span>
+              </p>
+              {communicationForm.type === 'sms' && (
+                <p>
+                  SMS parts: <span className="font-medium text-gray-900">
+                    {Math.ceil(Math.max(communicationForm.message.length, 1) / 160)}
+                  </span>
+                </p>
+              )}
+              <p className="font-medium text-gray-900 pt-1 border-t border-gray-200">
+                Estimated total: TZS {
+                  (() => {
+                    const recipients = communicationForm.recipient_type === 'all' ? members.length :
+                      communicationForm.recipient_type === 'individual' ? communicationForm.selected_members.length : 0;
+                    const costPerMsg = communicationForm.type === 'sms' ? 25 : communicationForm.type === 'whatsapp' ? 30 : 0;
+                    const parts = communicationForm.type === 'sms' ? Math.ceil(Math.max(communicationForm.message.length, 1) / 160) : 1;
+                    return (recipients * costPerMsg * parts).toLocaleString();
+                  })()
+                }
+              </p>
+            </div>
           </div>
+
+          {/* SMS Results */}
+          {smsResults && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Sent: {smsResults.totalSent}</span>
+              </div>
+              {smsResults.totalFailed > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  <span className="text-sm font-medium text-red-800">Failed: {smsResults.totalFailed}</span>
+                </div>
+              )}
+              {smsResults.invalidNumbers > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-800">Invalid numbers skipped: {smsResults.invalidNumbers}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
-          <Button variant="outline" onClick={() => setIsCommunicationModalOpen(false)} className="w-full sm:w-auto">
+          <Button variant="outline" onClick={() => { if (!smsSending) { setIsCommunicationModalOpen(false); setSmsResults(null); } }} className="w-full sm:w-auto" disabled={smsSending}>
             Cancel
           </Button>
-          <Button onClick={handleSendCommunication} className="w-full sm:w-auto">
-            {communicationForm.scheduled_at ? 'Schedule Message' : 'Send Now'}
+          <Button
+            onClick={handleSendCommunication}
+            className="w-full sm:w-auto"
+            disabled={smsSending || !communicationForm.message.trim() || (communicationForm.type === 'sms' && communicationForm.message.length > 918)}
+          >
+            {smsSending ? (
+              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Sending SMS...</span>
+            ) : communicationForm.type === 'sms' ? (
+              <span className="flex items-center gap-2"><Send className="h-4 w-4" /> Send SMS via NextSMS</span>
+            ) : communicationForm.scheduled_at ? 'Schedule Message' : 'Send Now'}
           </Button>
           </div>
         </Modal>
@@ -1364,9 +1641,9 @@ export default function MessagesPage() {
             <div className="space-y-4 sm:space-y-6">
               {/* Header */}
               <div className={`p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6 ${
-                viewingAnnouncement.priority === 'high' ? 'bg-gradient-to-r from-red-600 to-red-700' :
-                viewingAnnouncement.priority === 'medium' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                'bg-gradient-to-r from-blue-500 to-blue-600'
+                viewingAnnouncement.priority === 'high' ? 'bg-linear-to-r from-red-600 to-red-700' :
+                viewingAnnouncement.priority === 'medium' ? 'bg-linear-to-r from-yellow-500 to-yellow-600' :
+                'bg-linear-to-r from-blue-500 to-blue-600'
               } text-white`}>
                 <div className="flex items-center gap-2 mb-2">
                   <Megaphone className="h-5 w-5" />
@@ -1476,9 +1753,9 @@ export default function MessagesPage() {
             <div className="space-y-4 sm:space-y-6">
               {/* Header */}
               <div className={`p-4 sm:p-6 rounded-lg -mt-4 -mx-4 sm:-mx-6 ${
-                viewingCommunication.type === 'sms' ? 'bg-gradient-to-r from-green-600 to-green-700' :
-                viewingCommunication.type === 'email' ? 'bg-gradient-to-r from-blue-600 to-blue-700' :
-                'bg-gradient-to-r from-emerald-600 to-emerald-700'
+                viewingCommunication.type === 'sms' ? 'bg-linear-to-r from-green-600 to-green-700' :
+                viewingCommunication.type === 'email' ? 'bg-linear-to-r from-blue-600 to-blue-700' :
+                'bg-linear-to-r from-emerald-600 to-emerald-700'
               } text-white`}>
                 <div className="flex items-center gap-2 mb-2">
                   {viewingCommunication.type === 'sms' ? <Phone className="h-5 w-5" /> :

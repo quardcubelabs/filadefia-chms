@@ -85,17 +85,15 @@
   }
 }
 
-* {
-  border-color: hsl(var(--border));
-}
+/* border-color is handled by Tailwind v4 base layer and utility classes */
 
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
   font-family: 'Inter', system-ui, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   /* Prevent FOUC (Flash of Unstyled Content) */
@@ -115,8 +113,8 @@ body {
 }
 
 .fcc-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
   box-shadow: var(--fcc-shadow);
   border-radius: var(--radius);
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'gradient' | 'bordered' | 'elevated';
@@ -62,8 +62,9 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subtitle, action,
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{title}</h3>
         {subtitle && <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">{subtitle}</p>}
       </div>
-      {action && <div className="flex-shrink-0">{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
+
   );
 };
 
