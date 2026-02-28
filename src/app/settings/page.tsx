@@ -271,20 +271,55 @@ export default function SettingsPage() {
       setIsSaving(true);
       
       if (!supabase) return;
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(editedProfile)
+
+      // Map the editable fields to the actual profiles table columns.
+      // first_name / last_name are the canonical columns; 'name' is a virtual field.
+      const nameParts = (editedProfile.name || '').trim().split(/\s+/);
+      const first_name = nameParts[0] || user.profile.first_name || '';
+      const last_name = nameParts.slice(1).join(' ') || user.profile.last_name || '';
+
+      // Base columns that always exist in the profiles table
+      const basePayload: Record<string, any> = {
+        first_name,
+        last_name,
+        phone: editedProfile.phone || null,
+      };
+
+      // Extended columns added by the fix_profiles_columns.sql migration.
+      // If those columns don't exist yet the extended update is skipped gracefully.
+      const extendedPayload: Record<string, any> = {
+        bio: editedProfile.bio || null,
+        address: editedProfile.address || null,
+        emergency_contact: editedProfile.emergency_contact || null,
+        emergency_phone: editedProfile.emergency_phone || null,
+      };
+
+      // Try full update first; if extended columns are missing, fall back to base-only.
+      let { error } = await supabase
+        .from('profiles')
+        .update({ ...basePayload, ...extendedPayload })
         .eq('id', user.profile.id);
 
-      if (error) throw error;
+      if (error?.message?.includes('column') && error.message.includes('schema cache')) {
+        // Extended columns not yet added – fall back to base columns only
+        const { error: baseError } = await supabase
+          .from('profiles')
+          .update(basePayload)
+          .eq('id', user.profile.id);
+        if (baseError) throw baseError;
+        console.warn('Extended profile columns (bio, address, etc.) not found. Run database/fix_profiles_columns.sql in Supabase to enable them.');
+      } else if (error) {
+        throw error;
+      }
 
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       toast.success('Profile Updated', 'Your profile has been updated!');
       setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setMessage({ type: 'error', text: 'Failed to update profile.' });
-      toast.error('Update Failed', 'Failed to update profile.');
+    } catch (error: any) {
+      const errorMsg = error?.message || error?.details || error?.hint || JSON.stringify(error) || 'Unknown error';
+      console.error('Error updating profile:', errorMsg, error);
+      setMessage({ type: 'error', text: `Failed to update profile: ${errorMsg}` });
+      toast.error('Update Failed', `Failed to update profile: ${errorMsg}`);
     } finally {
       setIsSaving(false);
     }
@@ -413,15 +448,15 @@ export default function SettingsPage() {
           }`}>
             <div className="flex items-start sm:items-center">
               {message.type === 'success' ? 
-                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" /> :
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 mt-0.5 sm:mt-0 shrink-0" /> :
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mr-2 mt-0.5 sm:mt-0 shrink-0" />
               }
               <span className={`text-sm sm:text-base flex-1 ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
                 {message.text}
               </span>
               <button 
                 onClick={() => setMessage(null)}
-                className="ml-2 text-gray-500 hover:text-gray-700 flex-shrink-0"
+                className="ml-2 text-gray-500 hover:text-gray-700 shrink-0"
               >
                 <X className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
@@ -442,7 +477,7 @@ export default function SettingsPage() {
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
                 {activeTab === tab.id && (
@@ -615,7 +650,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('notifications', 'email', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -631,7 +666,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('notifications', 'push', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -647,7 +682,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('notifications', 'events', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -663,7 +698,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('notifications', 'finances', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -679,7 +714,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('notifications', 'announcements', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
               </div>
@@ -702,7 +737,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('privacy', 'profileVisible', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -718,7 +753,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('privacy', 'showEmail', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -734,7 +769,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('privacy', 'showPhone', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
               </div>
@@ -772,7 +807,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingsUpdate('security', 'loginNotifications', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
@@ -812,7 +847,7 @@ export default function SettingsPage() {
                 <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Theme</label>
                 <Select
                   value={settings.appearance.theme}
-                  onChange={(value) => handleSettingsUpdate('appearance', 'theme', value)}
+                  onChange={(e) => handleSettingsUpdate('appearance', 'theme', e.target.value)}
                   options={[
                     { value: 'light', label: 'Light' },
                     { value: 'dark', label: 'Dark' },
@@ -826,7 +861,7 @@ export default function SettingsPage() {
                 <label className={`block text-xs sm:text-sm font-medium ${textPrimary} mb-1 sm:mb-2`}>Language</label>
                 <Select
                   value={settings.appearance.language}
-                  onChange={(value) => handleSettingsUpdate('appearance', 'language', value)}
+                  onChange={(e) => handleSettingsUpdate('appearance', 'language', e.target.value)}
                   options={[
                     { value: 'en', label: 'English' },
                     { value: 'es', label: 'Español' },

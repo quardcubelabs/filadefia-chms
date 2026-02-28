@@ -347,7 +347,7 @@ export default function NotificationsPage() {
         {isDepartmentLeader && departmentName && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex items-start sm:items-center">
-              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-2 sm:mr-3 mt-0.5 sm:mt-0 flex-shrink-0" />
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-2 sm:mr-3 mt-0.5 sm:mt-0 shrink-0" />
               <div className="min-w-0">
                 <h3 className="font-medium text-blue-900 text-sm sm:text-base">Department Notifications: {departmentName}</h3>
                 <p className="text-blue-700 text-xs sm:text-sm mt-1">
@@ -424,7 +424,7 @@ export default function NotificationsPage() {
               }`}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
-                    <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${
+                    <div className={`p-1.5 sm:p-2 rounded-full shrink-0 ${
                       !notification.read ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
                     }`}>
                       <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5">
@@ -443,7 +443,7 @@ export default function NotificationsPage() {
                             {notification.priority}
                           </Badge>
                           {!notification.read && (
-                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-600 rounded-full shrink-0"></div>
                           )}
                         </div>
                       </div>
